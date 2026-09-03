@@ -16,3 +16,4 @@ dist-server/
 _gsdata_/
 .claude/settings.local.json
 .ygsf-token
+server/backups-local/
