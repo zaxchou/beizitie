@@ -26,24 +26,24 @@
 
 1. **类型检查**
    ```bash
-   cd Z:/projectC/calligraphy-memory && npx tsc --noEmit
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && npx tsc --noEmit
    ```
    如果失败，停止并报告错误。
 
 2. **构建前端**
    ```bash
-   cd Z:/projectC/calligraphy-memory && npm run build
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && npm run build
    ```
 
 3. **暂存 + 提交**（仅在 `git status --porcelain` 有输出时执行）
    ```bash
-   cd Z:/projectC/calligraphy-memory && git add -A && git commit -m "<简短描述改动>"
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && git add -A && git commit -m "<简短描述改动>"
    ```
    提交信息用英文，简洁描述本次改动。
 
 4. **推送**
    ```bash
-   cd Z:/projectC/calligraphy-memory && git push origin main
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && git push origin main
    ```
 
 5. **部署到生产** — `bash deploy.sh anki` 自动：
@@ -64,7 +64,7 @@
 
 1. **导出内容包**
    ```bash
-   cd Z:/projectC/calligraphy-memory && npx tsx server/scripts/export-local-deck.ts
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && npx tsx server/scripts/export-local-deck.ts
    ```
    提取输出中的文件路径（如 `/tmp/瘦金体千字文.content.zip`）。
 
@@ -99,7 +99,7 @@
    ```
    如果 404，手动 scp 封面文件上来：
    ```bash
-   scp Z:/projectC/calligraphy-memory/uploads/<cover-file>.jpg xcx:/opt/zi2anki/uploads/
+   scp Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory/uploads/<cover-file>.jpg xcx:/opt/zi2anki/uploads/
    ```
 
 6. **清理临时文件**
@@ -118,23 +118,23 @@
 
 1. **类型检查**
    ```bash
-   cd Z:/projectC/calligraphy-memory && npx tsc --noEmit
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && npx tsc --noEmit
    ```
    如果失败，停止并报告错误。
 
 2. **构建前端**
    ```bash
-   cd Z:/projectC/calligraphy-memory && npm run build
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && npm run build
    ```
 
 3. **暂存 + 提交**（仅在 `git status --porcelain` 有输出时执行）
    ```bash
-   cd Z:/projectC/calligraphy-memory && git add -A && git commit -m "<简短描述改动>"
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && git add -A && git commit -m "<简短描述改动>"
    ```
 
 4. **推送**
    ```bash
-   cd Z:/projectC/calligraphy-memory && git push origin main
+   cd Z:/BaiduNetdiskWorkspace/myagent-work/zcode/projectC/calligraphy-memory && git push origin main
    ```
 
 5. **迁移部署** — `bash deploy.sh anki --migrate` 自动：

@@ -1,0 +1,182 @@
+# 背字帖 (zi2anki) 项目交接报告
+
+> 生成时间：2026-08-14
+> 交接场景：换电脑继续开发
+> 代码仓库：`Z:\projectC\calligraphy-memory`（git 仓库，远程仅作版本管理，部署不走 GitHub）
+
+---
+
+## 1. 项目是什么
+
+书法记忆卡（Anki 类）Web 应用。前端 React + Vite + Zustand + MUI，后端 Express + PostgreSQL，服务端渲染静态构建产物。
+
+三个域名指向同一台服务器（124.223.17.29）：
+
+| 域名 | 用途 |
+|---|---|
+| molin.wiki | 书法知识 wiki（另一个项目，Docker） |
+| zi2anki.molin.wiki | 本应用（Let's Encrypt 证书） |
+| beizitie.com | 本应用正式域名（**TrustAsia 付费证书**，已备案） |
+
+---
+
+## 2. 关键文件与目录
+
+```
+calligraphy-memory/
+├── src/                  # React 前端
+│   ├── pages/            # 页面组件
+│   ├── components/       # 组件（layout/、study/、market/、dashboard/ 等）
+│   ├── stores/           # Zustand stores
+│   ├── lib/              # api.ts（后端 API 客户端）、productionFeatures.ts（生产特性开关缓存）
+│   └── types/            # TypeScript 类型
+├── server/               # Express 后端
+│   ├── index.ts          # 入口 + 公开路由（jizi、marketplace 公开端点）
+│   ├── db.ts             # PostgreSQL 连接 + schema 迁移
+│   ├── middleware/auth.ts# JWT 鉴权（含 JWT_SECRET 解析）
+│   ├── routes/           # auth / decks / cards / study / analytics / marketplace / jizi / admin
+│   ├── lib/              # cache 等
+│   ├── scripts/          # 内容包应用脚本
+│   ├── data/             # （本地开发用）
+│   └── production-config.json   # ⚠️ 生产配置开关（已 gitignore，见 §6）
+├── deploy.sh             # ⚠️ 部署脚本（已 gitignore，本机独有，见 §7）
+├── scripts/backup-db.sh  # 生产数据库备份
+├── DEPLOYMENT_SAFETY.md  # ⚠️ 部署安全规则，必读
+└── CLAUDE.md             # 项目指令，必读
+```
+
+---
+
+## 3. 当前未提交的工作（必须处理）
+
+`git status` 显示大量未提交改动 —— 这是「生产特性 + 游客模式 + 权限重构」功能，**代码已在生产运行，但从未 commit**。换电脑前务必 commit + push，否则代码丢失。
+
+改动内容：
+
+| 文件 | 改动 |
+|---|---|
+| `server/routes/auth.ts` | 新增 `loadProductionConfig()`（读生产配置）、`GET /production-features`、`POST /guest`（游客登录，自动订阅预设牌组） |
+| `server/index.ts` | 新增公开 `/api/marketplace/decks` 路由（游客免登录浏览市场），支持可选 JWT 带出 is_subscribed |
+| `server/middleware/auth.ts` | 导出 `GUEST_ROLE`、`JWT_SECRET` |
+| `src/lib/api.ts` | 新增 `fetchProductionFeatures()`、`guestLogin()` |
+| `src/lib/productionFeatures.ts` | **新文件**：生产特性懒加载缓存 |
+| `src/pages/LoginPage.tsx` | 游客模式：guestMode 开启时自动游客登录（不显示登录表单），`?login=1` 可强制显示表单 |
+| `src/components/auth/ProtectedRoute.tsx` | 游客只能访问 `/`、`/market`、`/study/:deckId`、`/dashboard` |
+| `src/components/layout/AppShell.tsx` | 备案号 footer（生产时显示）、TopBar 游客隐藏用户名 |
+| `src/components/layout/SideMenu.tsx` | 游客隐藏用户区 + 只显示仪表盘/市场导航 |
+| `src/components/layout/BottomNav.tsx` | 游客只显示仪表盘/市场 |
+| `src/stores/useAuthStore.ts` | 新增 `loginFromGuest()` |
+| `src/pages/DecksPage.tsx` | 创建/重命名/删除牌组按钮仅管理员显示（subscriber 隐藏） |
+| `.gitignore` | 新增 `server/production-config.json` |
+
+**建议的 commit message：**
+```
+feat: production guest mode + filing footer + subscriber UI scoping
+
+- backend: production-features endpoint, guest login with preset subscriptions, public marketplace routes
+- frontend: auto-guest-login on LoginPage, guest nav scoping, filing footer, hide user section for guests
+- .gitignore: exclude server/production-config.json (deployment config, not source)
+```
+
+---
+
+## 4. 部署架构（换电脑必须重建）
+
+### 4.1 服务器拓扑
+
+- **服务器 IP**：124.223.17.29
+- **SSH 别名**：`xcx`（在 `~/.ssh/config`，**换电脑需重新配置**，指向 ubuntu@124.223.17.29，通常走密钥登录）
+- **应用路径**：`/opt/zi2anki`
+- **进程管理**：pm2，进程名 `zi2anki`，用 `npx tsx` 跑 `server/index.ts`，端口 3001
+- **环境变量**：`/opt/zi2anki/ecosystem.config.cjs`（⚠️ 这里硬编码了 `NODE_ENV=production`、`JWT_SECRET`、`TSX_DISABLE_CACHE`。**不能用 `pm2 restart zi2anki` 简单重启，必须用 `pm2 start /opt/zi2anki/ecosystem.config.cjs --only zi2anki --update-env`**，否则环境变量不会刷新）
+
+### 4.2 Nginx（Docker 托管）
+
+- nginx 跑在 molin-wiki 的 docker-compose 里（container `deploy-nginx-1`）
+- 配置文件：`/opt/molin-wiki/deploy/nginx.conf`，bind mount 到容器 `/etc/nginx/conf.d/default.conf`
+- **⚠️ bind mount inode 陷阱**：`sed -i` 修改 nginx.conf 会新建 inode，Docker bind mount 追踪旧 inode，容器不感知。改完必须 `docker compose restart nginx`（或用 `cat > file` 原地写）
+- 证书目录：`/opt/molin-wiki/ssl/`（已含 beizitie.com_bundle.crt + beizitie.com.key、molin.wiki 证书）
+- Let's Encrypt 目录：`/etc/letsencrypt`（zi2anki.molin.wiki 用）
+
+### 4.3 证书现状
+
+- **beizitie.com**：TrustAsia DV TLS RSA CA 2024，有效期 2026-07-07 ~ 2026-10-05，nginx 配置指向 `/etc/nginx/ssl/beizitie.com_bundle.crt` + `.key`
+- **zi2anki.molin.wiki**：Let's Encrypt，自动续期（certbot webroot 指向 Docker named volume `deploy_certbot_www`）
+
+---
+
+## 5. 部署流程
+
+**部署 = 本地 SCP 直传，不走 GitHub。** 用 `deploy.sh`（本机脚本）：
+
+```bash
+bash deploy.sh anki            # 安全默认：构建前端 + 传 dist + 传 server/ + npm install + pm2 restart + 健康检查 + 用户数据哨兵对比
+bash deploy.sh anki --data     # 仅增量上传 uploads/ 缺失文件
+bash deploy.sh anki --migrate  # 先备份生产库再部署（幂等 DDL）
+bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
+```
+
+**⚠️ 部署前必读 `DEPLOYMENT_SAFETY.md` 和 `CLAUDE.md`。核心红线：**
+
+- 生产 DB 是唯一真源，**严禁**本地 DB 覆盖生产 DB
+- `deploy.sh anki --sync` 已永久禁用（旧模式会清空用户数据）
+- 任何 DB 变更前先 `scripts/backup-db.sh` 备份（备份在 `/opt/zi2anki/backups/`，保留 30 天）
+- 部署会自动跑用户数据哨兵：对比 users / user_card_progress / user_subscriptions / study_sessions / daily_stats / jizi_history 的 count，不允许下降
+
+---
+
+## 6. ⚠️ production-config.json —— 关键陷阱
+
+文件：`server/production-config.json`（已 gitignore，**不随 GitHub**）
+
+当前内容（本地）：
+```json
+{
+  "guestMode": true,
+  "filing": { "icp": "沪ICP备2026019654号-3" },
+  "guestSubscriptions": ["0bce9012-95e5-4930-b7fc-c384cf4f074a"]
+}
+```
+
+**⚠️ 服务器端当前是 `guestMode: false`（备案下来后手动 sed 关闭了），但本地这份文件是 `guestMode: true`。** `deploy.sh anki` 会把整个 `server/` 目录 tar 上传（含此文件），**下次部署会覆盖服务器配置把 guestMode 弹回 true**！
+
+**换电脑前必须二选一：**
+- 若备案已完成、游客模式不再需要：把本地 `guestMode` 也改成 `false` 后再部署/提交，并保留 `filing` 部分（备案号 footer 仍需要）
+- 若之后可能再开游客模式：保留 true 但记住部署会同步它
+
+`guestMode` 控制：登录页是否自动游客登录。`filing` 控制：footer 备案号显示（备案号永久保留）。`guestSubscriptions` 控制：游客自动订阅哪些牌组（多宝塔碑 deck_id `0bce9012-95e5-4930-b7fc-c384cf4f074a`）。
+
+后端读取逻辑（`server/routes/auth.ts`）：仅当 `process.env.NODE_ENV === 'production'` 才读取此文件，本地开发返回空开关（不影响本地）。
+
+---
+
+## 7. 换电脑重建清单
+
+1. **安装依赖**：Node.js（≥18，实际生产用 v20）+ PostgreSQL（本地开发）
+2. **SSH 配置**：在 `~/.ssh/config` 配 `xcx` 别名 → `ubuntu@124.223.17.29`，配好密钥
+3. **恢复 `deploy.sh`**：⚠️ 该文件已 gitignore，不在仓库里！需从旧电脑拷贝，或按旧版重建（核心逻辑见上）。`deploy.sh` 里硬编码了 `ANKI_LOCAL="Z:/projectC/calligraphy-memory"` 本地路径，换电脑要改成新路径
+4. **环境变量**：本地开发 `.env` 需要 `JWT_SECRET`（生产值在服务器 ecosystem.config.cjs 里；本地可用 dev 回退值）
+5. **生产配置**：确认 `server/production-config.json` 的 guestMode 状态（见 §6）
+6. **本地启动**：
+   - 后端：`npx tsx server/index.ts`（或看 `start.bat` / `start.ps1`）
+   - 前端 dev：`npx vite`（vite.config.ts 里 `/api`、`/uploads` 已 proxy 到 localhost:3001）
+7. **拉取代码**：`git clone` / `git pull`，注意 `deploy.sh`、`server/production-config.json`、`uploads/` 都不在仓库，需手动同步
+
+---
+
+## 8. 建议的技能（next session 推荐）
+
+- **`deploy`** — 安全部署 zi2anki 到生产（已内置安全规则）
+- **`code-review`** — 提交未 commit 的游客模式代码前跑一遍 review
+- **`verify`** — 游客模式/备案号/权限改动改完后跑端到端验证
+- **`stamp-downloader`** — 若继续做集字印章库导入
+
+---
+
+## 9. 已知技术备忘
+
+- **Zustand persist key**：认证状态存在 localStorage 的 `背字帖-auth`（非 raw token/user），测试/调试注入登录态要写完整的 persist JSON
+- **pm2 重启**：必须用 ecosystem.config.cjs 的 `pm2 start ... --update-env`，不能裸 `pm2 restart`（会丢 NODE_ENV）
+- **僵尸进程陷阱**（历史）：pm2 看似 online 但端口 3001 被孤儿 tsx 进程占用时，清缓存无效，先 `pkill` 再 pm2 start（有记忆记录）
+- **上传文件**：`/opt/zi2anki/uploads/` 内容寻址（UUID 文件名），增量同步靠文件名差集
+- **Vite proxy**：前端 dev 时 `/api` 和 `/uploads` 走 `http://localhost:3001`
