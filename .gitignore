@@ -17,3 +17,4 @@ _gsdata_/
 .claude/settings.local.json
 .ygsf-token
 server/backups-local/
+tmp-test-local-backup.js
