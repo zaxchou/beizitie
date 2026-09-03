@@ -85,7 +85,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
 
     let sql = `
       SELECT md.deck_id, md.calligrapher, md.dynasty, md.style, md.description,
-             COALESCE(md.cover_thumb, md.cover_image, (
+             COALESCE(NULLIF(md.cover_thumb, ''), NULLIF(md.cover_image, ''), (
                SELECT image_url FROM cards
                  WHERE deck_id = md.deck_id AND image_url != '' ORDER BY created_at ASC LIMIT 1
              ), '') AS cover_image,
@@ -117,6 +117,28 @@ app.get('/api/marketplace/decks', async (req, res) => {
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
     }
     sql += ' ORDER BY md.featured DESC, md.sort_order ASC, md.published_at DESC';
+
+    // 分页：?limit=&offset= 时返回 { total, calligraphers, decks }，否则兼容旧的全量数组
+    const limitRaw = req.query.limit ? parseInt(req.query.limit as string, 10) || 0 : 0;
+    if (limitRaw > 0) {
+      const offset = parseInt(req.query.offset as string, 10) || 0;
+      const cond = sql.split('WHERE md.published_at IS NOT NULL')[1]?.split(' ORDER BY')[0] || '';
+      const countRes = await db.query(
+        `SELECT COUNT(*)::int AS n FROM marketplace_decks md JOIN decks d ON d.id = md.deck_id WHERE md.published_at IS NOT NULL${cond}`,
+        params,
+      );
+      const facets = await db.query(
+        `SELECT DISTINCT calligrapher FROM marketplace_decks WHERE calligrapher <> '' ORDER BY calligrapher`,
+      );
+      const paged = `${sql} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+      const { rows } = await db.query(paged, [...params, limitRaw, offset]);
+      res.json({
+        total: countRes.rows[0]?.n ?? rows.length,
+        calligraphers: facets.rows.map((r: any) => r.calligrapher),
+        decks: rows,
+      });
+      return;
+    }
 
     const { rows } = await db.query(sql, params);
     res.json(rows);
