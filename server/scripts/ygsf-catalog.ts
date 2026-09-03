@@ -131,19 +131,20 @@ async function doImport(db: any, opts: Args, token: string) {
   const deckId = crypto.randomUUID();
   const client = await db.connect();
   try {
+    const now = new Date().toISOString();
     await client.query('BEGIN');
     await client.query(
-      `INSERT INTO decks (id, name, card_count, user_id, source_key, daily_new_card_limit, daily_review_limit)
-       VALUES ($1, $2, $3, $4, $5, 20, 200)`,
-      [deckId, deckName, glyphs.length, adminId, deckKey],
+      `INSERT INTO decks (id, name, card_count, user_id, source_key, daily_new_card_limit, daily_review_limit, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, 20, 200, $6, $6)`,
+      [deckId, deckName, glyphs.length, adminId, deckKey, now],
     );
     let inserted = 0;
     for (let i = 0; i < glyphs.length; i++) {
       const g = glyphs[i];
       await client.query(
-        `INSERT INTO cards (id, deck_id, front_text, image_url, source_key, sort_order, ease, interval, repetitions)
-         VALUES ($1, $2, $3, $4, $5, $6, 2.5, 0, 0)`,
-        [crypto.randomUUID(), deckId, g.hanzi, g.colorImage, `ygsf:${zitieId}:${g.id}`, i],
+        `INSERT INTO cards (id, deck_id, user_id, front_text, image_url, source_key, sort_order, ease, interval, repetitions, next_review, created_at, updated_at)
+         VALUES ($1, $2, NULL, $3, $4, $5, $6, 2.5, 0, 0, $7, $7, $7)`,
+        [crypto.randomUUID(), deckId, g.hanzi, g.colorImage, `ygsf:${zitieId}:${g.id}`, i, now],
       );
       await client.query(
         `INSERT INTO ygsf_images (glyph_id, zitie_id, hanzi, remote_url)
