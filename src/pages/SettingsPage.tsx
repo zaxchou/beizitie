@@ -35,7 +35,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import StorageIcon from '@mui/icons-material/Storage';
 import { useSettingsStore } from '@/stores/useSettingsStore';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
-import { fetchDecks, exportDeck, exportAllDecks, exportContentPackage, importApkgFile, changePassword, publishDeck } from '@/lib/api';
+import { fetchDecks, exportDeck, exportAllDecks, exportContentPackage, importApkgFile, importLocalBackup, changePassword, publishDeck } from '@/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { Deck } from '@/types';
 
@@ -61,6 +61,10 @@ const SettingsPage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importProgress, setImportProgress] = useState(0);
   const importingRef = useRef(false);
+
+  // 单文件版备份导入
+  const backupInputRef = useRef<HTMLInputElement>(null);
+  const [backupImporting, setBackupImporting] = useState(false);
 
   // 导入后自动发布
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -190,6 +194,38 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const handleBackupFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBackupImporting(true);
+    try {
+      const json = await file.text();
+      const data = JSON.parse(json);
+      if (data.format !== 'beizitie-backup' && data.format !== 'beizitie-export') {
+        setSnackbar({ open: true, message: '不是背字帖的备份文件', severity: 'error' });
+        return;
+      }
+      const result = await importLocalBackup(json);
+      const r = result.report;
+      const parts = [
+        `匹配已有帖 ${r.decks_matched}`,
+        r.decks_created ? `新建帖 ${r.decks_created}` : '',
+        `进度 ${r.progress_imported} 条`,
+      ].filter(Boolean);
+      setSnackbar({ open: true, message: `导入成功：${parts.join('，')}`, severity: 'success' });
+      fetchDecks().then(setDecks).catch(() => {});
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: `导入失败：${err instanceof Error ? err.message : String(err)}`,
+        severity: 'error',
+      });
+    } finally {
+      setBackupImporting(false);
+      if (backupInputRef.current) backupInputRef.current.value = '';
+    }
+  };
+
   return (
     <Box className="space-y-4 py-4">
       <Typography variant="h5" className="font-kai">设置</Typography>
@@ -311,6 +347,37 @@ const SettingsPage: React.FC = () => {
                 重置
               </Button>
             </ListItemSecondaryAction>
+          </ListItem>
+        </List>
+      </Card>
+
+      {/* 单文件版备份导入（所有登录用户可见） */}
+      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <List disablePadding>
+          <ListItem className="py-4 flex-col items-start gap-2">
+            <ListItemText
+              primary="导入单文件版备份"
+              secondary="选择单文件版（beizitie.html）导出的备份 JSON，学习进度将恢复到本账号"
+              primaryTypographyProps={{ variant: 'subtitle1' as const }}
+              sx={{ width: '100%' }}
+            />
+            <Box className="self-stretch flex justify-end">
+              <input
+                ref={backupInputRef}
+                type="file"
+                accept=".json,application/json"
+                hidden
+                onChange={handleBackupFileChange}
+              />
+              <Button
+                variant="outlined"
+                disabled={backupImporting}
+                startIcon={backupImporting ? <CircularProgress size={18} /> : <UploadIcon />}
+                onClick={() => backupInputRef.current?.click()}
+              >
+                {backupImporting ? '导入中…' : '选择备份文件'}
+              </Button>
+            </Box>
           </ListItem>
         </List>
       </Card>

@@ -504,3 +504,244 @@ importRouter.post('/import', requireAdmin, (req: Request, res: Response) => {
     res.json(result);
   });
 });
+
+// ---------------------------------------------------------------------------
+// POST /api/import/local-backup —— 导入单文件版备份（beizitie-backup JSON）到当前登录账号
+//
+// 双向兼容的另一半：单文件版(GitHub Pages/IndexedDB)导出的 JSON 恢复到服务器版。
+// 安全边界（见 DEPLOYMENT_SAFETY.md）：只写当前用户自己的数据
+// （自建牌组、user_card_progress、user_subscriptions、daily_stats），
+// 不触碰内容域，不做任何删除；匹配到公共牌组时进度挂到共享卡片上。
+// ---------------------------------------------------------------------------
+
+interface LocalBackupDeck {
+  id: string;
+  name: string;
+  zitieId?: string;
+  calligrapher?: string;
+  dynasty?: string;
+  style?: string;
+  created_at?: string;
+  settings?: { dailyNewLimit?: number; dailyReviewLimit?: number; paused?: boolean };
+}
+
+interface LocalBackupCard {
+  id: string;
+  deck_id: string;
+  front_text: string;
+  image_url: string;
+  sort_order?: number;
+}
+
+interface LocalBackupProgress {
+  card_id: string;
+  deck_id: string;
+  ease?: number;
+  interval?: number;
+  repetitions?: number;
+  next_review?: string;
+  last_review?: string | null;
+}
+
+/** URL 归一化：去掉缩略图 query（?x-bce-process=...），用于跨版本卡片对齐 */
+function normalizeImageUrl(u: string | undefined | null): string {
+  return (u || '').split('?')[0].trim();
+}
+
+importRouter.post('/local-backup', async (req: Request, res: Response) => {
+  try {
+    const body = req.body as {
+      format?: string;
+      decks?: LocalBackupDeck[];
+      cards?: LocalBackupCard[];
+      progress?: LocalBackupProgress[];
+      stats?: Array<{ date: string; studied?: number; newLearned?: number }>;
+    };
+    if (!body || (body.format !== 'beizitie-backup' && body.format !== 'beizitie-export')) {
+      res.status(400).json({ error: '不是背字帖的备份文件' });
+      return;
+    }
+    const userId = req.user!.userId;
+    const db = getDb();
+    const report = {
+      decks_matched: 0,
+      decks_created: 0,
+      cards_created: 0,
+      subscribed: 0,
+      progress_imported: 0,
+      progress_skipped: 0,
+      stats_days: 0,
+    };
+    const cardIdMap = new Map<string, string>(); // 备份 card_id → 服务器 card_id
+
+    for (const d of body.decks || []) {
+      if (!d?.id || !d?.name) continue;
+
+      // 1) zitieId → 服务器公共牌组（source_key 约定 ygsf:<zitieId>）
+      let serverDeckId: string | null = null;
+      let isPublicDeck = false;
+      if (d.zitieId) {
+        const { rows } = await db.query(
+          `SELECT id, user_id FROM decks WHERE source_key = $1 ORDER BY created_at ASC LIMIT 1`,
+          [`ygsf:${d.zitieId}`]
+        );
+        if (rows[0]) {
+          serverDeckId = rows[0].id as string;
+          isPublicDeck = !rows[0].user_id;
+        }
+      }
+
+      // 2) 用户已有同名自建牌组 → 视为同一份（重复导入幂等）
+      if (!serverDeckId) {
+        const { rows } = await db.query(
+          `SELECT id FROM decks WHERE name = $1 AND user_id = $2 ORDER BY created_at ASC LIMIT 1`,
+          [d.name, userId]
+        );
+        if (rows[0]) serverDeckId = rows[0].id as string;
+      }
+
+      const deckCards = (body.cards || []).filter((c) => c.deck_id === d.id);
+
+      if (serverDeckId) {
+        report.decks_matched++;
+        // 建立备份卡片 → 服务器卡片映射：先按归一化 image_url 精确对齐，
+        // 再按 front_text 唯一性兜底（同一帖内同字多 variants 不能瞎匹配）
+        const { rows: srvCards } = await db.query(
+          `SELECT id, front_text, image_url FROM cards WHERE deck_id = $1`,
+          [serverDeckId]
+        );
+        const byUrl = new Map<string, string>();
+        const byText = new Map<string, string[]>();
+        for (const sc of srvCards as Array<{ id: string; front_text: string; image_url: string }>) {
+          const u = normalizeImageUrl(sc.image_url);
+          if (u && !byUrl.has(u)) byUrl.set(u, sc.id);
+          const arr = byText.get(sc.front_text) || [];
+          arr.push(sc.id);
+          byText.set(sc.front_text, arr);
+        }
+        for (const c of deckCards) {
+          let target = byUrl.get(normalizeImageUrl(c.image_url));
+          if (!target) {
+            const arr = byText.get(c.front_text);
+            if (arr && arr.length === 1) target = arr[0];
+          }
+          if (target) cardIdMap.set(c.id, target);
+        }
+        // 公共牌组自动补订阅，进度才有落点
+        if (isPublicDeck) {
+          const r = await db.query(
+            `INSERT INTO user_subscriptions (user_id, deck_id, subscribed_at)
+             VALUES ($1, $2, $3) ON CONFLICT (user_id, deck_id) DO NOTHING`,
+            [userId, serverDeckId, new Date().toISOString()]
+          );
+          report.subscribed += r.rowCount || 0;
+        }
+      } else {
+        // 没有可匹配的服务器牌组（自建帖/已下架帖）→ 在用户名下重建整帖
+        const newDeckId = crypto.randomUUID();
+        const now = new Date().toISOString();
+        await db.query(
+          `INSERT INTO decks (id, name, card_count, daily_new_card_limit, daily_review_limit, user_id, created_at, updated_at, source_key)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $7, $8)`,
+          [
+            newDeckId,
+            d.name,
+            deckCards.length,
+            d.settings?.dailyNewLimit ?? 20,
+            d.settings?.dailyReviewLimit ?? 200,
+            userId,
+            d.created_at || now,
+            `local-backup:${d.zitieId || d.id}`,
+          ]
+        );
+        report.decks_created++;
+        const CHUNK = 500;
+        for (let i = 0; i < deckCards.length; i += CHUNK) {
+          const chunk = deckCards.slice(i, i + CHUNK);
+          const values: unknown[] = [];
+          const placeholders = chunk
+            .map((c, j) => {
+              const b = j * 9;
+              const newCardId = crypto.randomUUID();
+              cardIdMap.set(c.id, newCardId);
+              values.push(
+                newCardId,
+                newDeckId,
+                c.front_text || '',
+                c.image_url || '',
+                now,
+                now,
+                now,
+                c.sort_order ?? j,
+                `local-backup-card:${c.id}`
+              );
+              return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8},$${b + 9})`;
+            })
+            .join(',');
+          await db.query(
+            `INSERT INTO cards (id, deck_id, front_text, image_url, next_review, created_at, updated_at, sort_order, source_key)
+             VALUES ${placeholders}`,
+            values
+          );
+        }
+        report.cards_created += deckCards.length;
+      }
+    }
+
+    // 进度：批量 upsert（恢复语义：备份快照覆盖服务器现有进度）
+    const progress = (body.progress || []).filter((p) => cardIdMap.has(p.card_id) && p.next_review);
+    report.progress_skipped = (body.progress || []).length - progress.length;
+    const PCHUNK = 400;
+    for (let i = 0; i < progress.length; i += PCHUNK) {
+      const chunk = progress.slice(i, i + PCHUNK);
+      const values: unknown[] = [];
+      const placeholders = chunk
+        .map((p, j) => {
+          const b = j * 7;
+          values.push(
+            userId,
+            cardIdMap.get(p.card_id),
+            p.ease ?? 2.5,
+            p.interval ?? 0,
+            p.repetitions ?? 0,
+            p.next_review,
+            p.last_review ?? null
+          );
+          return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7})`;
+        })
+        .join(',');
+      await db.query(
+        `INSERT INTO user_card_progress (user_id, card_id, ease, interval, repetitions, next_review, last_review)
+         VALUES ${placeholders}
+         ON CONFLICT (user_id, card_id) DO UPDATE SET
+           ease = EXCLUDED.ease,
+           interval = EXCLUDED.interval,
+           repetitions = EXCLUDED.repetitions,
+           next_review = EXCLUDED.next_review,
+           last_review = EXCLUDED.last_review`,
+        values
+      );
+      report.progress_imported += chunk.length;
+    }
+
+    // 每日统计：按天取较大值（统计是展示域，取 max 即可，不做加减）
+    const stats = (body.stats || []).filter((s) => s?.date);
+    for (const s of stats) {
+      await db.query(
+        `INSERT INTO daily_stats (date, user_id, deck_id, cards_studied, new_cards_learned)
+         VALUES ($1, $2, '', $3, $4)
+         ON CONFLICT (date, user_id, deck_id) DO UPDATE SET
+           cards_studied = GREATEST(daily_stats.cards_studied, EXCLUDED.cards_studied),
+           new_cards_learned = GREATEST(daily_stats.new_cards_learned, EXCLUDED.new_cards_learned)`,
+        [s.date, userId, s.studied ?? 0, s.newLearned ?? 0]
+      );
+      report.stats_days++;
+    }
+
+    console.log(`[import] local-backup user=${userId}:`, report);
+    res.json({ success: true, report });
+  } catch (err) {
+    console.error('[import] local-backup error:', err);
+    res.status(500).json({ error: '导入失败: ' + (err instanceof Error ? err.message : String(err)) });
+  }
+});

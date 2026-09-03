@@ -1,12 +1,12 @@
 /**
  * IndexedDB 访问层（单文件版）
- * 库：beizitie v1
- * stores: decks(id) / cards(id, idx deckId) / progress(cardId, idx deckId) / stats(date) / kv(key)
+ * 库：beizitie v2
+ * stores: decks(id) / cards(id, idx deckId) / progress(cardId, idx deckId) / stats(date) / kv(key) / images(url)
  */
 import type { LocalCard, LocalDailyStat, LocalDeck, LocalProgress } from '../../core/types';
 
 const DB_NAME = 'beizitie';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -27,6 +27,8 @@ export function openDb(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains('stats')) db.createObjectStore('stats', { keyPath: 'date' });
       if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv', { keyPath: 'key' });
+      // v2：字图离线缓存（url → Blob）
+      if (!db.objectStoreNames.contains('images')) db.createObjectStore('images', { keyPath: 'url' });
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -135,4 +137,31 @@ export async function kvSet(key: string, value: unknown): Promise<void> {
     t.oncomplete = () => resolve();
     t.onerror = () => reject(t.error);
   });
+}
+
+// ---- images（字图离线缓存） ----
+export interface CachedImage {
+  url: string;
+  blob: Blob;
+  cached_at: string;
+}
+
+export async function getImageBlob(url: string): Promise<Blob | undefined> {
+  const row = (await tx(['images'], 'readonly', (t) =>
+    reqToPromise(t.objectStore('images').get(url)),
+  )) as CachedImage | undefined;
+  return row?.blob;
+}
+
+export async function putImageBlob(url: string, blob: Blob): Promise<void> {
+  const row: CachedImage = { url, blob, cached_at: new Date().toISOString() };
+  return tx(['images'], 'readwrite', (t) => void t.objectStore('images').put(row));
+}
+
+export async function countImages(): Promise<number> {
+  return tx(['images'], 'readonly', (t) => reqToPromise(t.objectStore('images').count()));
+}
+
+export async function clearImages(): Promise<void> {
+  return tx(['images'], 'readwrite', (t) => void t.objectStore('images').clear());
 }

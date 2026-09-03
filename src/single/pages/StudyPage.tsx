@@ -13,6 +13,7 @@ import FlashCard from '@/components/study/FlashCard';
 import RatingButtons from '@/components/study/RatingButtons';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { localDataSource } from '@/data/local/localAdapter';
+import { resolveImageSrc, warmDeckImages } from '@/data/local/imageCache';
 import type { Card, Rating } from '@/types';
 import type { LocalCard, LocalProgress } from '../../core/types';
 
@@ -63,11 +64,29 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy }) => {
   const mmss = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`;
 
   const current = queue[index];
+  const currentSrc = current?.card.image_url || '';
+
+  // 字图离线缓存：命中 IDB 用本地 blob，未命中即时网络显示并后台缓存
+  const [resolvedSrc, setResolvedSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!currentSrc) {
+      setResolvedSrc(null);
+      return;
+    }
+    resolveImageSrc(currentSrc).then((s) => {
+      if (alive) setResolvedSrc(s);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [currentSrc]);
+
   const progress = useMemo(() => {
     if (!current) return null;
-    // FlashCard 只需要 SM-2 字段 + 文本/图片；进度实时覆盖
-    return current.card;
-  }, [current]);
+    // FlashCard 只需要 SM-2 字段 + 文本/图片；进度实时覆盖；图片地址优先走离线缓存
+    return { ...current.card, image_url: resolvedSrc || current.card.image_url };
+  }, [current, resolvedSrc]);
 
   const start = useCallback(async (deckId: string) => {
     setLoading(true);
@@ -90,6 +109,14 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy }) => {
   useEffect(() => {
     if (studyingDeck) start(studyingDeck.id);
   }, [studyingDeck, start]);
+
+  // 学习开始后低并发预热整帖字图（断网也能继续学），退出学习即中止
+  useEffect(() => {
+    if (queue.length === 0) return;
+    const ctrl = new AbortController();
+    void warmDeckImages(queue.map((q) => q.card.image_url), () => ctrl.signal.aborted);
+    return () => ctrl.abort();
+  }, [queue]);
 
   const handleRate = async (rating: Rating) => {
     if (!current) return;

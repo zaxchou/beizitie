@@ -533,6 +533,25 @@ export async function importApkgFile(
   });
 }
 
+/** 导入单文件版备份（beizitie-backup JSON）到当前登录账号 */
+export function importLocalBackup(json: string): Promise<{
+  success: boolean;
+  report: {
+    decks_matched: number;
+    decks_created: number;
+    cards_created: number;
+    subscribed: number;
+    progress_imported: number;
+    progress_skipped: number;
+    stats_days: number;
+  };
+}> {
+  return request('/api/import/local-backup', {
+    method: 'POST',
+    body: json,
+  });
+}
+
 // ===== 生产环境功能开关 =====
 
 export interface ProductionFeatures {

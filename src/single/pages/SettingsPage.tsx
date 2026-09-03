@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Box,
   Typography,
@@ -7,8 +7,11 @@ import {
   CardContent,
   Chip,
   Alert,
+  Switch,
 } from '@mui/material';
 import { localDataSource } from '@/data/local/localAdapter';
+import { clearImageCache, imageCacheCount } from '@/data/local/imageCache';
+import { kvGet, kvSet } from '@/data/local/db';
 
 interface Props {
   darkMode: 'system' | 'light' | 'dark';
@@ -26,6 +29,23 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ sev: 'success' | 'error'; text: string } | null>(null);
+
+  // 字图离线缓存
+  const [imgCacheOn, setImgCacheOn] = useState(true);
+  const [imgCacheCount, setImgCacheCount] = useState<number | null>(null);
+  useEffect(() => {
+    void kvGet('imageCacheEnabled').then((v) => setImgCacheOn((v as boolean) ?? true));
+    void imageCacheCount().then(setImgCacheCount);
+  }, []);
+  const handleImgCacheToggle = async (on: boolean) => {
+    setImgCacheOn(on);
+    await kvSet('imageCacheEnabled', on);
+  };
+  const handleClearCache = async () => {
+    await clearImageCache();
+    setImgCacheCount(0);
+    setMsg({ sev: 'success', text: '字图缓存已清空' });
+  };
 
   const handleExport = async () => {
     setBusy(true);
@@ -105,6 +125,27 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
                 e.target.value = '';
               }}
             />
+          </Box>
+        </CardContent>
+      </Card>
+
+      {/* 字图离线缓存 */}
+      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box>
+              <Typography sx={{ fontWeight: 600 }}>字图离线缓存</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                学习过的字图存到本机，断网也能复习
+                {imgCacheCount !== null ? `（已缓存 ${imgCacheCount} 张）` : ''}
+              </Typography>
+            </Box>
+            <Switch checked={imgCacheOn} onChange={(e) => handleImgCacheToggle(e.target.checked)} />
+          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            <Button size="small" variant="text" color="error" onClick={handleClearCache} disabled={!imgCacheCount}>
+              清空缓存
+            </Button>
           </Box>
         </CardContent>
       </Card>
