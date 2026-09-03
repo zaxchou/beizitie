@@ -122,11 +122,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
     const limitRaw = req.query.limit ? parseInt(req.query.limit as string, 10) || 0 : 0;
     if (limitRaw > 0) {
       const offset = parseInt(req.query.offset as string, 10) || 0;
-      const cond = sql.split('WHERE md.published_at IS NOT NULL')[1]?.split(' ORDER BY')[0] || '';
-      const countRes = await db.query(
-        `SELECT COUNT(*)::int AS n FROM marketplace_decks md JOIN decks d ON d.id = md.deck_id WHERE md.published_at IS NOT NULL${cond}`,
-        params,
-      );
+      const countRes = await db.query(`SELECT COUNT(*)::int AS n FROM (${sql}) t`, params);
       const facets = await db.query(
         `SELECT DISTINCT calligrapher FROM marketplace_decks WHERE calligrapher <> '' ORDER BY calligrapher`,
       );
