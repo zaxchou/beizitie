@@ -26,7 +26,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getDb, waitForDb, getUploadsDir } from '../db.js';
+import { getDb, waitForDb } from '../db.js';
 
 const AES_KEY = Buffer.from('PkT!ihpN^QkQ62k%', 'utf8');
 const API_BASE = 'https://api.ygsf.com/v2.4';
@@ -60,7 +60,8 @@ function decryptYgsf(payload: string): any {
 function loadToken(cliToken?: string): string {
   if (cliToken) return cliToken;
   if (process.env.YGSF_TOKEN) return process.env.YGSF_TOKEN;
-  const tokenFile = path.join(__dirname, '..', '..', '.ygsf-token');
+  // 脚本约定从项目根目录运行（/opt/zi2anki 或本地仓库根）
+  const tokenFile = path.resolve(process.cwd(), '.ygsf-token');
   try {
     return fs.readFileSync(tokenFile, 'utf-8').trim();
   } catch {
@@ -148,9 +149,9 @@ function buildVariantMap(glyphs: YgsfGlyph[]): Map<string, string[]> {
   return map;
 }
 
-/** 从远程或本地图片地址中解析 glyph id（24 位 hex） */
+/** 从远程或本地图片地址中解析 glyph id（YGSF 为 32 位 hex，贪婪匹配 .png 前的完整 id） */
 function glyphIdFromUrl(url: string): string | null {
-  const m = url && url.match(/([0-9a-f]{24})\.png/);
+  const m = url && url.match(/([0-9a-f]{16,})\.png/);
   return m ? m[1] : null;
 }
 
@@ -332,7 +333,7 @@ async function main() {
   if (mirror) {
     const remoteCards = cards.filter((c: any) => c.image_url?.startsWith(REMOTE_URL_PREFIX));
     console.log(`牌组「${deck.name}」远程直链卡片 ${remoteCards.length} 张${limit ? `，本次最多镜像 ${limit} 张` : ''}`);
-    const uploadsDir = getUploadsDir();
+    const uploadsDir = path.resolve(process.cwd(), 'uploads');
     let done = 0;
     let skipped = 0;
     for (const c of remoteCards) {
@@ -373,7 +374,7 @@ async function main() {
        WHERE c.deck_id = $1
          AND c.image_url LIKE $2
          AND y.local_path IS NOT NULL
-         AND c.image_url LIKE '%/' || y.glyph_id || '.png%'`,
+         AND c.image_url LIKE '%' || y.glyph_id || '.png%'`,
       [deck.id, `${REMOTE_URL_PREFIX}%`],
     );
     const remain = await db.query(
@@ -392,7 +393,7 @@ async function main() {
        FROM ygsf_images y
        WHERE c.deck_id = $1
          AND c.image_url LIKE $2
-         AND c.image_url LIKE '%/' || y.glyph_id || '.png%'`,
+         AND c.image_url LIKE '%' || y.glyph_id || '.png%'`,
       [deck.id, `${LOCAL_URL_PREFIX}%`],
     );
     console.log(`已切回 ${flip.rowCount} 张卡片到远程直链。`);
