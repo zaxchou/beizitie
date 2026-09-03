@@ -90,7 +90,10 @@ async function ygsfGet(
   return body.data;
 }
 
-/** 分页拉取整个字帖的单字清单，按 _id 去重。匿名只能翻前几页，登录墙处提前停止 */
+/**
+ * 分页拉取整个字帖的单字清单，按 _id 去重。
+ * 优先 zitie/glyphs/query（当前数据，loaded 偏移）；异常或为空时回退 zitie/page/glyphs（旧快照，匿名约 4 页）。
+ */
 async function fetchAllGlyphs(
   zid: string,
   token: string,
@@ -98,26 +101,50 @@ async function fetchAllGlyphs(
   const all: YgsfGlyph[] = [];
   const seen = new Set<string>();
   let limited = false;
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    let list: any[];
-    try {
-      const data = await ygsfGet('/zitie/page/glyphs', { zid, page }, token);
-      list = Array.isArray(data) ? data : data?.list || [];
-    } catch (e: any) {
-      if (e.isLoginWall) {
-        limited = true;
-        break;
+
+  // 主通道：zitie/glyphs/query（当前数据）
+  try {
+    for (let loaded = 0; loaded < MAX_PAGES * 120; loaded += 120) {
+      const data = await ygsfGet('/zitie/glyphs/query', { zid, loaded }, token);
+      const list: any[] = Array.isArray(data) ? data : data?.list || [];
+      let fresh = 0;
+      for (const g of list) {
+        if (!g?._id || seen.has(g._id)) continue;
+        seen.add(g._id);
+        all.push(g);
+        fresh++;
       }
-      throw e;
+      if (list.length === 0 || fresh === 0) break;
+      await new Promise((r) => setTimeout(r, 120));
     }
-    let fresh = 0;
-    for (const g of list) {
-      if (!g?._id || seen.has(g._id)) continue;
-      seen.add(g._id);
-      all.push(g);
-      fresh++;
+  } catch (e: any) {
+    if (!e.isLoginWall) throw e;
+    limited = true;
+  }
+
+  // 回退：zitie/page/glyphs（旧快照接口，匿名可用页数有限）
+  if (all.length === 0) {
+    for (let page = 1; page <= MAX_PAGES; page++) {
+      let list: any[];
+      try {
+        const data = await ygsfGet('/zitie/page/glyphs', { zid, page }, token);
+        list = Array.isArray(data) ? data : data?.list || [];
+      } catch (e: any) {
+        if (e.isLoginWall) {
+          limited = true;
+          break;
+        }
+        throw e;
+      }
+      let fresh = 0;
+      for (const g of list) {
+        if (!g?._id || seen.has(g._id)) continue;
+        seen.add(g._id);
+        all.push(g);
+        fresh++;
+      }
+      if (list.length === 0 || fresh === 0) break;
     }
-    if (list.length === 0 || fresh === 0) break;
   }
   return { glyphs: all, limited };
 }
