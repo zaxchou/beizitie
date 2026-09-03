@@ -126,11 +126,17 @@ app.get('/api/marketplace/decks', async (req, res) => {
       const facets = await db.query(
         `SELECT DISTINCT calligrapher FROM marketplace_decks WHERE calligrapher <> '' ORDER BY calligrapher`,
       );
+      const styleCounts = await db.query(
+        `SELECT trim(s.s) AS style, COUNT(*)::int AS n
+         FROM marketplace_decks md, unnest(string_to_array(md.style, ',')) AS s(s)
+         WHERE md.published_at IS NOT NULL AND md.style <> '' GROUP BY 1 ORDER BY 2 DESC`,
+      );
       const paged = `${sql} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
       const { rows } = await db.query(paged, [...params, limitRaw, offset]);
       res.json({
         total: countRes.rows[0]?.n ?? rows.length,
         calligraphers: facets.rows.map((r: any) => r.calligrapher),
+        styleCounts: styleCounts.rows,
         decks: rows,
       });
       return;

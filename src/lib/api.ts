@@ -581,7 +581,7 @@ export function fetchMarketplaceDecksPaged(params: {
   search?: string;
   limit: number;
   offset: number;
-}): Promise<{ total: number; calligraphers: string[]; decks: MarketplaceDeck[] }> {
+}): Promise<{ total: number; calligraphers: string[]; styleCounts: { style: string; n: number }[]; decks: MarketplaceDeck[] }> {
   const qs = new URLSearchParams();
   if (params.style) qs.set('style', params.style);
   if (params.calligrapher) qs.set('calligrapher', params.calligrapher);

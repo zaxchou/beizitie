@@ -31,6 +31,16 @@ import { useAuthStore } from '@/stores/useAuthStore';
 
 /** 书体筛选选项 */
 const STYLE_OPTIONS = ['全部', '楷', '行', '草', '隶', '篆'] as const;
+/** 各书体的点缀色（筛选 chip 选中态与卡片角标） */
+const STYLE_COLORS: Record<string, string> = {
+  楷: '#8d6e63',
+  行: '#1976d2',
+  草: '#2e7d32',
+  隶: '#6a1b9a',
+  篆: '#ad1457',
+  章草: '#5d4037',
+};
+const styleColor = (s: string) => STYLE_COLORS[s] || '#546e7a';
 
 /** 封面占位组件 */
 const CoverPlaceholder: React.FC<{ name: string }> = ({ name }) => (
@@ -105,6 +115,11 @@ const MarketPage: React.FC = () => {
         if (data.calligraphers?.length) {
           setCalligrapherOptions(['全部', ...data.calligraphers]);
         }
+        if (data.styleCounts) {
+          const m: Record<string, number> = {};
+          for (const s of data.styleCounts) m[s.style] = s.n;
+          setStyleCounts(m);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载市场失败');
       } finally {
@@ -127,6 +142,8 @@ const MarketPage: React.FC = () => {
 
   /** 书家下拉列表（来自服务端全量 facets） */
   const [calligrapherOptions, setCalligrapherOptions] = useState<string[]>(['全部']);
+  /** 各书体数量（来自服务端 facets） */
+  const [styleCounts, setStyleCounts] = useState<Record<string, number>>({});
 
   const deckMatchesFilters = useCallback((deck: MarketplaceDeck): boolean => {
     if (styleFilter !== '全部') {
@@ -207,11 +224,29 @@ const MarketPage: React.FC = () => {
         ) : (
           <CoverPlaceholder name={deck.name} />
         )}
+        {deck.style && (
+          <Box
+            sx={{
+              position: 'absolute', top: 4, right: 4,
+              px: 0.5, py: '1px', borderRadius: 1,
+              bgcolor: 'rgba(20,20,20,0.55)', backdropFilter: 'blur(2px)',
+              color: '#fff', fontSize: { xs: 9, sm: 10 }, fontWeight: 700, lineHeight: 1.2,
+            }}
+          >
+            {deck.style.split(',')[0].trim()}
+          </Box>
+        )}
       </Box>
       <Typography variant="caption" noWrap
         sx={{ mt: 0.5, textAlign: 'center', fontSize: { xs: 10, sm: 11 }, fontWeight: 500 }}>
         {deck.name}
       </Typography>
+      {(deck.calligrapher || deck.dynasty) && (
+        <Typography variant="caption" noWrap
+          sx={{ textAlign: 'center', fontSize: { xs: 9, sm: 10 }, color: 'text.secondary', lineHeight: 1.3 }}>
+          {[deck.dynasty, deck.calligrapher].filter(Boolean).join('·')}
+        </Typography>
+      )}
       <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.25 }}>
         {pendingId === deck.deck_id ? (
           <CircularProgress size={12} />
@@ -294,15 +329,33 @@ const MarketPage: React.FC = () => {
           }}
         />
 
-        {STYLE_OPTIONS.map((s) => (
-          <Chip
-            key={s} label={s} size="small"
-            color={styleFilter === s ? 'primary' : 'default'}
-            variant={styleFilter === s ? 'filled' : 'outlined'}
-            onClick={() => setStyleFilter(s)}
-            sx={{ cursor: 'pointer' }}
-          />
-        ))}
+        {[
+          ...STYLE_OPTIONS,
+          ...Object.keys(styleCounts).filter((s) => !STYLE_OPTIONS.includes(s as any)),
+        ].map((s) => {
+          const selected = styleFilter === s;
+          const n = s === '全部' ? total : styleCounts[s];
+          return (
+            <Chip
+              key={s} size="small"
+              label={
+                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5 }}>
+                  <Box component="span" sx={{ fontWeight: selected ? 700 : 500 }}>{s}</Box>
+                  {n !== undefined && (
+                    <Box component="span" sx={{ fontSize: 10, opacity: 0.75 }}>{n}</Box>
+                  )}
+                </Box>
+              }
+              onClick={() => setStyleFilter(s)}
+              sx={{
+                cursor: 'pointer',
+                ...(selected && s !== '全部'
+                  ? { bgcolor: styleColor(s), color: '#fff', '&:hover': { bgcolor: styleColor(s) } }
+                  : {}),
+              }}
+            />
+          );
+        })}
         <Chip
           label="已订阅"
           size="small"
