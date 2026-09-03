@@ -167,7 +167,8 @@ const DecksPage: React.FC = () => {
         </Alert>
       )}
 
-      {/* 创建牌组输入区 */}
+      {/* 创建牌组输入区（仅管理员） */}
+      {isAdmin && (
       <Card variant="outlined" className="p-4" sx={{ borderRadius: 2, bgcolor: 'background.paper' }}>
         <Box className="flex gap-2">
           <TextField
@@ -192,6 +193,7 @@ const DecksPage: React.FC = () => {
           </Button>
         </Box>
       </Card>
+      )}
 
       {/* 牌组列表或空状态 */}
       {!decks || decks.length === 0 ? (
@@ -237,30 +239,34 @@ const DecksPage: React.FC = () => {
                         )}
                       </IconButton>
                     )}
-                    <IconButton
-                      edge="end"
-                      aria-label={`重命名 ${deck.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenEdit(deck.id, deck.name);
-                      }}
-                      size="small"
-                      className="mr-1"
-                    >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      edge="end"
-                      aria-label={`删除 ${deck.name}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleOpenDelete(deck.id, deck.name);
-                      }}
-                      size="small"
-                      color="error"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
+                    {isAdmin && (
+                      <IconButton
+                        edge="end"
+                        aria-label={`重命名 ${deck.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenEdit(deck.id, deck.name);
+                        }}
+                        size="small"
+                        className="mr-1"
+                      >
+                        <EditIcon fontSize="small" />
+                      </IconButton>
+                    )}
+                    {isAdmin && (
+                      <IconButton
+                        edge="end"
+                        aria-label={`删除 ${deck.name}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleOpenDelete(deck.id, deck.name);
+                        }}
+                        size="small"
+                        color="error"
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    )}
                   </Box>
                 }
               >

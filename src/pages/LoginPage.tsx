@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
   Box, Card, CardContent, TextField, Button, Typography, Link, Alert,
-  CircularProgress, InputAdornment, IconButton,
+  CircularProgress, InputAdornment, IconButton, Divider,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { FormControlLabel, Checkbox } from '@mui/material';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { loadProductionFeatures } from '@/lib/productionFeatures';
+import { guestLogin } from '@/lib/api';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -16,11 +18,52 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [guestMode, setGuestMode] = useState(false);
+  const [guestLoggingIn, setGuestLoggingIn] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/';
 
-  // 页面挂载时查询系统状态，判断是否为空数据库
-  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+  // 初始化：查系统配置 + 生产特性。游客模式直接自动登录，不渲染登录表单
+  useEffect(() => {
+    fetchConfig();
+    loadProductionFeatures().then((f) => {
+      setGuestMode(f.guestMode);
+      if (f.guestMode && !new URLSearchParams(location.search).has('login')) {
+        // 游客模式自动登录，不显示任何表单
+        setGuestLoggingIn(true);
+        guestLogin().then((res) => {
+          useAuthStore.getState().loginFromGuest(res);
+          navigate('/', { replace: true });
+        }).catch(() => {
+          setGuestLoggingIn(false);
+          setInitializing(false);
+        });
+      } else {
+        setInitializing(false);
+      }
+    });
+  }, []);
+
+  // 初始化的 loading 中 —— 不显示任何内容
+  if (initializing) {
+    return (
+      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'background.default' }}>
+        {guestLoggingIn && <CircularProgress />}
+      </Box>
+    );
+  }
+
+  const handleGuestLogin = async () => {
+    setGuestLoggingIn(true);
+    try {
+      const res = await guestLogin();
+      useAuthStore.getState().loginFromGuest(res);
+      navigate('/', { replace: true });
+    } catch {
+      setGuestLoggingIn(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +168,23 @@ export default function LoginPage() {
               {isLoading ? <CircularProgress size={24} color="inherit" /> : '登录'}
             </Button>
           </Box>
+
+          {/* 游客模式分隔线 + 入口 */}
+          {guestMode && (
+            <>
+              <Divider sx={{ my: 2 }} />
+              <Button
+                fullWidth
+                variant="outlined"
+                size="large"
+                onClick={handleGuestLogin}
+                disabled={guestLoggingIn}
+                sx={{ py: 1.2, mb: 1.5 }}
+              >
+                {guestLoggingIn ? <CircularProgress size={24} /> : '游客浏览'}
+              </Button>
+            </>
+          )}
 
           <Typography variant="body2" align="center" color="text.secondary">
             没有账号？{' '}

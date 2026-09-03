@@ -54,8 +54,13 @@ const SideMenu: React.FC<SideMenuProps> = ({ width = 260, children }) => {
 
   if (!isPc) return null;
 
+  // 游客只显示仪表盘和市场
+  const visibleNav = user?.role === 'guest'
+    ? navItems.filter(item => item.value === '/dashboard' || item.value === '/market')
+    : navItems;
+
   /** 根据当前路径匹配高亮项 */
-  const currentValue = navItems.find((item) => {
+  const currentValue = visibleNav.find((item) => {
     if (item.value === '/dashboard') {
       return location.pathname === '/' || location.pathname.startsWith('/dashboard');
     }
@@ -83,7 +88,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ width = 260, children }) => {
       <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
         {/* 导航列表（顶部：5 项） */}
         <List sx={{ flexShrink: 0, pt: 0.5, pb: 0.5 }}>
-          {navItems.map((item) => {
+          {visibleNav.map((item) => {
             const selected = currentValue === item.value;
             return (
               <ListItem key={item.value} disablePadding sx={{ py: 0.25 }}>
@@ -123,8 +128,8 @@ const SideMenu: React.FC<SideMenuProps> = ({ width = 260, children }) => {
         ) : null}
 
         <Box sx={{ p: 1.5, boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)' }}>
-          {/* 用户信息 */}
-          {user && (
+          {/* 用户信息（游客不显示） */}
+          {user && user.role !== 'guest' && (
             <Box sx={{ mb: 1, textAlign: 'center' }}>
               <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 600 }}>
                 {user.username}
@@ -135,7 +140,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ width = 260, children }) => {
             </Box>
           )}
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
-            {user && (
+            {user && user.role !== 'guest' && (
               <Button
                 size="small"
                 variant="text"
@@ -147,9 +152,11 @@ const SideMenu: React.FC<SideMenuProps> = ({ width = 260, children }) => {
                 退出
               </Button>
             )}
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
-              背字帖 · v1.0
-            </Typography>
+            {user?.role !== 'guest' && (
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
+                背字帖 · v1.0
+              </Typography>
+            )}
           </Box>
         </Box>
       </Box>

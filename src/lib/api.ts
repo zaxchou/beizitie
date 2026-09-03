@@ -1,6 +1,6 @@
 // ===== Express API 客户端 =====
 
-import type { Card, Deck, StudySession, DailyStats, MarketplaceDeck, PublishDeckData } from '@/types';
+import type { Card, Deck, StudySession, DailyStats, MarketplaceDeck, PublishDeckData, AuthResponse } from '@/types';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 const API_BASE = '';
@@ -531,6 +531,23 @@ export async function importApkgFile(
     }
     xhr.send(formData);
   });
+}
+
+// ===== 生产环境功能开关 =====
+
+export interface ProductionFeatures {
+  guestMode: boolean;
+  filing: { icp?: string; psb?: string } | null;
+}
+
+/** 获取生产环境功能开关（本地开发返回默认值） */
+export function fetchProductionFeatures(): Promise<ProductionFeatures> {
+  return request<ProductionFeatures>('/api/auth/production-features');
+}
+
+/** 游客登录（仅生产环境可用） */
+export function guestLogin(): Promise<AuthResponse> {
+  return request<AuthResponse>('/api/auth/guest', { method: 'POST' });
 }
 
 /** 修改密码 */

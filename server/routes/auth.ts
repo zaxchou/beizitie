@@ -2,10 +2,77 @@ import { Router, Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { getDb } from '../db.js';
 import { JWT_SECRET, authMiddleware } from '../middleware/auth.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/** 读取生产配置（仅生产模式）。返回 null 表示无生产配置（开发/本地模式）。 */
+function loadProductionConfig(): Record<string, unknown> | null {
+  const configPath = path.join(__dirname, '..', 'production-config.json');
+  try {
+    if (process.env.NODE_ENV !== 'production') return null;
+    if (!fs.existsSync(configPath)) return null;
+    return JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
 export const authRouter = Router();
+
+const GUEST_USER_ID = '00000000-0000-0000-0000-000000000000';
+const GUEST_USERNAME = 'guest';
+const GUEST_ROLE = 'guest';
+
+// GET /api/auth/production-features — 读取生产环境开关（仅生产有效，本地返回空对象）
+authRouter.get('/production-features', (_req: Request, res: Response) => {
+  const config = loadProductionConfig();
+  if (!config) {
+    // 开发/本地模式：返回空开关（所有功能正常）
+    res.json({ guestMode: false, filing: null });
+    return;
+  }
+  res.json({
+    guestMode: !!config.guestMode,
+    filing: config.filing || null,
+  });
+});
+
+// POST /api/auth/guest — 游客登录（仅生产环境 guestMode 开启时登录，并订阅预设牌组）
+authRouter.post('/guest', async (_req: Request, res: Response) => {
+  const config = loadProductionConfig();
+  if (!config || !config.guestMode) {
+    res.status(403).json({ error: '游客模式未开启' });
+    return;
+  }
+  const token = jwt.sign(
+    { userId: GUEST_USER_ID, username: GUEST_USERNAME, role: GUEST_ROLE },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+  // 为游客订阅预设牌组
+  const subscriptions = (config.guestSubscriptions as string[]) || [];
+  if (subscriptions.length > 0) {
+    try {
+      const db = getDb();
+      for (const deckId of subscriptions) {
+        const now = new Date().toISOString();
+        await db.query(
+          'INSERT INTO user_subscriptions (user_id, deck_id, subscribed_at) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+          [GUEST_USER_ID, deckId, now]
+        );
+      }
+    } catch (err) {
+      console.error('[guest] 订阅预设牌组失败:', err);
+      // 不因订阅失败影响游客登录
+    }
+  }
+  res.json({ token, user: { id: GUEST_USER_ID, username: GUEST_USERNAME, role: GUEST_ROLE } });
+});
 
 function uuid(): string { return crypto.randomUUID(); }
 

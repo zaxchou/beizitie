@@ -15,6 +15,7 @@ interface AuthStore {
   fetchConfig: () => Promise<void>;
   login: (username: string, password: string, rememberMe?: boolean) => Promise<void>;
   register: (username: string, password: string) => Promise<void>;
+  loginFromGuest: (res: { token: string; user: User }) => void;
   logout: () => void;
   clearError: () => void;
 }
@@ -76,6 +77,10 @@ export const useAuthStore = create<AuthStore>()(
           set({ error: msg, isLoading: false });
           throw err;
         }
+      },
+
+      loginFromGuest: (res: { token: string; user: User }) => {
+        set({ user: res.user, token: res.token, isLoading: false, error: null });
       },
 
       logout: () => {

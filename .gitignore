@@ -8,8 +8,10 @@
 .workbuddy/
 Thumbs.db
 deploy.sh
+server/production-config.json
 dist/
 node_modules/
 uploads/*
 dist-server/
 _gsdata_/
+.claude/settings.local.json

@@ -6,7 +6,8 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getDb, waitForDb } from './db.js';
 import { authRouter } from './routes/auth.js';
-import { authMiddleware } from './middleware/auth.js';
+import { authMiddleware, JWT_SECRET } from './middleware/auth.js';
+import jwt from 'jsonwebtoken';
 import { decksRouter } from './routes/decks.js';
 import { cardsRouter } from './routes/cards.js';
 import { studyRouter } from './routes/study.js';
@@ -63,6 +64,102 @@ app.get('/api/decks/:deckId/cards/preview', async (req, res) => {
 
 // 公开路由：集字（无需登录，必须在 authMiddleware 之前注册）
 app.use('/api/jizi', jiziRouter);
+
+// 公开路由：市场牌组列表（无需登录，可选已登录态用于 is_subscribed）
+app.get('/api/marketplace/decks', async (req, res) => {
+  try {
+    const db = getDb();
+    const style = (req.query.style as string | undefined) || '';
+    const calligrapher = (req.query.calligrapher as string | undefined) || '';
+    const search = (req.query.search as string | undefined) || '';
+
+    // 尝试从 Authorization header 获取用户信息（不强制）
+    let userId: string | null = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const payload = jwt.verify(authHeader.slice(7), JWT_SECRET) as { userId: string };
+        userId = payload.userId;
+      } catch { /* 静默忽略无效 token */ }
+    }
+
+    let sql = `
+      SELECT md.deck_id, md.calligrapher, md.dynasty, md.style, md.description,
+             COALESCE(md.cover_thumb, md.cover_image, (
+               SELECT image_url FROM cards
+                 WHERE deck_id = md.deck_id AND image_url != '' ORDER BY created_at ASC LIMIT 1
+             ), '') AS cover_image,
+             md.featured, md.sort_order, md.published_at, md.created_at,
+             d.name, d.card_count, d.daily_new_card_limit, d.daily_review_limit
+    `;
+    if (userId) {
+      sql += `, EXISTS(SELECT 1 FROM user_subscriptions us WHERE us.user_id = $1 AND us.deck_id = md.deck_id) AS is_subscribed`;
+    } else {
+      sql += `, false AS is_subscribed`;
+    }
+    sql += `
+      FROM marketplace_decks md
+      JOIN decks d ON d.id = md.deck_id
+      WHERE md.published_at IS NOT NULL
+    `;
+    const params: unknown[] = userId ? [userId] : [];
+
+    if (style) {
+      sql += ` AND md.style LIKE '%' || $${params.length + 1} || '%'`;
+      params.push(style);
+    }
+    if (calligrapher) {
+      sql += ` AND md.calligrapher = $${params.length + 1}`;
+      params.push(calligrapher);
+    }
+    if (search) {
+      sql += ` AND (d.name LIKE $${params.length + 1} OR md.description LIKE $${params.length + 2} OR md.calligrapher LIKE $${params.length + 3})`;
+      params.push(`%${search}%`, `%${search}%`, `%${search}%`);
+    }
+    sql += ' ORDER BY md.featured DESC, md.sort_order ASC, md.published_at DESC';
+
+    const { rows } = await db.query(sql, params);
+    res.json(rows);
+  } catch (err) {
+    console.error('GET /marketplace/decks (public) error:', err);
+    res.status(500).json({ error: 'Failed to fetch marketplace decks' });
+  }
+});
+
+app.get('/api/marketplace/decks/:deckId', async (req, res) => {
+  try {
+    const { deckId } = req.params;
+    const db = getDb();
+
+    let userId: string | null = null;
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      try {
+        const payload = jwt.verify(authHeader.slice(7), JWT_SECRET) as { userId: string };
+        userId = payload.userId;
+      } catch { /* 静默忽略 */ }
+    }
+
+    const sql = `SELECT md.deck_id, md.calligrapher, md.dynasty, md.style, md.description, md.cover_image, md.cover_thumb,
+              md.featured, md.sort_order, md.published_at, md.created_at,
+              d.name, d.card_count, d.daily_new_card_limit, d.daily_review_limit
+              ${userId ? `, EXISTS(SELECT 1 FROM user_subscriptions us WHERE us.user_id = $1 AND us.deck_id = md.deck_id) AS is_subscribed` : ', false AS is_subscribed'}
+       FROM marketplace_decks md
+       JOIN decks d ON d.id = md.deck_id
+       WHERE md.deck_id = ${userId ? '$2' : '$1'} AND md.published_at IS NOT NULL`;
+
+    const params = userId ? [userId, deckId] : [deckId];
+    const { rows } = await db.query(sql, params);
+    if (rows.length === 0) {
+      res.status(404).json({ error: 'Marketplace deck not found' });
+      return;
+    }
+    res.json(rows[0]);
+  } catch (err) {
+    console.error('GET /marketplace/decks/:deckId (public) error:', err);
+    res.status(500).json({ error: 'Failed to fetch marketplace deck' });
+  }
+});
 
 // JWT 鉴权中间件（之后的所有 /api/* 都需要鉴权）
 app.use('/api', authMiddleware);

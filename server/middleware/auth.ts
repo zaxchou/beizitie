@@ -64,5 +64,8 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction): v
   next();
 }
 
+/** 游客角色常量 */
+export const GUEST_ROLE = 'guest';
+
 /** 导出 JWT_SECRET 供 auth router 使用 */
 export { JWT_SECRET };

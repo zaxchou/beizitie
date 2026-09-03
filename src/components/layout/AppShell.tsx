@@ -1,7 +1,7 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Box, useMediaQuery, useTheme, Typography, IconButton, Tooltip,
+  Box, useMediaQuery, useTheme, Typography, IconButton, Tooltip, Link,
 } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import TopBar from './TopBar';
@@ -9,6 +9,7 @@ import BottomNav from './BottomNav';
 import SideMenu from './SideMenu';
 import SidebarStats from '@/components/dashboard/SidebarStats';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { loadProductionFeatures } from '@/lib/productionFeatures';
 
 /** 路由路径 → 页面标题映射 */
 const ROUTE_TITLE_MAP: Record<string, string> = {
@@ -37,6 +38,11 @@ const AppShell: React.FC = () => {
   const theme = useTheme();
   const isPc = useMediaQuery(theme.breakpoints.up('md'));
   const { user, logout } = useAuthStore();
+  const [filing, setFiling] = useState<{ icp?: string; psb?: string } | null>(null);
+
+  useEffect(() => {
+    loadProductionFeatures().then((f) => setFiling(f.filing));
+  }, []);
 
   /** 根据当前路径自动匹配页面标题 */
   const title = useMemo((): string => {
@@ -65,7 +71,7 @@ const AppShell: React.FC = () => {
     <Box className="flex flex-col" sx={{ minHeight: '100vh', height: '100dvh', overflow: 'hidden' }}>
       <Box sx={{ display: { xs: location.pathname.startsWith('/jizi') ? 'none' : 'block', md: 'none' }, flexShrink: 0 }}>
         <TopBar title={title}>
-          {user && (
+          {user && user.role !== 'guest' && (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <Typography variant="body2" sx={{ fontSize: 13, fontWeight: 600 }}>
                 {user.username}
@@ -102,6 +108,44 @@ const AppShell: React.FC = () => {
         </Box>
       </Box>
       {!isPc && <BottomNav />}
+
+      {/* 备案号（生产环境） */}
+      {filing && (
+        <Box
+          sx={{
+            textAlign: 'center',
+            py: 1.5,
+            px: 2,
+            bgcolor: 'background.paper',
+            borderTop: 1,
+            borderColor: 'divider',
+            mt: 'auto',
+          }}
+        >
+          {filing.icp && (
+            <Link
+              href="https://beian.mps.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="hover"
+              sx={{ color: 'text.disabled', fontSize: 12, mr: 2 }}
+            >
+              {filing.icp}
+            </Link>
+          )}
+          {filing.psb && (
+            <Link
+              href="https://beian.mps.gov.cn/"
+              target="_blank"
+              rel="noopener noreferrer"
+              underline="hover"
+              sx={{ color: 'text.disabled', fontSize: 12 }}
+            >
+              {filing.psb}
+            </Link>
+          )}
+        </Box>
+      )}
     </Box>
   );
 };

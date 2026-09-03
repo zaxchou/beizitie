@@ -6,6 +6,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 import StoreIcon from '@mui/icons-material/Store';
 import BrushIcon from '@mui/icons-material/Brush';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 /** 导航项定义 */
 interface NavItem {
@@ -53,13 +54,19 @@ const navItems: NavItem[] = [
 const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
+
+  // 游客只显示仪表盘和市场
+  const visibleNav = user?.role === 'guest'
+    ? navItems.filter(item => item.value === '/dashboard' || item.value === '/market')
+    : navItems;
 
   const handleChange = (_event: React.SyntheticEvent, newValue: string): void => {
     navigate(newValue);
   };
 
   /** 根据当前路径匹配高亮项 */
-  const currentValue = navItems.find((item) => {
+  const currentValue = visibleNav.find((item) => {
     if (item.value === '/dashboard') {
       return location.pathname === '/' || location.pathname.startsWith('/dashboard');
     }
@@ -76,7 +83,7 @@ const BottomNav: React.FC = () => {
       elevation={0}
     >
       <BottomNavigation value={currentValue} onChange={handleChange}>
-        {navItems.map((item) => (
+        {visibleNav.map((item) => (
           <BottomNavigationAction
             key={item.value}
             label={item.label}
