@@ -48,6 +48,9 @@ function absolutize(url: string): string {
 
 type Scope = 'all' | 'mine';
 
+/** 全部字库匹配结果的模块级缓存：字符 → 结果（跨查询复用，重复字零请求） */
+const allCharCache = new Map<string, JiziMatchResult>();
+
 export const JiziPage: React.FC = () => {
   const [scope, setScope] = useState<Scope>('all');
   const [text, setText] = useState('');
@@ -72,14 +75,19 @@ export const JiziPage: React.FC = () => {
   });
 
   // ---- 数据源：全部字库（在线版公开接口，168 万+ 单字）/ 我的书库（本地） ----
+  // 字符级缓存：跨查询/跨会话(模块级)复用已匹配的字，重复内容零网络请求
   const matchAll = useCallback(async (chars: string[]): Promise<JiziMatchResult[]> => {
-    const r = await fetch(`${SERVER_API}/api/jizi/match?text=${encodeURIComponent(chars.join(''))}&scope=all&_plat=web`);
-    if (!r.ok) throw new Error(`在线匹配失败 HTTP ${r.status}`);
-    const data = await r.json();
-    for (const res of data.results || []) {
-      for (const hit of res.hits || []) hit.image_url = absolutize(hit.image_url);
+    const missing = chars.filter((c) => !allCharCache.has(c));
+    if (missing.length > 0) {
+      const r = await fetch(`${SERVER_API}/api/jizi/match?text=${encodeURIComponent(missing.join(''))}&scope=all&_plat=web`);
+      if (!r.ok) throw new Error(`在线匹配失败 HTTP ${r.status}`);
+      const data = await r.json();
+      for (const res of data.results || []) {
+        for (const hit of res.hits || []) hit.image_url = absolutize(hit.image_url);
+        allCharCache.set(res.char, res);
+      }
     }
-    return data.results || [];
+    return chars.map((c) => allCharCache.get(c) || { char: c, hits: [] });
   }, []);
 
   const matchMine = useCallback(async (chars: string[]): Promise<JiziMatchResult[]> => {

@@ -282,6 +282,15 @@ async function importOne(
       );
     }
     await client.query('COMMIT');
+    // 集字索引按帖增量更新（行数有限，毫秒级），保持 /api/jizi/match 数据新鲜
+    if (opts.publish) {
+      try {
+        const { indexDeck } = await import('../services/jiziIndex.js');
+        await indexDeck(getDb(), deckId);
+      } catch (e: any) {
+        console.warn(`[jizi-index] 按帖索引失败（不影响导入）: ${e.message}`);
+      }
+    }
     return {
       status: 'ok',
       message: `已建「${deckName}」（${glyphs.length} 卡，${style || '?'}${details ? `，${details.dynasty || '?'}${details.pageCount ? ` ${details.pageCount} 页` : ''}` : ''}${opts.publish ? '，已上架' : ''}）`,

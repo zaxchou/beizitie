@@ -238,6 +238,27 @@ async function migrateSchema(db: pkg.Pool): Promise<void> {
     )`);
   } catch { /* ignore */ }
   try { await db.query(`ALTER TABLE ygsf_zuopin ADD COLUMN IF NOT EXISTS batch_status TEXT DEFAULT ''`); } catch { /* ignore */ }
+
+  // 集字预计算索引表：hanzi 已规范为繁体，match 接口按 hanzi 索引命中，
+  // 由 scripts/jizi-index-build.ts 全量/增量重建，避免每次请求全表扫描 cards
+  try {
+    await db.query(`CREATE TABLE IF NOT EXISTS jizi_index (
+      card_id TEXT PRIMARY KEY,
+      hanzi TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      deck_id TEXT NOT NULL,
+      deck_name TEXT NOT NULL DEFAULT '',
+      style TEXT NOT NULL DEFAULT '',
+      calligrapher TEXT NOT NULL DEFAULT '',
+      sort_key BIGINT NOT NULL DEFAULT 0
+    )`);
+    await db.query(`CREATE INDEX IF NOT EXISTS idx_jizi_index_hanzi ON jizi_index(hanzi)`);
+    await db.query(`CREATE TABLE IF NOT EXISTS jizi_index_state (
+      id INT PRIMARY KEY,
+      built_at TEXT NOT NULL,
+      card_count BIGINT NOT NULL DEFAULT 0
+    )`);
+  } catch { /* ignore */ }
 }
 
 /** 上传目录的绝对路径（项目根目录下的 uploads/） */

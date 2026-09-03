@@ -3,8 +3,13 @@ import jwt from 'jsonwebtoken';
 import { Converter } from 'opencc-js';
 import { getDb } from '../db.js';
 import { JWT_SECRET } from '../middleware/auth.js';
+import { isIndexReady } from '../services/jiziIndex.js';
 
 export const jiziRouter = Router();
+
+// 每个字最多返回的变体数：常用字在全部字库里可能有几千条命中，
+// 全量返回会让响应膨胀到十几 MB，500 个变体对用户已不可枚举
+const MAX_HITS_PER_CHAR = 500;
 
 // 简→繁规范化器
 const toTraditional = Converter({ from: 'cn', to: 'tw' });
@@ -75,71 +80,145 @@ jiziRouter.get('/match', async (req: Request, res: Response) => {
     const db = getDb();
     const t0 = Date.now();
 
-    let rows: Array<{
-      id: string;
-      deck_id: string;
-      front_text: string;
-      image_url: string;
-      created_at: string;
-      deck_name: string;
-      style: string | null;
-      calligrapher: string | null;
-    }>;
+    const uniqueChars = [...new Set(chars.map((c) => toTraditional(c)))];
 
-    if (effectiveScope === 'all') {
-      rows = (await db.query(
-        `SELECT c.id, c.deck_id, c.front_text, c.image_url, c.created_at,
-                d.name AS deck_name,
-                md.style, md.calligrapher
-         FROM cards c
-         JOIN decks d ON d.id = c.deck_id
-         JOIN marketplace_decks md ON md.deck_id = c.deck_id
-         WHERE c.image_url != ''
-         ORDER BY c.created_at ASC`
-      )).rows as typeof rows;
-    } else {
-      rows = (await db.query(
-        `SELECT c.id, c.deck_id, c.front_text, c.image_url, c.created_at,
-                d.name AS deck_name,
-                md.style, md.calligrapher
-         FROM cards c
-         JOIN decks d ON d.id = c.deck_id
-         LEFT JOIN marketplace_decks md ON md.deck_id = c.deck_id
-         WHERE c.image_url != ''
-           AND (
-             d.user_id = $1
-             OR EXISTS (
-               SELECT 1 FROM user_subscriptions us
-               WHERE us.user_id = $2 AND us.deck_id = c.deck_id
-             )
-           )
-         ORDER BY c.created_at ASC`,
-        [userId, userId]
-      )).rows as typeof rows;
-    }
-
-    const map = new Map<string, CharHit[]>();
-    for (const r of rows) {
-      const cleaned = cleanFrontText(r.front_text);
-      if (!cleaned) continue;
-      const singleChars = Array.from(cleaned).filter((c) => /\p{Script=Han}/u.test(c));
-      if (singleChars.length !== 1) continue;
-      const ch = toTraditional(singleChars[0]);
-      let arr = map.get(ch);
-      if (!arr) {
-        arr = [];
-        map.set(ch, arr);
+    const groupRows = (
+      rows: Array<{
+        card_id: string;
+        hanzi: string;
+        image_url: string;
+        deck_id: string;
+        deck_name: string;
+        style: string;
+        calligrapher: string;
+        sort_key: string | number;
+      }>
+    ) => {
+      const map = new Map<string, CharHit[]>();
+      for (const r of rows) {
+        let arr = map.get(r.hanzi);
+        if (!arr) {
+          arr = [];
+          map.set(r.hanzi, arr);
+        }
+        arr.push({
+          card_id: r.card_id,
+          image_url: r.image_url,
+          deck_id: r.deck_id,
+          deck_name: r.deck_name,
+          style: r.style || '',
+          calligrapher: r.calligrapher || '',
+          front_text_raw: '',
+          sort_key: Number(r.sort_key),
+        });
       }
-      arr.push({
-        card_id: r.id,
-        image_url: r.image_url,
-        deck_id: r.deck_id,
-        deck_name: r.deck_name,
-        style: r.style || '',
-        calligrapher: r.calligrapher || '',
-        front_text_raw: r.front_text,
-        sort_key: new Date(r.created_at).getTime(),
-      });
+      return map;
+    };
+
+    let map: Map<string, CharHit[]>;
+    let scanned = 0;
+
+    // 索引已构建 → hanzi 索引命中（毫秒级）；未构建 → 回退全表扫描（兼容首次部署）
+    if (await isIndexReady(db)) {
+      const capSql = `SELECT * FROM (
+         SELECT ji.hanzi, ji.card_id, ji.image_url, ji.deck_id, ji.deck_name,
+                ji.style, ji.calligrapher, ji.sort_key,
+                ROW_NUMBER() OVER (PARTITION BY ji.hanzi ORDER BY ji.sort_key ASC) AS rn
+         FROM jizi_index ji
+         JOIN decks d0 ON d0.id = ji.deck_id
+         WHERE ji.hanzi = ANY($1)`;
+      if (effectiveScope === 'all') {
+        const { rows } = await db.query(
+          `${capSql}
+           ) ranked WHERE rn <= ${MAX_HITS_PER_CHAR}`,
+          [uniqueChars]
+        );
+        map = groupRows(rows as never);
+        scanned = rows.length;
+      } else {
+        const { rows } = await db.query(
+          `${capSql}
+             AND (
+               d0.user_id = $2
+               OR EXISTS (
+                 SELECT 1 FROM user_subscriptions us
+                 WHERE us.user_id = $2 AND us.deck_id = ji.deck_id
+               )
+             )
+           ) ranked WHERE rn <= ${MAX_HITS_PER_CHAR}`,
+          [uniqueChars, userId]
+        );
+        map = groupRows(rows as never);
+        scanned = rows.length;
+      }
+    } else {
+      let rows: Array<{
+        id: string;
+        deck_id: string;
+        front_text: string;
+        image_url: string;
+        created_at: string;
+        deck_name: string;
+        style: string | null;
+        calligrapher: string | null;
+      }>;
+
+      if (effectiveScope === 'all') {
+        rows = (await db.query(
+          `SELECT c.id, c.deck_id, c.front_text, c.image_url, c.created_at,
+                  d.name AS deck_name,
+                  md.style, md.calligrapher
+           FROM cards c
+           JOIN decks d ON d.id = c.deck_id
+           JOIN marketplace_decks md ON md.deck_id = c.deck_id
+           WHERE c.image_url != ''
+           ORDER BY c.created_at ASC`
+        )).rows as typeof rows;
+      } else {
+        rows = (await db.query(
+          `SELECT c.id, c.deck_id, c.front_text, c.image_url, c.created_at,
+                  d.name AS deck_name,
+                  md.style, md.calligrapher
+           FROM cards c
+           JOIN decks d ON d.id = c.deck_id
+           LEFT JOIN marketplace_decks md ON md.deck_id = c.deck_id
+           WHERE c.image_url != ''
+             AND (
+               d.user_id = $1
+               OR EXISTS (
+                 SELECT 1 FROM user_subscriptions us
+                 WHERE us.user_id = $2 AND us.deck_id = c.deck_id
+               )
+             )
+           ORDER BY c.created_at ASC`,
+          [userId, userId]
+        )).rows as typeof rows;
+      }
+
+      scanned = rows.length;
+      map = new Map<string, CharHit[]>();
+      for (const r of rows) {
+        const cleaned = cleanFrontText(r.front_text);
+        if (!cleaned) continue;
+        const singleChars = Array.from(cleaned).filter((c) => /\p{Script=Han}/u.test(c));
+        if (singleChars.length !== 1) continue;
+        const ch = toTraditional(singleChars[0]);
+        let arr = map.get(ch);
+        if (!arr) {
+          arr = [];
+          map.set(ch, arr);
+        }
+        arr.push({
+          card_id: r.id,
+          image_url: r.image_url,
+          deck_id: r.deck_id,
+          deck_name: r.deck_name,
+          style: r.style || '',
+          calligrapher: r.calligrapher || '',
+          front_text_raw: r.front_text,
+          sort_key: new Date(r.created_at).getTime(),
+        });
+      }
     }
 
     const results: JiziMatchResult[] = chars.map((ch) => ({
@@ -150,7 +229,7 @@ jiziRouter.get('/match', async (req: Request, res: Response) => {
     res.json({
       results,
       meta: {
-        scanned: rows.length,
+        scanned,
         ms: Date.now() - t0,
         unique_chars: map.size,
       },
