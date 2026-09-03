@@ -98,6 +98,11 @@ function isJunkName(name: string): boolean {
   return JUNK_PATTERNS.some((p) => name.includes(p));
 }
 
+/** 画题类（题字小品）不是背帖素材 */
+function isPaintingTitle(name: string): boolean {
+  return /(图|画)(轴|页|卷|册)?$/.test(name.trim()) || /像$/.test(name.trim());
+}
+
 function buildDescription(o: {
   name: string;
   author: string;
@@ -158,7 +163,7 @@ async function importOne(
   }
   if (!zitieId || !deckName) return { status: 'fail', message: '缺少 zitie/id 或名称' };
 
-  if (opts.batchMode && isJunkName(deckName)) {
+  if (opts.batchMode && (isJunkName(deckName) || isPaintingTitle(deckName))) {
     return { status: 'junk', message: `杂帖黑名单：${deckName}` };
   }
 
@@ -187,6 +192,9 @@ async function importOne(
   }
   if (glyphs.length > opts.maxChars) {
     return { status: 'maxchars', message: `单字数 ${glyphs.length} 超过上限 ${opts.maxChars}` };
+  }
+  if (opts.batchMode && glyphs.length < 10) {
+    return { status: 'junk', message: `碎片帖（仅 ${glyphs.length} 字）` };
   }
 
   // 元数据：详情（朝代/版本封面/页数）+ 碑帖原文
