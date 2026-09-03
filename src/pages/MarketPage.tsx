@@ -9,6 +9,7 @@ import {
   MenuItem,
   CircularProgress,
   Alert,
+  Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
@@ -16,7 +17,7 @@ import StoreIcon from '@mui/icons-material/Store';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import {
-  fetchMarketplaceDecks,
+  fetchMarketplaceDecksPaged,
   subscribeDeck,
   unsubscribeDeck,
   getImageUrl,
@@ -58,6 +59,8 @@ const CoverPlaceholder: React.FC<{ name: string }> = ({ name }) => (
  */
 const MarketPage: React.FC = () => {
   const [decks, setDecks] = useState<MarketplaceDeck[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuthStore();
@@ -65,6 +68,7 @@ const MarketPage: React.FC = () => {
 
   // 筛选条件
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [searchDebounced, setSearchDebounced] = useState('');
   const [styleFilter, setStyleFilter] = useState<string>('全部');
   const [calligrapherFilter, setCalligrapherFilter] = useState<string>('全部');
 
@@ -80,32 +84,49 @@ const MarketPage: React.FC = () => {
   // 详情弹窗
   const [detailDeck, setDetailDeck] = useState<MarketplaceDeck | null>(null);
 
-  /** 加载市场牌组 */
-  const loadDecks = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await fetchMarketplaceDecks();
-      setDecks(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '加载市场失败');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const PAGE_SIZE = 60;
+
+  /** 加载市场牌组（服务端筛选 + 分页；offset=0 重置列表） */
+  const loadDecks = useCallback(
+    async (offset: number) => {
+      if (offset === 0) setLoading(true);
+      else setLoadingMore(true);
+      setError(null);
+      try {
+        const data = await fetchMarketplaceDecksPaged({
+          style: styleFilter !== '全部' ? styleFilter : undefined,
+          calligrapher: calligrapherFilter !== '全部' ? calligrapherFilter : undefined,
+          search: searchDebounced.trim() || undefined,
+          limit: PAGE_SIZE,
+          offset,
+        });
+        setDecks((prev) => (offset === 0 ? data.decks : [...prev, ...data.decks]));
+        setTotal(data.total);
+        if (data.calligraphers?.length) {
+          setCalligrapherOptions(['全部', ...data.calligraphers]);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '加载市场失败');
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [styleFilter, calligrapherFilter, searchDebounced],
+  );
 
   useEffect(() => {
-    loadDecks();
+    loadDecks(0);
   }, [loadDecks]);
 
-  /** 从全部牌组中提取书家列表（去重） */
-  const calligrapherOptions = useMemo(() => {
-    const set = new Set<string>();
-    decks.forEach((d) => {
-      if (d.calligrapher) set.add(d.calligrapher);
-    });
-    return ['全部', ...Array.from(set).sort((a, b) => a.localeCompare(b, 'zh-CN'))];
-  }, [decks]);
+  // 搜索防抖
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(searchKeyword), 400);
+    return () => clearTimeout(t);
+  }, [searchKeyword]);
+
+  /** 书家下拉列表（来自服务端全量 facets） */
+  const [calligrapherOptions, setCalligrapherOptions] = useState<string[]>(['全部']);
 
   const deckMatchesFilters = useCallback((deck: MarketplaceDeck): boolean => {
     if (styleFilter !== '全部') {
@@ -415,6 +436,20 @@ const MarketPage: React.FC = () => {
               </Box>
             </Box>
           </Box>
+
+          {decks.length < total && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+              <Button
+                variant="outlined"
+                onClick={() => loadDecks(decks.length)}
+                disabled={loadingMore}
+                sx={{ borderRadius: 2 }}
+              >
+                {loadingMore ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
+                {loadingMore ? '加载中…' : `加载更多（已显示 ${decks.length}/${total}）`}
+              </Button>
+            </Box>
+          )}
         </>
       )}
 
@@ -434,7 +469,7 @@ const MarketPage: React.FC = () => {
         open={!!editDeck}
         publishMode={false}
         onClose={() => setEditDeck(null)}
-        onSaved={() => { setEditDeck(null); loadDecks(); }}
+        onSaved={() => { setEditDeck(null); loadDecks(0); }}
       />
 
       {/* 详情弹窗 */}
@@ -442,7 +477,7 @@ const MarketPage: React.FC = () => {
         open={!!detailDeck}
         deck={detailDeck}
         onClose={() => setDetailDeck(null)}
-        onSubscribed={loadDecks}
+        onSubscribed={() => loadDecks(0)}
       />
     </Box>
   );

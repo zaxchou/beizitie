@@ -185,6 +185,7 @@ export async function fetchZitieGlyphs(
         glyphs.push(toGlyph(g));
       }
       if (glyphs.length >= total || list.length === 0) break;
+      await new Promise((r) => setTimeout(r, 120));
     }
   } catch (e: any) {
     if (!e.isLoginWall) throw e;

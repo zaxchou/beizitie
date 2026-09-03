@@ -574,6 +574,23 @@ export function fetchMarketplaceDecks(params?: {
   return request<MarketplaceDeck[]>(`/api/marketplace/decks${q ? `?${q}` : ''}`);
 }
 
+/** 分页浏览市场牌组（大目录用，带总数与书家 facets） */
+export function fetchMarketplaceDecksPaged(params: {
+  style?: string;
+  calligrapher?: string;
+  search?: string;
+  limit: number;
+  offset: number;
+}): Promise<{ total: number; calligraphers: string[]; decks: MarketplaceDeck[] }> {
+  const qs = new URLSearchParams();
+  if (params.style) qs.set('style', params.style);
+  if (params.calligrapher) qs.set('calligrapher', params.calligrapher);
+  if (params.search) qs.set('search', params.search);
+  qs.set('limit', String(params.limit));
+  qs.set('offset', String(params.offset));
+  return request(`/api/marketplace/decks?${qs.toString()}`);
+}
+
 /** 获取单个市场牌组详情 */
 export function fetchMarketplaceDeck(deckId: string): Promise<MarketplaceDeck> {
   return request<MarketplaceDeck>(`/api/marketplace/decks/${deckId}`);
