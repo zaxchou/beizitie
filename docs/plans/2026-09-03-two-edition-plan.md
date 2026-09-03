@@ -145,7 +145,7 @@ interface DataAdapter {
 ### P0 前置任务（不动单文件代码）
 | 任务 | 说明 | 验收 |
 |---|---|---|
-| P0.1 仓库改名 | zi2anki → beizitie（API 或网页），更新本地 remote 与文档引用 | 旧链接重定向可达；push 正常 |
+| P0.1 仓库改名 ✅ | zi2anki → **beizitie**（2026-09-03 经 GitHub API 完成，旧链接自动重定向，本地 remote 已更新，push 验证通过） | 旧链接重定向可达；push 正常 |
 | P0.2 老 10 帖切直链 | 按 ygsf_zuopin 名称匹配 → 按 front_text 映射切 image_url；**春江花月夜需单独验证**，匹配失败保持本地 | 每帖抽样直链 200；本地图文件保留 |
 | P0.3 README 重写 | 单文件版为主角；服务器版降级为「平台版」小节 | - |
 | P0.4 publish-catalog 工具 | 从生产库生成 catalog/*.json（含 D8 过滤） | index.json < 3MB；抽样帖可解析 |
