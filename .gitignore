@@ -15,3 +15,4 @@ uploads/*
 dist-server/
 _gsdata_/
 .claude/settings.local.json
+.ygsf-token

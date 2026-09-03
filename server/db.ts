@@ -209,6 +209,19 @@ async function migrateSchema(db: pkg.Pool): Promise<void> {
   try { await db.query(`CREATE INDEX IF NOT EXISTS idx_cards_source_key ON cards(source_key)`); } catch { /* ignore */ }
   try { await db.query(`CREATE INDEX IF NOT EXISTS idx_cards_archived ON cards(archived_at)`); } catch { /* ignore */ }
   try { await db.query(`ALTER TABLE marketplace_decks ADD COLUMN IF NOT EXISTS cover_thumb TEXT DEFAULT ''`); } catch { /* ignore */ }
+
+  // YGSF 远程字库映射表（glyph_id → 远程直链 + 本地缓存路径），供 ygsf-sync.ts 混合机制使用
+  try {
+    await db.query(`CREATE TABLE IF NOT EXISTS ygsf_images (
+      glyph_id TEXT PRIMARY KEY,
+      zitie_id TEXT DEFAULT '',
+      hanzi TEXT DEFAULT '',
+      remote_url TEXT DEFAULT '',
+      local_path TEXT DEFAULT NULL,
+      cached_at TEXT DEFAULT NULL
+    )`);
+  } catch { /* ignore */ }
+  try { await db.query(`CREATE INDEX IF NOT EXISTS idx_ygsf_images_zitie ON ygsf_images(zitie_id)`); } catch { /* ignore */ }
 }
 
 /** 上传目录的绝对路径（项目根目录下的 uploads/） */
