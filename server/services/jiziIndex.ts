@@ -43,7 +43,7 @@ async function upsertRows(db: pkg.Pool, rows: IndexRow[]): Promise<number> {
     const chunk = rows.slice(i, i + BATCH);
     const values: unknown[] = [];
     const placeholders = chunk.map((r, j) => {
-      const b = j * 7;
+      const b = j * 8;
       values.push(r.card_id, r.hanzi, r.image_url, r.deck_id, r.deck_name, r.style, r.calligrapher, r.sort_key);
       return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8})`;
     });

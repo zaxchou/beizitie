@@ -6,7 +6,6 @@
  *   npx tsx server/scripts/jizi-index-build.ts --full         # 全量重建（事务内 DELETE+重建）
  *   npx tsx server/scripts/jizi-index-build.ts --incremental  # 增量：新增/修改卡片 + 刷新市场元数据
  */
-import 'dotenv/config';
 import { getDb, waitForDb } from '../db.js';
 import { buildFull, buildIncremental } from '../services/jiziIndex.js';
 

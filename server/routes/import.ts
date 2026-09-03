@@ -548,7 +548,9 @@ function normalizeImageUrl(u: string | undefined | null): string {
   return (u || '').split('?')[0].trim();
 }
 
-importRouter.post('/local-backup', async (req: Request, res: Response) => {
+// 注意：importRouter 挂载在 app.use('/api') 下，APKG 导入是 '/import'，
+// 这里必须带 /import 前缀，否则落不到本路由、被后面的 adminRouter.use(requireAdmin) 拦成 403
+importRouter.post('/import/local-backup', async (req: Request, res: Response) => {
   try {
     const body = req.body as {
       format?: string;
@@ -582,12 +584,15 @@ importRouter.post('/local-backup', async (req: Request, res: Response) => {
       let isPublicDeck = false;
       if (d.zitieId) {
         const { rows } = await db.query(
-          `SELECT id, user_id FROM decks WHERE source_key = $1 ORDER BY created_at ASC LIMIT 1`,
+          `SELECT d.id AS id, d.user_id AS user_id,
+                  EXISTS (SELECT 1 FROM marketplace_decks m WHERE m.deck_id = d.id) AS published
+           FROM decks d WHERE d.source_key = $1 ORDER BY d.created_at ASC LIMIT 1`,
           [`ygsf:${d.zitieId}`]
         );
         if (rows[0]) {
           serverDeckId = rows[0].id as string;
-          isPublicDeck = !rows[0].user_id;
+          // 已发布到市场的帖按公共帖处理（无论挂在哪个账号名下），进度落点 + 自动补订阅
+          isPublicDeck = !rows[0].user_id || rows[0].published;
         }
       }
 
