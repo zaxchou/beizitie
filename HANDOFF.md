@@ -180,3 +180,32 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - **僵尸进程陷阱**（历史）：pm2 看似 online 但端口 3001 被孤儿 tsx 进程占用时，清缓存无效，先 `pkill` 再 pm2 start（有记忆记录）
 - **上传文件**：`/opt/zi2anki/uploads/` 内容寻址（UUID 文件名），增量同步靠文件名差集
 - **Vite proxy**：前端 dev 时 `/api` 和 `/uploads` 走 `http://localhost:3001`
+- **Express 子路由挂载陷阱**：`importRouter` 等挂载在 `app.use('/api')` 下，路由路径必须带完整前缀（如 `/import/local-backup`）；写 `/local-backup` 会漏匹配、落到后面的 `adminRouter.use(requireAdmin)` 变 403，表现为"请求凭空消失进管理员校验"，极难排查（2026-09-04 踩过）
+- **deploy.sh 禁止并发本地构建**：deploy.sh anki 第一步自己跑 `npm run build` 并 tar 流式上传 dist；期间再开本地构建会改写 dist 导致 tar 流损坏/挂死（ssh 孤儿进程 + 远端锁滞留）。重跑前先 `ssh xcx "rm -rf /opt/zi2anki/.deploy.lock"` 并 kill 本地 ssh 孤儿进程（2026-09-04 踩过）
+
+---
+
+## 10. 2026-09-04 本轮交付（集字提速 + P2 收尾）
+
+### 10.1 集字匹配提速（jizi_index 预计算索引）
+- **病因**：`GET /api/jizi/match?scope=all` 每次请求全表扫描 168 万 cards 拉进 Node 逐行清洗匹配 — 5 字 12.5s / 21 字 28.8s + 18MB 响应 / 常用字直接 502
+- **药方**：预计算表 `jizi_index`（card_id PK / hanzi 繁体规范 / deck/style/calligrapher 快照 / sort_key）+ `idx_jizi_index_hanzi`；路由改为 `hanzi = ANY($1)` 索引命中，`ROW_NUMBER()` 每字封顶 500 变体；索引未建时自动回退旧全表扫描（兼容首次部署）
+- **效果**：服务端计算 100-180ms；5 字 0.22s / 21 字 2.9s(3.5MB)；前端字符级模块缓存（`JiziPage.tsx` allCharCache）重复字零网络请求
+- **维护**：全量重建 `npx tsx server/scripts/jizi-index-build.ts --full`（172 万行约 57s）；增量 `--incremental`（约 1.2s，cron 每日 3:40 已配）；`ygsf-catalog.ts` importOne 上架后调 `indexDeck()` 按帖实时入索引
+
+### 10.2 双向兼容补完：服务器版导入单文件备份
+- **接口**：`POST /api/import/local-backup`（登录用户，body = beizitie-backup JSON）
+- **匹配规则**：deck 按 `source_key = ygsf:<zitieId>` 匹配（已发布帖无论挂谁名下按公共帖处理并自动补订阅）→ 用户同名自建帖兜底 → 都没有则在用户名下重建整帖（source_key `local-backup:<zitieId|id>`，重复导入幂等）
+- **卡片对齐**：归一化 image_url（去 `?x-bce-process` query）精确匹配 → front_text 帖内唯一时兜底；进度批量 upsert（恢复语义覆盖）；daily_stats 按天取 GREATEST
+- **前端**：web 版设置页新增「导入单文件版备份」卡片（所有登录用户可见）
+- **安全边界**：只写当前用户自己的数据（自建帖/进度/订阅/统计），零删除，符合 DEPLOYMENT_SAFETY.md；已用临时用户端到端实测（精确匹配/唯一字兜底/坏进度跳过/自动订阅/幂等/级联清理全过）
+
+### 10.3 单文件版字图离线缓存
+- IndexedDB `beizitie` **v1→v2**（新增 `images` store：url→Blob）；新模块 `src/data/local/imageCache.ts`
+- 学习页：命中缓存用本地 blob，未命中即时网络显示 + 后台缓存（在线零体验差异）；进帖低并发(2)预热整帖，断网可复习；上限 8000 张
+- 设置页新增「字图离线缓存」开关 + 已缓存张数 + 清空按钮；kv `imageCacheEnabled` 默认开
+
+### 10.4 部署与验证记录
+- deploy.sh anki 干净重跑成功（用户数据哨兵 6 项全过）；生产 jizi_index 已全量建成（1,725,637 行）
+- `beizitie.html` 已更新推送 Pages（含图片缓存 + 集字字符缓存）
+- 仍为手动/遗留：镜像同步（--mirror）保持手动；服务器版学习页未接图片缓存（同域静态文件收益小，暂缓）
