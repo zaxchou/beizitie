@@ -9,7 +9,7 @@
 | 方式 | 适合谁 | 状态 |
 |---|---|---|
 | 🌐 **在线版** [beizitie.com](https://beizitie.com) | 打开就用，注册即学，数据云端保存 | ✅ 运营中 |
-| 📄 **单文件版**（开源主打） | 下载一个 HTML 双击即用；无账号，学习记录只存在你自己电脑里，一键导出备份 | 🔨 开发中（见[双版本计划](docs/plans/2026-09-03-two-edition-plan.md)） |
+| 📄 **单文件版**（开源主打） | 下载一个 HTML 双击即用；无账号，学习记录只存在你自己电脑里，一键导出备份 | ✅ **[下载 beizitie.html](https://github.com/zaxchou/beizitie/raw/main/beizitie.html)**（1.1MB，右键另存为） |
 | 🛠 **自托管平台版** | 学校/书院/团队自建，多用户管理 | ✅ 见下文 |
 
 ## 功能亮点
@@ -31,7 +31,10 @@
 - 一键导出/导入 JSON：备份、换机、分享进度
 - 与在线版进度格式互通（可导回 beizitie.com 继续）
 
-**Roadmap**：[docs/plans/2026-09-03-two-edition-plan.md](docs/plans/2026-09-03-two-edition-plan.md) · P1 里程碑 = 第一个 `beizitie.html`
+**当前能力**：市场浏览（2700+ 帖，离线目录）→ 订阅 → SM-2 学习 → 深色模式 → 导出/导入 JSON 备份（与在线版互通）。
+需要联网加载字帖图片；集字与统计在 Roadmap 中（[双版本计划](docs/plans/2026-09-03-two-edition-plan.md)）。
+
+> 使用提示：下载后双击打开即可（Chrome/Edge/Safari）。市场数据已内联，订阅和学习时需联网拉取字帖图片。
 
 ---
 
