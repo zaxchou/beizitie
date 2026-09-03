@@ -80,7 +80,9 @@ const MarketPage: React.FC = () => {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [searchDebounced, setSearchDebounced] = useState('');
   const [styleFilter, setStyleFilter] = useState<string>('全部');
+  const [dynastyFilter, setDynastyFilter] = useState<string>('全部');
   const [calligrapherFilter, setCalligrapherFilter] = useState<string>('全部');
+  const [dynastyCounts, setDynastyCounts] = useState<Record<string, number>>({});
 
   // 操作中状态
   const [pendingId, setPendingId] = useState<string | null>(null);
@@ -106,6 +108,7 @@ const MarketPage: React.FC = () => {
         const data = await fetchMarketplaceDecksPaged({
           style: styleFilter !== '全部' ? styleFilter : undefined,
           calligrapher: calligrapherFilter !== '全部' ? calligrapherFilter : undefined,
+          dynasty: dynastyFilter !== '全部' ? dynastyFilter : undefined,
           search: searchDebounced.trim() || undefined,
           limit: PAGE_SIZE,
           offset,
@@ -120,6 +123,11 @@ const MarketPage: React.FC = () => {
           for (const s of data.styleCounts) m[s.style] = s.n;
           setStyleCounts(m);
         }
+        if (data.dynastyCounts) {
+          const m: Record<string, number> = {};
+          for (const d of data.dynastyCounts) m[d.dynasty] = d.n;
+          setDynastyCounts(m);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : '加载市场失败');
       } finally {
@@ -127,7 +135,7 @@ const MarketPage: React.FC = () => {
         setLoadingMore(false);
       }
     },
-    [styleFilter, calligrapherFilter, searchDebounced],
+    [styleFilter, dynastyFilter, calligrapherFilter, searchDebounced],
   );
 
   useEffect(() => {
@@ -353,6 +361,31 @@ const MarketPage: React.FC = () => {
                   ? { bgcolor: styleColor(s), color: '#fff', '&:hover': { bgcolor: styleColor(s) } }
                   : {}),
               }}
+            />
+          );
+        })}
+        {/* 朝代筛选（按纪年顺序展示） */}
+        {[
+          ...['先秦', '汉', '三国', '晋', '南北朝', '隋', '唐', '五代', '宋', '元', '明', '清', '近代', '日本'].filter((d) => dynastyCounts[d]),
+          ...Object.keys(dynastyCounts).filter((d) => !['先秦', '汉', '三国', '晋', '南北朝', '隋', '唐', '五代', '宋', '元', '明', '清', '近代', '日本'].includes(d)),
+        ].map((d) => {
+          const selected = dynastyFilter === d;
+          const n = dynastyCounts[d];
+          return (
+            <Chip
+              key={`dy-${d}`} size="small"
+              label={
+                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5 }}>
+                  <Box component="span" sx={{ fontWeight: selected ? 700 : 500 }}>{d}</Box>
+                  {n !== undefined && (
+                    <Box component="span" sx={{ fontSize: 10, opacity: 0.75 }}>{n}</Box>
+                  )}
+                </Box>
+              }
+              onClick={() => setDynastyFilter(selected ? '全部' : d)}
+              color={selected ? 'primary' : 'default'}
+              variant={selected ? 'filled' : 'outlined'}
+              sx={{ cursor: 'pointer' }}
             />
           );
         })}

@@ -593,17 +593,19 @@ export function fetchMarketplaceDecks(params?: {
   return request<MarketplaceDeck[]>(`/api/marketplace/decks${q ? `?${q}` : ''}`);
 }
 
-/** 分页浏览市场牌组（大目录用，带总数与书家 facets） */
+/** 分页浏览市场牌组（大目录用，带总数与书家/书体/朝代 facets） */
 export function fetchMarketplaceDecksPaged(params: {
   style?: string;
   calligrapher?: string;
+  dynasty?: string;
   search?: string;
   limit: number;
   offset: number;
-}): Promise<{ total: number; calligraphers: string[]; styleCounts: { style: string; n: number }[]; decks: MarketplaceDeck[] }> {
+}): Promise<{ total: number; calligraphers: string[]; styleCounts: { style: string; n: number }[]; dynastyCounts: { dynasty: string; n: number }[]; decks: MarketplaceDeck[] }> {
   const qs = new URLSearchParams();
   if (params.style) qs.set('style', params.style);
   if (params.calligrapher) qs.set('calligrapher', params.calligrapher);
+  if (params.dynasty) qs.set('dynasty', params.dynasty);
   if (params.search) qs.set('search', params.search);
   qs.set('limit', String(params.limit));
   qs.set('offset', String(params.offset));

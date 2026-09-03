@@ -43,6 +43,7 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
     const userId = req.user!.userId;
     const style = (req.query.style as string | undefined) || '';
     const calligrapher = (req.query.calligrapher as string | undefined) || '';
+    const dynasty = (req.query.dynasty as string | undefined) || '';
     const search = (req.query.search as string | undefined) || '';
 
     let sql = `
@@ -71,6 +72,11 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
       sql += ` AND md.calligrapher = $${paramIndex}`;
       params.push(calligrapher);
     }
+    if (dynasty) {
+      paramIndex = params.length + 1;
+      sql += ` AND md.dynasty = $${paramIndex}`;
+      params.push(dynasty);
+    }
     if (search) {
       paramIndex = params.length + 1;
       sql += ` AND (d.name LIKE $${paramIndex} OR md.description LIKE $${paramIndex + 1} OR md.calligrapher LIKE $${paramIndex + 2})`;
@@ -92,12 +98,17 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
          FROM marketplace_decks md, unnest(string_to_array(md.style, ',')) AS s(s)
          WHERE md.style <> '' GROUP BY 1 ORDER BY 2 DESC`,
       );
+      const dynastyCounts = await db.query(
+        `SELECT dynasty, COUNT(*)::int AS n
+         FROM marketplace_decks WHERE dynasty <> '' GROUP BY 1 ORDER BY 2 DESC`,
+      );
       const paged = `${sql} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
       const { rows } = await db.query(paged, [...params, limitRaw, offset]);
       res.json({
         total: countRes.rows[0]?.n ?? rows.length,
         calligraphers: facets.rows.map((r: any) => r.calligrapher),
         styleCounts: styleCounts.rows,
+        dynastyCounts: dynastyCounts.rows,
         decks: rows,
       });
       return;

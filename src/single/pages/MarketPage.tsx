@@ -13,9 +13,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import { localDataSource } from '@/data/local/localAdapter';
 import type { CatalogZuopin } from '@/core/types';
 import { fetchZitie, catalogIndex } from '@/data/local/localAdapter';
+import { DeckDetailDialog } from '@/single/components/DeckDetailDialog';
 
 const PAGE_SIZE = 60;
 const STYLE_OPTIONS = ['全部', '楷', '行', '草', '隶', '篆'];
+const DYNASTY_ORDER = ['先秦', '汉', '三国', '晋', '南北朝', '隋', '唐', '五代', '宋', '元', '明', '清', '近代', '日本'];
 
 interface Props {
   onSubscribed: (name: string) => void;
@@ -25,9 +27,12 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
   const [zuopins, setZuopins] = useState<CatalogZuopin[]>([]);
   const [total, setTotal] = useState(0);
   const [styleCounts, setStyleCounts] = useState<Record<string, number>>({});
+  const [dynastyCounts, setDynastyCounts] = useState<Record<string, number>>({});
   const [calligrapherOptions, setCalligrapherOptions] = useState<string[]>(['全部']);
   const [styleFilter, setStyleFilter] = useState('全部');
+  const [dynastyFilter, setDynastyFilter] = useState('全部');
   const [calligrapherFilter, setCalligrapherFilter] = useState('全部');
+  const [detailZuopin, setDetailZuopin] = useState<CatalogZuopin | null>(null);
   const [keyword, setKeyword] = useState('');
   const [keywordDebounced, setKeywordDebounced] = useState('');
   const [loading, setLoading] = useState(true);
@@ -59,6 +64,7 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
         const kw = keywordDebounced.trim().toLowerCase();
         const filtered = all.filter((z) => {
           if (styleFilter !== '全部' && !z.s.includes(styleFilter)) return false;
+          if (dynastyFilter !== '全部' && z.d !== dynastyFilter) return false;
           if (calligrapherFilter !== '全部' && z.a !== calligrapherFilter) return false;
           if (kw && !(z.n.toLowerCase().includes(kw) || z.a.toLowerCase().includes(kw) || z.d.toLowerCase().includes(kw)))
             return false;
@@ -74,7 +80,7 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
         setLoadingMore(false);
       }
     },
-    [styleFilter, calligrapherFilter, keywordDebounced, refreshSubscribed],
+    [styleFilter, dynastyFilter, calligrapherFilter, keywordDebounced, refreshSubscribed],
   );
 
   useEffect(() => {
@@ -90,6 +96,9 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
     const sc = new Map<string, number>();
     for (const z of catalogIndex.zuopins) for (const s of z.s) sc.set(s, (sc.get(s) || 0) + 1);
     setStyleCounts(Object.fromEntries(sc));
+    const dc = new Map<string, number>();
+    for (const z of catalogIndex.zuopins) if (z.d) dc.set(z.d, (dc.get(z.d) || 0) + 1);
+    setDynastyCounts(Object.fromEntries(dc));
   }, []);
 
   const handleSubscribe = async (z: CatalogZuopin) => {
@@ -149,6 +158,26 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
             />
           );
         })}
+        {DYNASTY_ORDER.filter((d) => dynastyCounts[d])
+          .concat(Object.keys(dynastyCounts).filter((d) => !DYNASTY_ORDER.includes(d)))
+          .map((d) => {
+            const selected = dynastyFilter === d;
+            return (
+              <Chip
+                key={`dy-${d}`} size="small"
+                label={
+                  <Box component="span" sx={{ display: 'inline-flex', gap: 0.5, alignItems: 'baseline' }}>
+                    <span style={{ fontWeight: selected ? 700 : 500 }}>{d}</span>
+                    <span style={{ fontSize: 10, opacity: 0.75 }}>{dynastyCounts[d]}</span>
+                  </Box>
+                }
+                onClick={() => setDynastyFilter(selected ? '全部' : d)}
+                color={selected ? 'primary' : 'default'}
+                variant={selected ? 'filled' : 'outlined'}
+                sx={{ cursor: 'pointer' }}
+              />
+            );
+          })}
         <TextField
           select size="small" value={calligrapherFilter}
           onChange={(e) => setCalligrapherFilter(e.target.value)}
@@ -180,10 +209,12 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
               return (
                 <Box key={z.id} sx={{ display: 'flex', flexDirection: 'column' }}>
                   <Box
+                    onClick={() => setDetailZuopin(z)}
                     sx={{
                       position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: 1.5,
-                      overflow: 'hidden', bgcolor: 'grey.100',
+                      overflow: 'hidden', bgcolor: 'grey.100', cursor: 'pointer',
                       boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)',
+                      '&:hover': { boxShadow: '0px 0px 0px 2px rgba(25,118,210,0.5)' },
                     }}
                   >
                     {z.c.startsWith('http') ? (
@@ -218,7 +249,10 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                       {z.s[0]}
                     </Box>
                   </Box>
-                  <Typography noWrap sx={{ mt: 0.5, textAlign: 'center', fontSize: { xs: 10, sm: 11 }, fontWeight: 500 }}>
+                  <Typography
+                    noWrap onClick={() => setDetailZuopin(z)}
+                    sx={{ mt: 0.5, textAlign: 'center', fontSize: { xs: 10, sm: 11 }, fontWeight: 500, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                  >
                     {z.n}
                   </Typography>
                   <Typography noWrap sx={{ textAlign: 'center', fontSize: 9, color: 'text.secondary' }}>
@@ -255,6 +289,14 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
           )}
         </>
       )}
+      <DeckDetailDialog
+        open={!!detailZuopin}
+        zuopin={detailZuopin}
+        subscribed={!!detailZuopin && subscribed.has(detailZuopin.z)}
+        pending={!!detailZuopin && pendingId === detailZuopin.id}
+        onClose={() => setDetailZuopin(null)}
+        onSubscribe={(z) => handleSubscribe(z)}
+      />
     </Box>
   );
 };

@@ -28,6 +28,7 @@ export interface ZitieGlyphList {
   z: string;
   base: string;        // CDN 目录前缀
   thumb: string;       // 统一缩放参数（如 ?x-bce-process=style/jpg512）
+  desc?: string;       // 市场简介（详情弹窗用，懒加载不进目录索引）
   g: CatalogGlyph[];
 }
 

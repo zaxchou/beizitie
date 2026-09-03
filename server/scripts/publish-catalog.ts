@@ -108,7 +108,7 @@ async function main() {
     fs.mkdirSync(path.join(out, 'zitie'), { recursive: true });
     fs.writeFileSync(
       path.join(out, 'zitie', `${zitieId}.json`),
-      JSON.stringify({ z: zitieId, base, thumb: THUMB, g: glyphs }),
+      JSON.stringify({ z: zitieId, base, thumb: THUMB, desc: (d.description || '').slice(0, 160), g: glyphs }),
     );
     zitieFiles.set(zitieId, glyphs.length);
     zitieIndex.push({
