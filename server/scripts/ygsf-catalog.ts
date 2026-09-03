@@ -22,6 +22,7 @@ import {
   fetchZitieGlyphs,
   loadYgsfToken,
   searchZuopin,
+  ygsfGet,
 } from '../services/ygsf.js';
 
 interface Args {
@@ -49,6 +50,7 @@ function parseArgs(): Args {
     search: get('--search'),
     searchFile: get('--search-file'),
     list: has('--list'),
+    classify: has('--classify'),
     style: get('--style'),
     importFlag: has('--import'),
     zuopin: get('--zuopin'),
@@ -174,15 +176,48 @@ async function doImport(db: any, opts: Args, token: string) {
   }
 }
 
+/** 轻量书体分类：每个未分类候选拉第一页单字读 _font 众数（约 1 请求/帖） */
+async function doClassify(db: any, token: string) {
+  const rows = await db.query(
+    "SELECT zuopin_id, name, zitie_id FROM ygsf_zuopin WHERE style = '' AND zitie_id <> '' ORDER BY scanned_at LIMIT 500",
+  );
+  console.log(`待分类候选 ${rows.rows.length} 个`);
+  let done = 0;
+  for (const z of rows.rows) {
+    try {
+      const data = await ygsfGet('/zitie/glyphs/query', { zid: z.zitie_id, loaded: 0 }, token);
+      const list: any[] = Array.isArray(data) ? data : data?.list || [];
+      const fontCount = new Map<string, number>();
+      for (const g of list) {
+        const f = (g?._font || '').trim();
+        if (f) fontCount.set(f, (fontCount.get(f) || 0) + 1);
+      }
+      const style = [...fontCount.entries()].sort((x, y) => y[1] - x[1])[0]?.[0] || '未知';
+      await db.query('UPDATE ygsf_zuopin SET style = $1 WHERE zuopin_id = $2', [style, z.zuopin_id]);
+      done++;
+      process.stdout.write(`\r已分类 ${done}：${z.name}=${style}    `);
+      await new Promise((r) => setTimeout(r, 300));
+    } catch (e: any) {
+      console.error(`\n分类失败 ${z.name}: ${e.message}`);
+    }
+  }
+  console.log(`\n分类完成 ${done} 个。`);
+}
+
 async function main() {
   const a = parseArgs();
-  if (!a.search && !a.searchFile && !a.list && !a.importFlag) {
-    console.log('用 --search <关键词> / --search-file <文件> / --list / --import。详见文件头注释。');
+  if (!a.search && !a.searchFile && !a.list && !a.importFlag && !a.classify) {
+    console.log('用 --search <关键词> / --search-file <文件> / --classify / --list / --import。详见文件头注释。');
     process.exit(0);
   }
   const token = loadYgsfToken();
   await waitForDb();
   const db = getDb();
+
+  if (a.classify) {
+    await doClassify(db, token);
+    process.exit(0);
+  }
 
   if (a.search) {
     await doSearch(db, a.search, token);
