@@ -13,6 +13,7 @@ import { localDataSource } from '@/data/local/localAdapter';
 interface Props {
   darkMode: 'system' | 'light' | 'dark';
   onDarkModeChange: (m: 'system' | 'light' | 'dark') => void;
+  onChanged?: () => void;
 }
 
 const DARK_OPTIONS: { key: 'system' | 'light' | 'dark'; label: string }[] = [
@@ -21,7 +22,7 @@ const DARK_OPTIONS: { key: 'system' | 'light' | 'dark'; label: string }[] = [
   { key: 'dark', label: '深色' },
 ];
 
-export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange }) => {
+export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onChanged }) => {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ sev: 'success' | 'error'; text: string } | null>(null);
@@ -50,6 +51,7 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange }) =>
       const text = await file.text();
       const report = await localDataSource.backup.importAll(text, 'merge');
       setMsg({ sev: 'success', text: `导入完成：${report.decks} 个牌组、${report.cards} 张卡、${report.progress} 条进度` });
+      onChanged?.();
     } catch (e: any) {
       setMsg({ sev: 'error', text: `导入失败：${e.message}` });
     } finally {

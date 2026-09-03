@@ -47,7 +47,11 @@ export interface LocalDataSource {
   library: {
     /** 订阅：把单字清单落成本地牌组 */
     addFromZitie(z: ZitieGlyphList, meta: Pick<LocalDeck, 'name' | 'author' | 'dynasty' | 'styles' | 'cover'>): Promise<LocalDeck>;
-    list(): Promise<(LocalDeck & { newCount: number; reviewCount: number })[]>;
+    list(): Promise<(LocalDeck & {
+      newCount: number; reviewCount: number;
+      totalCards: number; learnedCount: number;
+      newRemaining: number; dueRemaining: number;
+    })[]>;
     remove(deckId: string): Promise<void>;
     updateSettings(deckId: string, patch: DeckSettingsPatch): Promise<void>;
   };

@@ -11,13 +11,13 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FlashCard from '@/components/study/FlashCard';
 import RatingButtons from '@/components/study/RatingButtons';
+import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { localDataSource } from '@/data/local/localAdapter';
 import type { Card, Rating } from '@/types';
 import type { LocalCard, LocalProgress } from '../../core/types';
 
 interface Props {
-  studyingDeck: { id: string; name: string } | null;
-  onPickDeck: () => void;
+  studyingDeck: { id: string; name: string };
   onExitStudy: () => void;
 }
 
@@ -46,13 +46,21 @@ function toCard(c: LocalCard, p: LocalProgress | null): Card {
   };
 }
 
-export const StudyPage: React.FC<Props> = ({ studyingDeck, onPickDeck, onExitStudy }) => {
+export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy }) => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [loading, setLoading] = useState(false);
   const [rated, setRated] = useState(0);
   const [sessionDone, setSessionDone] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [confirmExit, setConfirmExit] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const mmss = `${String(Math.floor(elapsed / 60)).padStart(2, '0')}:${String(elapsed % 60).padStart(2, '0')}`;
 
   const current = queue[index];
   const progress = useMemo(() => {
@@ -95,17 +103,6 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onPickDeck, onExitStu
     }
   };
 
-  // ---- 未选择牌组 ----
-  if (!studyingDeck) {
-    return (
-      <Box sx={{ textAlign: 'center', py: 6 }}>
-        <Typography className="font-kai" sx={{ fontSize: 40, mb: 1 }}>🖌</Typography>
-        <Typography color="text.secondary" sx={{ mb: 2 }}>先从书库选一本碑帖</Typography>
-        <Button variant="contained" onClick={onPickDeck} sx={{ borderRadius: 2 }}>去书库选择</Button>
-      </Box>
-    );
-  }
-
   // ---- 加载中 ----
   if (loading) {
     return <Typography color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>正在出卡…</Typography>;
@@ -120,13 +117,14 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onPickDeck, onExitStu
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Button
           size="small" startIcon={<ArrowBackIcon />}
-          onClick={onExitStudy}
+          onClick={() => (rated > 0 && !sessionDone ? setConfirmExit(true) : onExitStudy())}
           sx={{ borderRadius: 2 }}
         >
           书库
         </Button>
-        <Box sx={{ flex: 1 }}>
+        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Typography sx={{ fontWeight: 600, fontSize: 15 }} noWrap>{studyingDeck.name}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>{mmss}</Typography>
           {!done && (
             <LinearProgress
               variant="determinate"
@@ -175,6 +173,14 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onPickDeck, onExitStu
           )}
         </>
       )}
+
+      <ConfirmDialog
+        open={confirmExit}
+        title="中断学习"
+        message={`已学习 ${rated} 张，中断后已评分的进度会保留。确定要返回吗？`}
+        onConfirm={() => { setConfirmExit(false); onExitStudy(); }}
+        onCancel={() => setConfirmExit(false)}
+      />
     </Box>
   );
 };

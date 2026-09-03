@@ -161,18 +161,29 @@ export const localDataSource: LocalDataSource = {
       for (const d of decks.sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
         const [cards, progress] = await Promise.all([getCardsByDeck(d.id), getProgressByDeck(d.id)]);
         const pMap = new Map(progress.map((p) => [p.cardId, p]));
-        let newCount = 0;
-        let reviewCount = 0;
-        if (!d.settings.paused) {
-          for (const c of cards) {
-            const p = pMap.get(c.id);
-            if (!p) newCount++;
-            else if (new Date(p.dueAt) <= now) reviewCount++;
-          }
+        const newRemaining = cards.filter((c) => !pMap.get(c.id)).length;
+        const dueCount = cards.filter((c) => {
+          const p = pMap.get(c.id);
+          return p && new Date(p.dueAt) <= now;
+        }).length;
+        let newCount = newRemaining;
+        let reviewCount = dueCount;
+        if (d.settings.paused) {
+          newCount = 0;
+          reviewCount = 0;
+        } else {
           newCount = Math.min(newCount, d.settings.dailyNewLimit);
           reviewCount = Math.min(reviewCount, d.settings.dailyReviewLimit);
         }
-        result.push({ ...d, newCount, reviewCount });
+        result.push({
+          ...d,
+          newCount,
+          reviewCount,
+          totalCards: cards.length,
+          learnedCount: progress.length,
+          newRemaining,
+          dueRemaining: dueCount,
+        });
       }
       return result;
     },
