@@ -1,229 +1,107 @@
-# 字2Anki (Zi2Anki)
+# 背字帖 Beizitie
 
-> 书法单字记忆工具 · 基于 SM-2 间隔重复算法 · 本地优先 · 离线可用
+> 书法碑帖单字记忆 · SM-2 间隔重复 · 开源 · 隐私优先
 
-**Zi2Anki** 是一款专为书法学习者打造的间隔重复记忆工具。将书法字帖单字以图片或文本形式导入后，系统通过 SM-2 算法自动安排每日复习计划，让字形记忆高效而持久。
+**背字帖**把历代碑帖拆成单字高清卡，用 SM-2 间隔重复算法帮你高效背记字形。收录欧颜柳赵、二王、智永、宋徽宗等 **358 位书家、2700+ 部碑帖字库、逾百万张单字**，覆盖楷行草隶篆。
 
-PC 端采用双栏布局（左侧固定 280px 菜单含学习概览 + 热力图日历），移动端自动切换底部 tab，适配全平台使用。数据存储于本地 SQLite，支持多用户账号系统（每人独立的记忆库），使用前需注册/登录。
+## 三种使用方式
 
----
+| 方式 | 适合谁 | 状态 |
+|---|---|---|
+| 🌐 **在线版** [beizitie.com](https://beizitie.com) | 打开就用，注册即学，数据云端保存 | ✅ 运营中 |
+| 📄 **单文件版**（开源主打） | 下载一个 HTML 双击即用；无账号，学习记录只存在你自己电脑里，一键导出备份 | 🔨 开发中（见[双版本计划](docs/plans/2026-09-03-two-edition-plan.md)） |
+| 🛠 **自托管平台版** | 学校/书院/团队自建，多用户管理 | ✅ 见下文 |
 
-## 截图
+## 功能亮点
 
-| PC 端 · 仪表盘 | PC 端 · 学习页面 | PC 端 · 学习统计 |
-|:---:|:---:|:---:|
-| ![仪表盘-PC](docs/screenshots/dashboard.png) | ![学习页面-PC](docs/screenshots/study.png) | ![统计-PC](docs/screenshots/analytics.png) |
-
-| 移动端 · 仪表盘 | 移动端 · 牌组列表 | 移动端 · 学习页面 |
-|:---:|:---:|:---:|
-| ![仪表盘-移动](docs/screenshots/mobile-dashboard.png) | ![牌组列表-移动](docs/screenshots/mobile-decks.png) | ![学习页面-移动](docs/screenshots/mobile-study.png) |
-
-## 功能特性
-
-- **PC 双栏布局** — 左侧固定 280px 菜单（导航 + 学习概览紧凑版热力图 + 统计卡），右侧自适应主区
-- **Mobile 适配** — 移动端自动切换底部 tab 布局，保留完整体验
-- **牌组管理** — 按字帖/碑帖创建牌组，分类管理书法单字卡片
-- **SM-2 算法** — 经典间隔重复算法（3 步学习阶梯：1min → 3min → 10min → 毕业）
-- **卡片预览** — 点击卡片即可预览正面/背面内容，支持上/下一张翻页
-- **批量导入** — 支持批量上传图片 + 文本批量导入（每两行一组卡片）
-- **APKG 导入/导出** — 与 Anki 桌面版双向交换数据：导出 .apkg 在 Anki 中复习，或从 Anki 导入已有牌组（含图片）
-- **多用户账号系统** — JWT 鉴权，每人独立的牌组/卡片/学习数据，使用前需登录
-- **学习统计** — 签到日历热力图（13 周 × 7 天）、每日学习量、连续打卡、评分分布
-- **学习中断恢复** — 中断学习时进度自动保留，已有评分不会丢失
-- **每日上限** — 按牌组设置新卡/复习每日上限，合理规划学习节奏
-- **响应式设计** — PC 端双栏 + 移动端底部 tab，全屏适配
-- **本地优先** — SQLite 存储，无需网络即可使用
+- **市场订阅**：2700+ 部碑帖字库免费用，按书体/书家筛选，一键订阅开始学习
+- **SM-2 间隔重复**：经典算法排复习计划（学习阶梯 1min → 3min → 10min → 毕业）
+- **集字**：输入任意诗文，自动从全库匹配单字，拼成书法作品导出高清 PNG
+- **多端适配**：PC 双栏布局，移动端底部导航
+- **隐私优先**：单文件版学习记录永不出设备；在线版数据可随时导出
 
 ---
 
-## 技术栈
+## 📄 单文件开源版
+
+> **一个 HTML 文件就是全部。** 无账号、无服务器、无追踪。
+
+- 浏览器直接打开，数据保存在本机 IndexedDB
+- 字库目录与单字图由静态 JSON + CDN 直链提供，应用自动保持最新
+- 一键导出/导入 JSON：备份、换机、分享进度
+- 与在线版进度格式互通（可导回 beizitie.com 继续）
+
+**Roadmap**：[docs/plans/2026-09-03-two-edition-plan.md](docs/plans/2026-09-03-two-edition-plan.md) · P1 里程碑 = 第一个 `beizitie.html`
+
+---
+
+## 🛠 自托管平台版
+
+多用户在线平台（JWT 账号体系、管理员内容后台、市场运营、数据统计）。
+
+### 技术栈
 
 | 层 | 技术 |
 |---|------|
-| 前端框架 | React 18 + TypeScript |
-| UI 组件 | MUI (Material UI) v5 |
-| 样式 | Tailwind CSS 3 |
-| 状态管理 | Zustand |
-| 路由 | React Router 6 |
-| 构建工具 | Vite 5 |
+| 前端 | React 18 + TypeScript + MUI v5 + Zustand + Vite |
 | 后端 | Express 5 + TypeScript (tsx) |
-| 数据库 | better-sqlite3 |
-| 算法 | SM-2（纯函数实现，53 项测试覆盖） |
-| 进程管理 | PM2（生产环境） |
-| 部署 | SCP 直传（不走 GitHub） |
+| 数据库 | PostgreSQL（连接参数见环境变量） |
+| 算法 | SM-2 纯函数实现 |
+| 进程 | PM2 + Nginx 反代 |
 
----
-
-## 快速开始
-
-### 环境要求
-
-- Node.js >= 18
-- npm >= 9
-
-### 安装与运行
+### 快速开始
 
 ```bash
-git clone https://github.com/zaxchou/zi2anki.git
-cd zi2anki
-
-# 安装依赖
+git clone https://github.com/zaxchou/beizitie.git
+cd beizitie
 npm install
-
-# 创建上传目录
 mkdir -p uploads
 
-# 启动后端（端口 3001）
+# 启动后端（默认端口 3001；数据库连接见环境变量）
 npx tsx server/index.ts
 
 # 新终端，启动前端（端口 3000）
 npx vite --port 3000
 ```
 
-打开浏览器访问 `http://localhost:3000`
+打开 `http://localhost:3000`，**第一个注册的账号自动成为管理员**。
 
-### 首次启动
-
-数据库为空时，**第一个注册的用户自动成为管理员**。打开浏览器访问 `http://localhost:3000` 后：
-
-1. 看到引导提示，点击"注册"
-2. 填写用户名和密码完成注册
-3. 第一个注册的账号拥有管理员权限
-
-> 后续注册的账号均为普通用户。管理员可在设置页面管理用户。
-
-### 环境变量（可选）
+### 环境变量（生产必须覆盖）
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `PORT` | `3001` | 后端服务端口 |
-| `JWT_SECRET` | （开发默认值） | 生产环境**必须设置**，否则拒绝启动 |
-| `PG_HOST` | `localhost` | PostgreSQL 主机 |
-| `PG_PORT` | `5432` | PostgreSQL 端口 |
-| `PG_DATABASE` | `zi2anki` | PostgreSQL 数据库名 |
-| `PG_USER` | `zi2anki` | PostgreSQL 用户名 |
-| `PG_PASSWORD` | `zi2anki_pg_2026` | PostgreSQL 密码 |
+| `PORT` | `3001` | 后端端口 |
+| `JWT_SECRET` | 开发默认值 | 生产**必须设置**，否则拒绝启动 |
+| `PG_HOST` / `PG_PORT` / `PG_DATABASE` / `PG_USER` / `PG_PASSWORD` | localhost / 5432 / zi2anki / zi2anki / — | PostgreSQL 连接 |
 
-> ⚠️ **生产环境必须设置 `JWT_SECRET` 环境变量**，否则服务拒绝启动。
-> 所有数据库连接参数也应在生产环境中覆盖默认值。
-
-### 一键启动（Windows）
-
-```bash
-start.bat
-```
-
----
-
-## 项目结构
+### 项目结构
 
 ```
-zi2anki/
-├── server/                  # Express 后端
-│   ├── index.ts             # 服务入口
-│   ├── db.ts                # SQLite 数据库初始化 + 迁移
-│   └── routes/
-│       ├── decks.ts         # 牌组 CRUD API
-│       ├── cards.ts         # 卡片 CRUD + 批量导入 API
-│       ├── study.ts         # 学习会话 + 统计 API
-│       ├── analytics.ts     # 数据分析 API（卡片状态、难度、评分趋势）
-│       ├── export.ts        # APKG 导出 API（生成 .apkg 文件）
-│       └── import.ts        # APKG 导入 API（解析 Anki 模型字段 + 提取图片）
-├── src/                     # React 前端
-│   ├── main.tsx             # 应用入口
-│   ├── App.tsx              # 路由配置 + 主题
-│   ├── components/
-│   │   ├── common/          # 通用组件（对话框、加载态）
-│   │   ├── dashboard/       # 仪表盘组件（统计卡、热力图日历）
-│   │   ├── layout/          # 布局组件（SideMenu、AppShell、BottomNav）
-│   │   └── study/           # 学习组件（闪卡、评分按钮、进度条）
-│   ├── pages/               # 页面
-│   │   ├── DashboardPage.tsx  # 仪表盘（牌组卡片 + 开始学习按钮）
-│   │   ├── DecksPage.tsx      # 牌组列表
-│   │   ├── CardManagePage.tsx # 卡片管理（添加/编辑/预览/翻页）
-│   │   ├── StudyPage.tsx      # 学习页面（闪卡复习 + 返回确认）
-│   │   ├── AnalyticsPage.tsx  # 学习数据统计
-│   │   └── SettingsPage.tsx   # 系统设置
-│   ├── hooks/               # 自定义 Hooks
-│   │   └── useDashboardStats.ts  # 共享统计加载
-│   ├── lib/
-│   │   ├── api.ts           # Express API 客户端
-│   │   ├── sm2.ts           # SM-2 算法实现
-│   │   ├── constants.ts     # 全局常量
-│   │   ├── db.ts            # Dexie 离线存储
-│   │   ├── sync.ts          # Supabase 同步
-│   │   └── supabase.ts      # Supabase 客户端
-│   ├── stores/              # Zustand 状态管理
-│   │   ├── useDeckStore.ts
-│   │   ├── useStudyStore.ts
-│   │   └── useSettingsStore.ts
-│   ├── types/               # TypeScript 类型定义
-│   └── __tests__/           # 单元测试（SM-2 算法 53 项）
-├── docs/
-│   ├── screenshots/         # 功能截图
-│   └── system_design.md     # 系统设计文档
-├── uploads/                 # 上传图片存储
-├── start.bat                # Windows 一键启动脚本
-├── package.json
-├── vite.config.ts
-└── tsconfig.json
+├── src/            # React 前端（13 个页面：市场/学习/集字/统计/管理…）
+│   ├── core/       # 纯逻辑（SM-2、类型）—— 两版本共享
+│   ├── data/       # 数据层（服务器/本地双实现，见双版本计划）
+│   └── platforms/  # web / single 双入口装配
+├── server/         # Express 后端（10 个路由模块 + 内容包/目录工具脚本）
+├── catalog/        # 单文件版静态目录（GitHub Pages 分发）
+└── docs/plans/     # 产品与架构计划文档
 ```
 
----
-
-## SM-2 算法
-
-本项目实现了改进的 SM-2 间隔重复算法，3 步学习阶梯：
-
-```
-新卡 → 1 分钟（重来）→ 3 分钟（困难）→ 10 分钟（良好）→ 毕业
-```
-
-| 评分 | 按钮 | ease 变化 | 间隔变化 |
-|------|------|-----------|----------|
-| 1（重来） | 🔴 Again | -0.20 | 重置到 1 分钟 |
-| 2（困难） | 🟡 Hard | -0.15 | 保持当前阶梯 |
-| 3（良好） | 🟢 Good | 不变 | 进入下一步 |
-| 4（简单） | 🔵 Easy | +0.15 | 直接毕业（4 天） |
-
-学习阶梯：`[1, 3, 10]`（分钟），毕业间隔 = 1 天，后续每轮 × ease。
-
----
-
-## API 概览
+### API 概览（节选）
 
 | 方法 | 路径 | 说明 |
 |------|------|------|
-| GET | `/api/decks` | 获取所有牌组 |
-| POST | `/api/decks` | 创建牌组 |
-| PUT | `/api/decks/:id` | 重命名牌组 |
-| DELETE | `/api/decks/:id` | 删除牌组 |
-| GET | `/api/decks/:id/cards` | 获取牌组下所有卡片 |
-| POST | `/api/decks/:id/cards` | 添加单张卡片 |
-| POST | `/api/decks/:id/cards/batch` | 批量导入图片 |
-| PUT | `/api/cards/:id` | 更新卡片 |
-| DELETE | `/api/cards/:id` | 删除卡片 |
-| GET | `/api/decks/:id/due-cards` | 获取到期待复习卡片 |
-| GET | `/api/decks/:id/new-cards` | 获取新卡片 |
-| POST | `/api/study-sessions` | 创建学习会话 |
-| PUT | `/api/study-sessions/:id` | 结束学习会话 |
-| GET | `/api/due-counts` | 各牌组待复习数量 |
-| GET/PUT | `/api/daily-stats/:date` | 每日统计 |
-| GET | `/api/daily-stats/range` | 每日统计范围查询 |
-| PUT | `/api/decks/:id/limits` | 设置每日学习上限 |
-| POST | `/api/decks/:id/reset` | 重置牌组学习进度 |
-| GET | `/api/export/:deckId` | 导出牌组为 .apkg（Anki 格式） |
-| GET | `/api/export` | 导出全部牌组为 .apkg |
-| POST | `/api/import` | 导入 .apkg 文件（multipart） |
+| GET | `/api/marketplace/decks` | 市场（支持分页/书体/书家/关键词） |
+| GET | `/api/decks/:id/due-cards` | 到期复习队列 |
+| POST | `/api/auth/login` | 登录（JWT） |
+| GET | `/api/jizi/match` | 集字匹配 |
+| GET | `/api/export/:deckId` | 导出 Anki apkg |
 
 ---
 
 ## 相关项目
 
-- **[molin-wiki](https://molin.wiki)** — 中国书画 AI 分析与知识平台（Vue3 + FastAPI + Qdrant）
-- **[zi2anki-skills](https://github.com/zaxchou/zi2anki-skills)** — WorkBuddy 技能包：书法单字提取、碑帖裁切等自动化工具
-
----
+- **[molin-wiki](https://molin.wiki)** — 中国书画 AI 分析与知识平台
+- **[zupu](https://github.com/zaxchou/zupu)** — 单文件开源族谱工具（本仓库单文件版的架构灵感来源）
 
 ## License
 
