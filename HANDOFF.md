@@ -234,3 +234,21 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 ### 11.4 现存数据池状态（供后续决策）
 - 候选池 pending 6056：未知 3561（维持排除）+ exists 1315 + junk 614 + 重名 474 + 巨帖 52 + partial 2 + **印章类 38（batch_status 空，唯一没跑过的非未知书体，待用户定夺）**
 - 楷行草隶篆该导的已全部导完，无遗漏
+
+---
+
+## 12. 2026-09-04 第三轮（市场体验：朝代筛选 + 详情弹窗）
+
+### 12.1 用户反馈 → 修复
+- **朝代分类缺失**：数据两版都有（DB `marketplace_decks.dynasty` / catalog `d` 字段），只是 UI 没入口。两版市场页都加了**朝代 chips 行**（按纪年排序：先秦→汉→…→明→清→近代→日本，带计数，点选再点取消）。
+- **单文件版市场不能点开详情**：web 版本就有 DeckDetailDialog，单文件版没有。新增 `src/single/components/DeckDetailDialog.tsx`：封面 + 元数据 + 简介 + 8 个单字预览 + 加入书库按钮；点封面或帖名打开。简介/样字懒加载自 `catalog/zitie/<id>.json`（publish-catalog 现在往单帖文件里写 `desc` 字段，**不进 index.json**，目录体积不涨）。
+
+### 12.2 ⚠️ 大坑：index.ts 内联公开路由遮蔽 marketplaceRouter
+- `server/index.ts` 里有一段早期加的**匿名市场列表内联路由**（`app.get('/api/marketplace/decks', ...)`，注册在 authMiddleware 之前，支持匿名+可选 token 取 is_subscribed）。Express 按注册顺序匹配，它**永远先于** marketplaceRouter 命中 → 改 `marketplace.ts` 的列表逻辑对线上**完全无效**。
+- 症状极具迷惑性：文件是新的、pm2 重启过、甚至怀疑 tsx 缓存（`/tmp/tsx-1000`，可 rm）。判别手法：往文件加 `console.log` marker 看 pm2 日志，证明文件加载了 → 说明另有同名路由。
+- 已修复：内联处理器与 marketplace.ts **同步**加了 dynasty 参数/过滤/dynastyCounts facet。**教训：改市场列表逻辑，两处都要改（或未来重构为共享函数）**。
+
+### 12.3 部署与验证
+- dynasty=唐 → total 160（与 DB 一致）；dynastyCounts 16 朝代（明1143/宋369/清350/元226/唐160…）
+- 新 beizitie.html（1.50MB）已发 Pages，含朝代筛选 + 详情弹窗
+- 市场列表响应新增 `dynastyCounts: [{dynasty, n}]`（公开+鉴权两条路径都加了）

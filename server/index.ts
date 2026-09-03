@@ -71,6 +71,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
     const db = getDb();
     const style = (req.query.style as string | undefined) || '';
     const calligrapher = (req.query.calligrapher as string | undefined) || '';
+    const dynasty = (req.query.dynasty as string | undefined) || '';
     const search = (req.query.search as string | undefined) || '';
 
     // 尝试从 Authorization header 获取用户信息（不强制）
@@ -112,6 +113,10 @@ app.get('/api/marketplace/decks', async (req, res) => {
       sql += ` AND md.calligrapher = $${params.length + 1}`;
       params.push(calligrapher);
     }
+    if (dynasty) {
+      sql += ` AND md.dynasty = $${params.length + 1}`;
+      params.push(dynasty);
+    }
     if (search) {
       sql += ` AND (d.name LIKE $${params.length + 1} OR md.description LIKE $${params.length + 2} OR md.calligrapher LIKE $${params.length + 3})`;
       params.push(`%${search}%`, `%${search}%`, `%${search}%`);
@@ -131,12 +136,17 @@ app.get('/api/marketplace/decks', async (req, res) => {
          FROM marketplace_decks md, unnest(string_to_array(md.style, ',')) AS s(s)
          WHERE md.published_at IS NOT NULL AND md.style <> '' GROUP BY 1 ORDER BY 2 DESC`,
       );
+      const dynastyCounts = await db.query(
+        `SELECT dynasty, COUNT(*)::int AS n
+         FROM marketplace_decks WHERE published_at IS NOT NULL AND dynasty <> '' GROUP BY 1 ORDER BY 2 DESC`,
+      );
       const paged = `${sql} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
       const { rows } = await db.query(paged, [...params, limitRaw, offset]);
       res.json({
         total: countRes.rows[0]?.n ?? rows.length,
         calligraphers: facets.rows.map((r: any) => r.calligrapher),
         styleCounts: styleCounts.rows,
+        dynastyCounts: dynastyCounts.rows,
         decks: rows,
       });
       return;
