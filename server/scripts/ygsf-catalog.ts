@@ -477,7 +477,7 @@ async function main() {
     if (!a.style) throw new Error('--import-batch 需要 --style');
     const cand = await db.query(
       `SELECT zuopin_id, name FROM ygsf_zuopin
-       WHERE style = $1 AND imported_deck_id IS NULL AND zitie_id <> ''
+       WHERE style = $1 AND imported_deck_id IS NULL AND zitie_id <> '' AND batch_status = ''
        ORDER BY name LIMIT $2`,
       [a.style, a.batch],
     );
@@ -492,6 +492,10 @@ async function main() {
         token,
       );
       console.log(`  [${r.status}] ${z.name}: ${r.message}`);
+      await db.query('UPDATE ygsf_zuopin SET batch_status = $2 WHERE zuopin_id = $1', [
+        z.zuopin_id,
+        r.status,
+      ]);
       if (r.status === 'ok') {
         ok++;
         partialStreak = 0;

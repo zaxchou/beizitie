@@ -223,7 +223,7 @@ async function migrateSchema(db: pkg.Pool): Promise<void> {
   } catch { /* ignore */ }
   try { await db.query(`CREATE INDEX IF NOT EXISTS idx_ygsf_images_zitie ON ygsf_images(zitie_id)`); } catch { /* ignore */ }
 
-  // YGSF 作品目录表（扫描候选池，imported_deck_id 标记已建库）
+  // YGSF 作品目录表（扫描候选池，imported_deck_id 标记已建库，batch_status 标记批量导入跳过原因）
   try {
     await db.query(`CREATE TABLE IF NOT EXISTS ygsf_zuopin (
       zuopin_id TEXT PRIMARY KEY,
@@ -233,9 +233,11 @@ async function migrateSchema(db: pkg.Pool): Promise<void> {
       zitie_id TEXT DEFAULT '',
       style TEXT DEFAULT '',
       imported_deck_id TEXT DEFAULT NULL,
-      scanned_at TEXT DEFAULT NULL
+      scanned_at TEXT DEFAULT NULL,
+      batch_status TEXT DEFAULT ''
     )`);
   } catch { /* ignore */ }
+  try { await db.query(`ALTER TABLE ygsf_zuopin ADD COLUMN IF NOT EXISTS batch_status TEXT DEFAULT ''`); } catch { /* ignore */ }
 }
 
 /** 上传目录的绝对路径（项目根目录下的 uploads/） */
