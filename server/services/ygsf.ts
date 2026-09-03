@@ -103,6 +103,54 @@ export async function searchZuopin(
   return { total, items };
 }
 
+export interface YgsfZitieDetails {
+  zitieId: string;
+  zuopinId: string;
+  name: string;
+  author: string;
+  dynasty: string;
+  coverUrl: string;
+  pageCount: number;
+  free: boolean;
+}
+
+/** 字帖详情（含朝代、版本全名、封面、页数） */
+export async function fetchZitieDetails(zid: string, token: string): Promise<YgsfZitieDetails | null> {
+  try {
+    const d = await ygsfGet('/zitie/details', { zid }, token);
+    const images: string[] = d?._images || [];
+    return {
+      zitieId: d._zitie_id || zid,
+      zuopinId: d._zuopin_id || '',
+      name: (d._name || '').trim(),
+      author: (d._author || '').trim(),
+      dynasty: (d._dynasty || '').trim(),
+      coverUrl: (d._cover_url || '').trim(),
+      pageCount: images.length,
+      free: d._free === 1,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** 拉取碑帖原文（逐页 _text 拼接，最多 maxPages 页） */
+export async function fetchZitieText(
+  zid: string,
+  token: string,
+  maxPages = 60,
+): Promise<string> {
+  const parts: string[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const d = await ygsfGet('/zitie/page/text', { zid, page }, token);
+    const text = (d?._text || '').trim();
+    if (!text) break;
+    parts.push(text);
+    await new Promise((r) => setTimeout(r, 150));
+  }
+  return parts.join('');
+}
+
 function toGlyph(g: any): YgsfGlyph {
   return {
     id: g._id,

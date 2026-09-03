@@ -19,7 +19,9 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { getDb, waitForDb } from '../db.js';
 import {
+  fetchZitieDetails,
   fetchZitieGlyphs,
+  fetchZitieText,
   loadYgsfToken,
   searchZuopin,
   ygsfGet,
@@ -51,6 +53,7 @@ function parseArgs(): Args {
     searchFile: get('--search-file'),
     list: has('--list'),
     classify: has('--classify'),
+    enrich: has('--enrich'),
     style: get('--style'),
     importFlag: has('--import'),
     zuopin: get('--zuopin'),
@@ -124,6 +127,22 @@ async function doImport(db: any, opts: Args, token: string) {
     process.exit(1);
   }
 
+  // 元数据：详情（朝代/版本封面/页数）+ 碑帖原文
+  process.stdout.write('拉取字帖详情与原文');
+  const details = await fetchZitieDetails(zitieId, token);
+  const text = await fetchZitieText(zitieId, token, 80);
+  coverUrl = details?.coverUrl || coverUrl;
+  const description = buildDescription({
+    name: deckName,
+    author,
+    dynasty: details?.dynasty || '',
+    style,
+    glyphCount: glyphs.length,
+    pages: details?.pageCount || 0,
+    text,
+  });
+  console.log(`：朝代=${details?.dynasty || '?'}，${details?.pageCount || '?'} 页，原文 ${text.length} 字`);
+
   // 管理员为内容归属
   const admin = await db.query("SELECT id FROM users WHERE role = 'admin' ORDER BY created_at LIMIT 1");
   const adminId = admin.rows[0]?.id || null;
@@ -134,9 +153,9 @@ async function doImport(db: any, opts: Args, token: string) {
     const now = new Date().toISOString();
     await client.query('BEGIN');
     await client.query(
-      `INSERT INTO decks (id, name, card_count, user_id, source_key, daily_new_card_limit, daily_review_limit, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, $5, 20, 200, $6, $6)`,
-      [deckId, deckName, glyphs.length, adminId, deckKey, now],
+      `INSERT INTO decks (id, name, card_count, user_id, source_key, daily_new_card_limit, daily_review_limit, article_text, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, 20, 200, $6, $7, $7)`,
+      [deckId, deckName, glyphs.length, adminId, deckKey, text.slice(0, 8000), now],
     );
     let inserted = 0;
     for (let i = 0; i < glyphs.length; i++) {
@@ -157,9 +176,9 @@ async function doImport(db: any, opts: Args, token: string) {
     if (opts.publish) {
       await client.query(
         `INSERT INTO marketplace_decks (deck_id, calligrapher, dynasty, style, description, cover_image, cover_thumb, featured, sort_order, published_at, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, '', 0, 9999, $7, $7)
+         VALUES ($1, $2, $3, $4, $5, $6, $6, 0, 9999, $7, $7)
          ON CONFLICT (deck_id) DO NOTHING`,
-        [deckId, author, '', style, '以观书法远程字库', coverUrl, new Date().toISOString()],
+        [deckId, author, details?.dynasty || '', style, description, coverUrl, new Date().toISOString()],
       );
     }
     await client.query(
@@ -205,15 +224,90 @@ async function doClassify(db: any, token: string) {
   console.log(`\n分类完成 ${done} 个。`);
 }
 
+/** 生成作品本位的简介（帖名 + 书家朝代 + 规模 + 原文起首） */
+function buildDescription(o: {
+  name: string;
+  author: string;
+  dynasty: string;
+  style: string;
+  glyphCount: number;
+  pages: number;
+  text: string;
+}): string {
+  let head = `《${o.name}》`;
+  const who = [o.dynasty, o.author].filter(Boolean).join('·');
+  if (who) head += `，${who}`;
+  if (o.style) head += ` ${o.style}书`;
+  head += `。全帖 ${o.glyphCount} 字${o.pages ? `、${o.pages} 页` : ''}。`;
+  const parts = [head];
+  const text = o.text.replace(/\s+/g, '');
+  if (text) parts.push(`碑帖原文起首：${text.slice(0, 80)}${text.length > 80 ? '……' : ''}`);
+  return parts.join('');
+}
+
+/** 补全已有 ygsf 牌组的元数据：封面/朝代/简介/原文（可 --zuopin 指定，缺省跑全部已导入） */
+async function doEnrich(db: any, opts: Args, token: string) {
+  const cond = opts.zuopin ? ' AND zuopin_id = $2' : '';
+  const params = opts.zuopin ? [opts.zuopin] : [];
+  const rows = await db.query(
+    `SELECT zuopin_id, name, author, zitie_id, imported_deck_id FROM ygsf_zuopin
+     WHERE imported_deck_id IS NOT NULL${cond}`,
+    params,
+  );
+  console.log(`待补全元数据 ${rows.rows.length} 帖`);
+  for (const z of rows.rows) {
+    try {
+      const det = await fetchZitieDetails(z.zitie_id, token);
+      const text = await fetchZitieText(z.zitie_id, token, 80);
+      const cnt = await db.query('SELECT COUNT(*)::int AS n FROM cards WHERE deck_id = $1', [
+        z.imported_deck_id,
+      ]);
+      const glyphCount = cnt.rows[0]?.n || 0;
+      const description = buildDescription({
+        name: det?.name || z.name,
+        author: z.author || det?.author || '',
+        dynasty: det?.dynasty || '',
+        style: z.style || '',
+        glyphCount,
+        pages: det?.pageCount || 0,
+        text,
+      });
+      await db.query('UPDATE decks SET article_text = $2 WHERE id = $1', [
+        z.imported_deck_id,
+        text.slice(0, 8000),
+      ]);
+      await db.query(
+        `UPDATE marketplace_decks SET
+           cover_image = CASE WHEN $2 <> '' THEN $2 ELSE cover_image END,
+           cover_thumb = CASE WHEN $2 <> '' THEN $2 ELSE cover_thumb END,
+           dynasty = $3, description = $4,
+           calligrapher = CASE WHEN $5 <> '' THEN $5 ELSE calligrapher END,
+           style = CASE WHEN $6 <> '' THEN $6 ELSE style END
+         WHERE deck_id = $1`,
+        [z.imported_deck_id, det?.coverUrl || '', det?.dynasty || '', description, det?.author || '', z.style || ''],
+      );
+      console.log(`✓ ${z.name}：封面+朝代(${det?.dynasty || '?'})+简介+原文 ${text.length} 字`);
+      await new Promise((r) => setTimeout(r, 300));
+    } catch (e: any) {
+      console.error(`✗ ${z.name}: ${e.message}`);
+    }
+  }
+}
+
 async function main() {
   const a = parseArgs();
-  if (!a.search && !a.searchFile && !a.list && !a.importFlag && !a.classify) {
-    console.log('用 --search <关键词> / --search-file <文件> / --classify / --list / --import。详见文件头注释。');
+  if (!a.search && !a.searchFile && !a.list && !a.importFlag && !a.classify && !a.enrich) {
+    console.log('用 --search <关键词> / --search-file <文件> / --classify / --list / --import / --enrich。详见文件头注释。');
     process.exit(0);
   }
   const token = loadYgsfToken();
   await waitForDb();
   const db = getDb();
+
+  if (a.enrich) {
+    await doEnrich(db, a, token);
+    process.exit(0);
+  }
 
   if (a.classify) {
     await doClassify(db, token);

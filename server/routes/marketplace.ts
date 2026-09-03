@@ -47,7 +47,7 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
 
     let sql = `
       SELECT md.deck_id, md.calligrapher, md.dynasty, md.style, md.description,
-             COALESCE(md.cover_thumb, md.cover_image, (
+             COALESCE(NULLIF(md.cover_thumb, ''), NULLIF(md.cover_image, ''), (
                SELECT image_url FROM cards
                  WHERE deck_id = md.deck_id AND image_url != '' ORDER BY created_at ASC LIMIT 1
              ), '') AS cover_image,
@@ -196,7 +196,7 @@ marketplaceRouter.get('/marketplace/subscriptions', async (req: Request, res: Re
     const { rows } = await db.query(
       `SELECT d.id, d.name, d.card_count, d.daily_new_card_limit, d.daily_review_limit,
               d.created_at, d.updated_at,
-              md.calligrapher, md.dynasty, md.style, md.description, COALESCE(md.cover_thumb, md.cover_image, '') AS cover_image,
+              md.calligrapher, md.dynasty, md.style, md.description, COALESCE(NULLIF(md.cover_thumb, ''), NULLIF(md.cover_image, '')) AS cover_image,
               us.subscribed_at,
               COALESCE((
                 SELECT COUNT(*) FROM cards c
