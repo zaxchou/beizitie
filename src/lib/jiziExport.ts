@@ -141,7 +141,8 @@ function loadImages(urls: string[]): Promise<Map<string, HTMLImageElement>> {
       (u) =>
         new Promise<[string, HTMLImageElement]>((resolve, reject) => {
           const img = new Image();
-          // 同源图片不需要 crossOrigin，设置了反而可能因服务器无 CORS 头导致加载失败
+          // 字库图 CDN（含跨域）已开 CORS；同源图片不受影响。不设置会导致 canvas 被污染无法导出
+          img.crossOrigin = 'anonymous';
           img.onload = () => resolve([u, img]);
           img.onerror = () => reject(new Error(`图片加载失败: ${u}`));
           img.src = u;

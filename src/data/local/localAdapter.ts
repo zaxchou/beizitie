@@ -131,6 +131,10 @@ export const localDataSource: LocalDataSource = {
 
   library: {
     async addFromZitie(z, meta) {
+      // 防重：同一字帖只允许订阅一次
+      const existing = await getAllDecks();
+      const dup = existing.find((d) => d.zitieId === z.z);
+      if (dup) throw new Error('该帖已在书库中');
       const deck: LocalDeck = {
         id: crypto.randomUUID(),
         zitieId: z.z,
@@ -186,6 +190,10 @@ export const localDataSource: LocalDataSource = {
         });
       }
       return result;
+    },
+
+    async cards(deckId) {
+      return getCardsByDeck(deckId);
     },
 
     async remove(deckId) {

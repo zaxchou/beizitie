@@ -23,14 +23,16 @@ import { buildThemeOptions } from '@/theme';
 import DashboardPage from './pages/DashboardPage';
 import MarketPage from './pages/MarketPage';
 import StudyPage from './pages/StudyPage';
+import JiziPage from './pages/JiziPage';
 import DataPage from './pages/DataPage';
 import SettingsPage from './pages/SettingsPage';
 
-type Tab = 'dashboard' | 'market' | 'data' | 'settings';
+type Tab = 'dashboard' | 'market' | 'jizi' | 'data' | 'settings';
 
 const TABS: { key: Tab; label: string; icon: JSX.Element }[] = [
   { key: 'dashboard', label: '背字帖', icon: <DashboardIcon /> },
   { key: 'market', label: '市场', icon: <StoreIcon /> },
+  { key: 'jizi', label: '集字', icon: <BrushIcon /> },
   { key: 'data', label: '数据', icon: <BarChartIcon /> },
   { key: 'settings', label: '设置', icon: <SettingsIcon /> },
 ];
@@ -91,6 +93,7 @@ export default function SingleApp() {
               {tab === 'market' && (
                 <MarketPage onSubscribed={(name) => { setToast(`《${name}》已加入书库`); bumpRefresh(); }} />
               )}
+              {tab === 'jizi' && <JiziPage />}
               {tab === 'data' && <DataPage refreshKey={refreshKey} />}
               {tab === 'settings' && <SettingsPage darkMode={darkMode} onDarkModeChange={setDarkMode} onChanged={bumpRefresh} />}
             </Box>
@@ -116,10 +119,6 @@ export default function SingleApp() {
                   <Typography sx={{ fontSize: 11 }}>{t.label}</Typography>
                 </Box>
               ))}
-              <Box sx={{ flex: 1, py: 1, textAlign: 'center', color: 'text.disabled' }}>
-                <BrushIcon />
-                <Typography sx={{ fontSize: 11 }}>集字</Typography>
-              </Box>
             </Box>
 
             <Snackbar open={!!toast} autoHideDuration={2500} onClose={() => setToast(null)}>

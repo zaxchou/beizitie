@@ -53,6 +53,7 @@ export interface LocalDataSource {
       newRemaining: number; dueRemaining: number;
     })[]>;
     remove(deckId: string): Promise<void>;
+    cards(deckId: string): Promise<LocalCard[]>;
     updateSettings(deckId: string, patch: DeckSettingsPatch): Promise<void>;
   };
   study: {
