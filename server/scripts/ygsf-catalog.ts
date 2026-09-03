@@ -12,6 +12,7 @@
  *   npx tsx server/scripts/ygsf-catalog.ts --import --zitie <id> --name "帖名" [--author X] [--publish]
  *   npx tsx server/scripts/ygsf-catalog.ts --import-batch --style 楷 [--batch 40] [--publish]
  *   npx tsx server/scripts/ygsf-catalog.ts --enrich [--zuopin <id>]
+ *   npx tsx server/scripts/ygsf-catalog.ts --enrich-missing   # 巡检：只补市场行缺封面/简介/书家/朝代的帖
  *
  * 建库逻辑：
  *   - 每个字帖版本（zitie）建一个 deck，卡片 image_url 直接用对方 CDN 直链（零图片存储）
@@ -45,6 +46,7 @@ interface Args {
   list?: boolean;
   classify: boolean;
   enrich: boolean;
+  enrichMissing: boolean;
   style?: string;
   importFlag: boolean;
   importBatch: boolean;
@@ -70,6 +72,7 @@ function parseArgs(): Args {
     list: has('--list'),
     classify: has('--classify'),
     enrich: has('--enrich'),
+    enrichMissing: has('--enrich-missing'),
     style: get('--style'),
     importFlag: has('--import'),
     importBatch: has('--import-batch'),
@@ -348,10 +351,25 @@ async function doClassify(db: any, token: string) {
   console.log(`\n分类完成 ${done} 个。`);
 }
 
-/** 补全已有 ygsf 牌组的元数据（可 --zuopin 指定，缺省跑全部已导入） */
+/** 补全已有 ygsf 牌组的元数据（可 --zuopin 指定单个；--enrich-missing 只补有缺口的；缺省跑全部已导入） */
 async function doEnrich(db: any, opts: Args, token: string) {
-  const cond = opts.zuopin ? ' AND zuopin_id = $2' : '';
-  const params = opts.zuopin ? [opts.zuopin] : [];
+  let cond = '';
+  const params: string[] = [];
+  if (opts.zuopin) {
+    cond = ' AND zuopin_id = $1';
+    params.push(opts.zuopin);
+  } else if (opts.enrichMissing) {
+    // 巡检模式：只跑市场行缺封面/简介/书家/朝代的帖
+    cond = ` AND EXISTS (
+      SELECT 1 FROM marketplace_decks md WHERE md.deck_id = ygsf_zuopin.imported_deck_id
+        AND (
+          (COALESCE(md.cover_thumb,'') = '' AND COALESCE(md.cover_image,'') = '')
+          OR COALESCE(md.description,'') = ''
+          OR COALESCE(md.calligrapher,'') = ''
+          OR COALESCE(md.dynasty,'') = ''
+        )
+    )`;
+  }
   const rows = await db.query(
     `SELECT zuopin_id, name, author, zitie_id, imported_deck_id FROM ygsf_zuopin
      WHERE imported_deck_id IS NOT NULL${cond}`,
@@ -406,10 +424,11 @@ async function main() {
     !a.importFlag &&
     !a.importBatch &&
     !a.classify &&
-    !a.enrich
+    !a.enrich &&
+    !a.enrichMissing
   ) {
     console.log(
-      '用 --search <关键词> / --search-file <文件> / --classify / --list / --import / --import-batch / --enrich。详见文件头注释。',
+      '用 --search <关键词> / --search-file <文件> / --classify / --list / --import / --import-batch / --enrich / --enrich-missing。详见文件头注释。',
     );
     process.exit(0);
   }
@@ -442,7 +461,7 @@ async function main() {
     await doClassify(db, token);
     process.exit(0);
   }
-  if (a.enrich) {
+  if (a.enrich || a.enrichMissing) {
     await doEnrich(db, a, token);
     process.exit(0);
   }

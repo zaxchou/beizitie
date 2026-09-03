@@ -209,3 +209,28 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - deploy.sh anki 干净重跑成功（用户数据哨兵 6 项全过）；生产 jizi_index 已全量建成（1,725,637 行）
 - `beizitie.html` 已更新推送 Pages（含图片缓存 + 集字字符缓存）
 - 仍为手动/遗留：镜像同步（--mirror）保持手动；服务器版学习页未接图片缓存（同域静态文件收益小，暂缓）
+
+---
+
+## 11. 2026-09-04 第二轮（P123 收尾：巡检 / 目录发版 / Release）
+
+### 11.1 数据质量巡检（2707 帖全量体检）
+- 体检结果：书体覆盖 100%；封面缺 2 → **清零**（新工具补齐）；简介缺 1 → 清零（多宝塔碑手工补）；书家缺 25→20、朝代缺 232（**YGSF 源数据本身没有**，冷门墓志，属数据上限非缺陷）
+- 简介质量抽查：全部为"作品名+朝代书家+书体+字数页数+原文起首"格式（此前 2 条疑似"以观/远程"命中实为碑文原文，误报）
+- 封面死链清扫：2697 封面全量 HEAD 检查，清掉 3 条死链（诗赠董其昌/鲜于氏离堆记/杂书卷）——鲜于氏离堆记即用户此前报过缩略图异常的帖
+- **新 cron**：每月 15 日 4:00 自动跑 `ygsf-cover-sweep.ts`（日志 cover-sweep-cron.log）
+- **新工具**：`server/scripts/ygsf-enrich-gaps.ts`（轻量巡检补缺，一帖一次 API，对比 --enrich 快一个数量级）；`ygsf-catalog.ts --enrich-missing` 仍在但慢（每帖拉 6 页原文），巡检优先用 enrich-gaps
+
+### 11.2 目录发版一键化
+- **新脚本**：仓库根 `release-catalog.sh` — 生产生成 catalog-out → tar 拉回 catalog/ → 内置体检（total>0、zitie 文件数≥95%、index<3MB）→ 重编 beizitie.html（index.json 是 ?raw 内联）→ 提交推送；`--skip-build` 跳过重编
+- 规矩定为：**每批导入后跑一次，每月至少一次**
+- 首跑成功：2705 帖（跳过 1，纳入条件过滤），index 0.72MB，Pages 已生效
+
+### 11.3 P3 发布
+- GitHub Release **v1.0.0** 已建（https://github.com/zaxchou/beizitie/releases/tag/v1.0.0），附 beizitie.html 产物（1.49MB，下载已验证）
+- gh CLI 本机没有 → 用 `git credential fill` 取 PAT + REST API 创建/传附件；流程已写进 SOP §6
+- **新文档**：`docs/双版本维护SOP.md`（功能开发 checklist / 目录发版 / 服务器维护 / YGSF 运维 / Release 流程 / 事故速查 / 退役检查点）
+
+### 11.4 现存数据池状态（供后续决策）
+- 候选池 pending 6056：未知 3561（维持排除）+ exists 1315 + junk 614 + 重名 474 + 巨帖 52 + partial 2 + **印章类 38（batch_status 空，唯一没跑过的非未知书体，待用户定夺）**
+- 楷行草隶篆该导的已全部导完，无遗漏
