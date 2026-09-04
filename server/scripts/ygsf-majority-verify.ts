@@ -40,10 +40,12 @@ async function main() {
 
   await waitForDb();
   const db = getDb();
+  const random = process.argv.includes('--random');
+  const order = random ? 'ORDER BY random()' : 'ORDER BY d.created_at ASC';
   const { rows: decks } = await db.query(
     `SELECT d.id AS deck_id, d.name, d.source_key FROM decks d
      WHERE d.source_key LIKE 'ygsf:%' ${zitieArg ? 'AND d.source_key = $1' : ''}
-     ORDER BY d.created_at ASC`,
+     ${order}`,
     zitieArg ? [`ygsf:${zitieArg}`] : []
   );
   const list = limit ? decks.slice(0, limit) : decks;

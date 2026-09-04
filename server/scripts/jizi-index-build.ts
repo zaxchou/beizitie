@@ -18,7 +18,8 @@ async function main() {
   const db = getDb();
   await waitForDb();
   console.log(`[jizi-index] ${mode} 开始...`);
-  const result = mode === 'full' ? await buildFull(db) : await buildIncremental(db);
+  const verifiedOnly = process.argv.includes('--verified-only');
+  const result = mode === 'full' ? await buildFull(db, verifiedOnly) : await buildIncremental(db);
   console.log(`[jizi-index] ${mode} 完成: indexed=${result.indexed} 耗时=${(result.ms / 1000).toFixed(1)}s`);
   process.exit(0);
 }
