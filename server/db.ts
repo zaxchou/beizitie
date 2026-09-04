@@ -258,6 +258,12 @@ async function migrateSchema(db: pkg.Pool): Promise<void> {
       built_at TEXT NOT NULL,
       card_count BIGINT NOT NULL DEFAULT 0
     )`);
+    // 已通过原文对齐校验的 ygsf 帖（ heal v3 写入）；集字索引只收录这些帖 + 非 ygsf 自建帖
+    await db.query(`CREATE TABLE IF NOT EXISTS jizi_verified (
+      deck_id TEXT PRIMARY KEY,
+      zitie_id TEXT DEFAULT '',
+      verified_at TEXT NOT NULL
+    )`);
   } catch { /* ignore */ }
 }
 

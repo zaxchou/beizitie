@@ -98,10 +98,13 @@ export async function indexCardRows(
   return upsertRows(db, out);
 }
 
-/** 全量重建（幂等，内容缓存表，不影响用户数据） */
-export async function buildFull(db: pkg.Pool): Promise<{ indexed: number; ms: number }> {
+/** 全量重建（幂等，内容缓存表，不影响用户数据）。verifiedOnly: 只收录非 ygsf 帖 + 原文对齐校验过的帖 */
+export async function buildFull(db: pkg.Pool, verifiedOnly = false): Promise<{ indexed: number; ms: number }> {
   const t0 = Date.now();
   let indexed = 0;
+  const vFilter = verifiedOnly
+    ? ` AND (d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))`
+    : '';
   await db.query('BEGIN');
   try {
     await db.query('DELETE FROM jizi_index');
@@ -113,7 +116,7 @@ export async function buildFull(db: pkg.Pool): Promise<{ indexed: number; ms: nu
          FROM cards c
          JOIN decks d ON d.id = c.deck_id
          LEFT JOIN marketplace_decks md ON md.deck_id = c.deck_id
-         WHERE c.id > $1 AND c.image_url != ''
+         WHERE c.id > $1 AND c.image_url != '' AND c.archived_at IS NULL${vFilter}
          ORDER BY c.id ASC LIMIT 20000`,
         [cursor]
       );
@@ -145,7 +148,7 @@ export async function buildIncremental(db: pkg.Pool): Promise<{ indexed: number;
        FROM cards c
        JOIN decks d ON d.id = c.deck_id
        LEFT JOIN marketplace_decks md ON md.deck_id = c.deck_id
-       WHERE c.id > $1 AND c.image_url != ''
+       WHERE c.id > $1 AND c.image_url != '' AND c.archived_at IS NULL
          AND (c.created_at > $2 OR c.updated_at > $2)
        ORDER BY c.id ASC LIMIT 20000`,
       [cursor, since]
@@ -176,7 +179,7 @@ export async function indexDeck(db: pkg.Pool, deckId: string): Promise<number> {
      FROM cards c
      JOIN decks d ON d.id = c.deck_id
      LEFT JOIN marketplace_decks md ON md.deck_id = c.deck_id
-     WHERE c.deck_id = $1 AND c.image_url != ''`,
+     WHERE c.deck_id = $1 AND c.image_url != '' AND c.archived_at IS NULL`,
     [deckId]
   );
   const n = await indexCardRows(db, rows as never);

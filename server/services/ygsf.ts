@@ -162,60 +162,81 @@ function toGlyph(g: any): YgsfGlyph {
 }
 
 /**
- * 拉取整本字帖的单字清单。优先 zitie/glyphs/query（120/页，loaded 偏移，含全量 total），
- * 异常时回退 zitie/page/glyphs（page 页码，匿名约 4 页后需登录）。
+ * ⚠️ 数据源可靠性结论（2026-09-04 事故分析）：
+ * - `zitie/page/glyphs`（快照接口）：标签稳定可信，page=1 通常一次返回全量。**唯一可信源。**
+ * - `zitie/glyphs/query`（loaded 偏移接口）：第 1 页可能正确，第 2 页起 `_hanzi` 与 `_id`
+ *   的配对会随机漂移（分片漂移，间歇性发作，连第 1 页都可能在坏窗口全乱）。
+ *   2026-09-04 凌晨批量导入即被该接口污染 137 万+ 卡片。
+ * 任何需要"字 ↔ 图"正确配对的场景，一律走 snapshot 快照。
+ */
+
+/** 快照接口：标签稳定可信的唯一数据源。翻页直至空/不满页，通常 page=1 即全量。 */
+export async function fetchZitieGlyphsSnapshot(
+  zid: string,
+  token: string,
+): Promise<{ glyphs: YgsfGlyph[]; limited: boolean }> {
+  const out: YgsfGlyph[] = [];
+  const seen = new Set<string>();
+  let limited = false;
+  for (let page = 1; page <= MAX_BATCHES; page++) {
+    let list: any[];
+    try {
+      const data = await ygsfGet('/zitie/page/glyphs', { zid, page }, token);
+      list = Array.isArray(data) ? data : data?.list || [];
+    } catch (e: any) {
+      if (e.isLoginWall) {
+        limited = true;
+        break;
+      }
+      throw e;
+    }
+    if (!Array.isArray(list) || list.length === 0) break;
+    let fresh = 0;
+    for (const g of list) {
+      if (!g?._id || seen.has(g._id)) continue;
+      seen.add(g._id);
+      out.push(toGlyph(g));
+      fresh++;
+    }
+    if (fresh === 0) break;
+  }
+  return { glyphs: out, limited };
+}
+
+/**
+ * 拉取整本字帖的单字清单。
+ * 主通道：page/glyphs 快照（标签稳定可信）；快照为空时才回退 glyphs/query 并标记 limited（其分页标签不可信）。
  * style 取出现最多的 _font。
  */
 export async function fetchZitieGlyphs(
   zid: string,
   token: string,
 ): Promise<{ glyphs: YgsfGlyph[]; style: string; total: number; limited: boolean }> {
-  let glyphs: YgsfGlyph[] = [];
-  let total = 0;
-  let limited = false;
-  try {
-    const seen = new Set<string>();
-    for (let loaded = 0; loaded < MAX_BATCHES * PAGE_SIZE; loaded += PAGE_SIZE) {
-      const data = await ygsfGet('/zitie/glyphs/query', { zid, loaded }, token);
-      const list: any[] = Array.isArray(data) ? data : data?.list || [];
-      total = data?.total ?? glyphs.length;
-      for (const g of list) {
-        if (!g?._id || seen.has(g._id)) continue;
-        seen.add(g._id);
-        glyphs.push(toGlyph(g));
-      }
-      if (glyphs.length >= total || list.length === 0) break;
-      await new Promise((r) => setTimeout(r, 120));
-    }
-  } catch (e: any) {
-    if (!e.isLoginWall) throw e;
-    limited = true;
-  }
+  // 主通道：稳定快照
+  let { glyphs, limited } = await fetchZitieGlyphsSnapshot(zid, token);
+  let total = glyphs.length;
 
-  // 回退：page/glyphs 分页
+  // 兜底：快照为空（极少数新帖/异常帖）才用 query 接口；其分页标签不可信，故标 limited 供调用方降级
   if (glyphs.length === 0) {
     const seen = new Set<string>();
-    for (let page = 1; page <= MAX_BATCHES; page++) {
-      let list: any[];
-      try {
-        const data = await ygsfGet('/zitie/page/glyphs', { zid, page }, token);
-        list = Array.isArray(data) ? data : data?.list || [];
-      } catch (e: any) {
-        if (e.isLoginWall) {
-          limited = true;
-          break;
+    try {
+      for (let loaded = 0; loaded < MAX_BATCHES * PAGE_SIZE; loaded += PAGE_SIZE) {
+        const data = await ygsfGet('/zitie/glyphs/query', { zid, loaded }, token);
+        const list: any[] = Array.isArray(data) ? data : data?.list || [];
+        total = data?.total ?? glyphs.length;
+        for (const g of list) {
+          if (!g?._id || seen.has(g._id)) continue;
+          seen.add(g._id);
+          glyphs.push(toGlyph(g));
         }
-        throw e;
+        if (glyphs.length >= total || list.length === 0) break;
+        await new Promise((r) => setTimeout(r, 120));
       }
-      let fresh = 0;
-      for (const g of list) {
-        if (!g?._id || seen.has(g._id)) continue;
-        seen.add(g._id);
-        glyphs.push(toGlyph(g));
-        fresh++;
-      }
-      if (list.length === 0 || fresh === 0) break;
+    } catch (e: any) {
+      if (!e.isLoginWall) throw e;
+      limited = true;
     }
+    if (glyphs.length > 0) limited = true; // query 来源标签不可信
   }
 
   glyphs = glyphs.filter((g) => g.hanzi && g.colorImage);

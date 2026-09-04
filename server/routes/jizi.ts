@@ -115,10 +115,12 @@ jiziRouter.get('/match', async (req: Request, res: Response) => {
       return map;
     };
 
-    let map: Map<string, CharHit[]>;
+    let map: Map<string, CharHit[]> = new Map();
     let scanned = 0;
 
-    // 索引已构建 → hanzi 索引命中（毫秒级）；未构建 → 回退全表扫描（兼容首次部署）
+    // 索引已构建 → hanzi 索引命中（毫秒级）。
+    // 未构建时默认返回空（宁可缺字不可错字）：回退全表扫描已被证实会吐出
+    // 以观源站随机漂移的错误标签，仅显式设 JIZI_FALLBACK_SCAN=true 才启用。
     if (await isIndexReady(db)) {
       const capSql = `SELECT * FROM (
          SELECT ji.hanzi, ji.card_id, ji.image_url, ji.deck_id, ji.deck_name,
@@ -151,7 +153,7 @@ jiziRouter.get('/match', async (req: Request, res: Response) => {
         map = groupRows(rows as never);
         scanned = rows.length;
       }
-    } else {
+    } else if (process.env.JIZI_FALLBACK_SCAN === 'true') {
       let rows: Array<{
         id: string;
         deck_id: string;
@@ -225,6 +227,8 @@ jiziRouter.get('/match', async (req: Request, res: Response) => {
       char: ch,
       hits: (map.get(toTraditional(ch)) || []).sort((a, b) => a.sort_key - b.sort_key),
     }));
+    // 回退被禁用时索引里也没有数据 → 结果为空（前端显示缺字），符合"宁缺勿错"
+    res.setHeader('X-Jizi-Mode', process.env.JIZI_FALLBACK_SCAN === 'true' ? 'scan' : 'verified-only');
 
     res.json({
       results,
