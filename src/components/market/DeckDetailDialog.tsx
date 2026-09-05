@@ -153,7 +153,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                 sx={{
                   width: isMobile ? '100%' : 240,
                   flexShrink: 0,
-                  aspectRatio: '3/4',
+                  aspectRatio: '1/1',
                   maxWidth: isMobile ? 200 : undefined,
                   mx: isMobile ? 'auto' : undefined,
                   borderRadius: 1.5,
