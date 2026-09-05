@@ -19,3 +19,4 @@ _gsdata_/
 .mimosa/
 server/backups-local/
 tmp-test-local-backup.js
+dist-single/
