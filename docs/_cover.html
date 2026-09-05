@@ -3,113 +3,136 @@
 <head>
 <meta charset="utf-8">
 <style>
+  /* =========================================================
+     背字帖 GitHub Cover（github-cover skill 模板填装，1280×640 @2x）
+     ❶ 光晕 ❷ 品牌行 ❸ 标题区 ❹ 3D 窗口 ❺ 浮动小卡 ❻ 点缀
+     ========================================================= */
   *{margin:0;padding:0;box-sizing:border-box}
   html,body{width:1280px;height:640px;overflow:hidden}
-  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;position:relative;color:#29231c;background:#efe6d2}
-  /* 背景独立成层：body 背景传播到 canvas 不受 zoom/缩放影响，会出接缝 */
-  .bg{position:absolute;inset:0;background:
-      radial-gradient(ellipse at 85% 15%, rgba(176,58,46,.05), transparent 55%),
-      radial-gradient(ellipse at 10% 90%, rgba(41,35,28,.08), transparent 50%),
-      linear-gradient(160deg,#faf6ec 0%,#f4eee0 55%,#efe6d2 100%)}
-  /* 文武线（外粗内细双框），与族谱封面同一家族版式 */
-  .frame-outer{position:absolute;inset:18px;border:2.5px solid rgba(93,80,60,.55);border-radius:2px}
-  .frame-inner{position:absolute;inset:26px;border:1px solid rgba(93,80,60,.35);border-radius:2px}
-  /* 右侧竖排大标题 */
-  .title-v{
-    position:absolute;top:92px;right:148px;
-    writing-mode:vertical-rl;text-orientation:upright;
-    font-family:"Songti SC","SimSun",serif;font-weight:700;
-    font-size:100px;letter-spacing:22px;color:#29231c;
+  :root{
+    /* ❶ 光晕：宣纸暖调邻近 pastel（蜜桃/朱粉/雾蓝/薄荷/淡金），与朱砂印章呼应 */
+    --wash-a:rgba(244,186,150,.40);
+    --wash-b:rgba(228,170,160,.28);
+    --wash-c:rgba(168,190,240,.26);
+    --wash-d:rgba(180,224,190,.28);
+    --wash-e:rgba(244,214,150,.30);
+    --ink:#1e2530;
+    --accent:#a83428;                 /* 朱砂（品牌印章/原拓金框同族） */
   }
-  /* 印章：日课一字 */
-  .seal{
-    position:absolute;right:118px;top:508px;width:104px;height:104px;
-    background:linear-gradient(150deg,#b03a2e,#96301f);
-    border-radius:8px;display:grid;grid-template-columns:1fr 1fr;place-items:center;
-    box-shadow:0 3px 10px rgba(150,48,31,.35);padding:10px;
+  body{
+    font-family:"PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink);position:relative;
+    background:
+      radial-gradient(ellipse at 10% -4%, var(--wash-a), transparent 46%),
+      radial-gradient(ellipse at 52% -8%, var(--wash-b), transparent 44%),
+      radial-gradient(ellipse at 100% 4%,  var(--wash-c), transparent 42%),
+      radial-gradient(ellipse at 100% 100%,var(--wash-d), transparent 44%),
+      radial-gradient(ellipse at 0% 104%,  var(--wash-e), transparent 40%),
+      linear-gradient(180deg,#fbfbfa 0%,#f6f6f2 100%);
   }
-  .seal span{font-family:"KaiTi","STKaiti","SimSun",serif;font-weight:700;
-    font-size:30px;color:#fdf6ea;line-height:1}
-  /* 左侧文字区 */
-  .kicker{position:absolute;left:96px;top:104px;font-size:20px;letter-spacing:10px;color:#8a6a2a;font-weight:600}
-  .kicker b{color:#b03a2e}
-  h1{position:absolute;left:90px;top:146px;font-family:"Songti SC","SimSun",serif;
-     font-size:78px;font-weight:700;color:#1f1b14;letter-spacing:6px}
-  .en{position:absolute;left:96px;top:256px;font-size:15px;letter-spacing:4px;color:#8a7d68;font-weight:500}
-  .desc{position:absolute;left:96px;top:300px;font-size:19px;color:#4a4438;letter-spacing:2px}
-  .desc b{color:#b03a2e;font-weight:700}
-  .chips{position:absolute;left:96px;top:352px;display:flex;gap:12px}
-  .chip{font-size:15px;padding:5px 14px;border-radius:14px;background:rgba(93,80,60,.08);
-        border:1px solid rgba(93,80,60,.22);color:#4a4438;letter-spacing:1px}
-  /* 迷你示意：九成宫铭四字卡 × SM-2 记忆阶梯 ＋ 字在帖中定位 */
-  .viz{position:absolute;left:96px;top:414px;display:flex;gap:30px;align-items:flex-start}
-  .cards{display:flex;gap:18px;align-items:flex-start}
-  .col{display:flex;flex-direction:column;align-items:center}
-  .gen{font-size:12px;color:#9a8f79;letter-spacing:2px;margin-bottom:7px}
-  .card{width:88px;height:88px;background:rgba(255,253,248,.92);
-        border:1px solid rgba(93,80,60,.28);border-radius:8px;padding:5px;
-        box-shadow:0 2px 6px rgba(41,35,28,.10)}
-  .card img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block}
-  .col.hot .card{border:2px solid #c99b3f;box-shadow:0 0 0 3px rgba(224,178,95,.28),0 3px 8px rgba(41,35,28,.14)}
-  .col.hot .gen{color:#b03a2e;font-weight:700}
-  .drop{width:1.5px;height:11px;background:#b9ab90;margin-top:7px}
-  .arr{align-self:flex-start;font-size:15px;color:#b9ab90;margin-top:54px}
-  /* 字在帖中：整页原拓 + 金框定位 */
-  .zhangfa{margin-left:14px;display:flex;flex-direction:column;align-items:center}
-  .page{position:relative;width:112px;height:112px;border:1px solid rgba(93,80,60,.32);
-        border-radius:8px;overflow:hidden;background:#1c1c1c;box-shadow:0 2px 6px rgba(41,35,28,.12)}
-  .page img{width:100%;height:100%;object-fit:cover;display:block}
-  .page .box{position:absolute;left:38.7%;top:38.7%;width:22.5%;height:18.6%;
-             border:2px solid #e0b25f;box-shadow:0 0 0 9999px rgba(0,0,0,.34)}
-  .cap{margin-top:7px;font-size:12px;letter-spacing:3px;color:#8a7d68}
-  .cap b{color:#b03a2e}
-  .src{margin-top:2px;font-size:10px;letter-spacing:.5px;color:rgba(138,125,104,.75)}
-  /* 底部信息 */
-  .foot{position:absolute;left:96px;bottom:38px;display:flex;gap:10px}
-  .tag{font-size:14px;padding:4px 12px;border-radius:12px;background:#29231c;color:#f4eee0;letter-spacing:1px}
-  .tag.o{background:transparent;border:1px solid rgba(93,80,60,.4);color:#4a4438}
-  .github{position:absolute;right:300px;bottom:38px;font-size:15px;color:#6b6152;letter-spacing:1px}
-  .github b{color:#29231c}
+  .grid{position:absolute;inset:0;
+    background-image:linear-gradient(rgba(40,60,110,.05) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(40,60,110,.05) 1px,transparent 1px);
+    background-size:40px 40px}
+
+  /* ❷ 品牌行：朱砂小印 + 产品名 */
+  .brand{position:absolute;left:72px;top:54px;display:flex;align-items:center;gap:13px}
+  .brand .seal{width:44px;height:44px;border-radius:8px;transform:rotate(-4deg);
+    background:linear-gradient(150deg,#c14a3c,#9c2f24);display:grid;grid-template-columns:1fr 1fr;
+    place-items:center;padding:4px;box-shadow:0 3px 9px rgba(150,48,31,.32)}
+  .brand .seal span{font-family:"KaiTi","STKaiti",serif;font-weight:700;font-size:13px;color:#fdf6ea;line-height:1}
+  .brand .name{font-size:21px;font-weight:800;letter-spacing:1px}
+  .brand .name i{font-style:normal;color:#9c2f24}
+
+  /* ❸ 标题区 */
+  .t1{position:absolute;left:70px;top:126px;font-size:104px;font-weight:800;color:var(--ink);
+      letter-spacing:8px;line-height:1;white-space:nowrap}
+  .t2{position:absolute;left:74px;top:250px;font-size:72px;line-height:1.15;white-space:nowrap}
+  .t2 .serif{font-family:"Songti SC","SimSun",serif;font-weight:700;letter-spacing:6px;
+      background:linear-gradient(transparent 58%, rgba(238,214,140,.85) 58%, rgba(238,214,140,.85) 92%, transparent 92%);
+      padding:0 6px}
+  .t2 .accent{font-family:"Songti SC","SimSun",serif;font-style:italic;color:var(--accent)}
+  .sub{position:absolute;left:76px;top:360px;font-size:17px;letter-spacing:2px;color:#5b6472}
+  .chips{position:absolute;left:74px;top:406px;display:flex;gap:13px}
+  .chip{font-size:15px;padding:7px 17px;border-radius:15px;letter-spacing:1px;
+        border:1px solid transparent;font-weight:500;background:rgba(255,255,255,.72)}
+  .chip.p{border-color:rgba(180,110,100,.35);color:#9c4034}
+  .chip.m{border-color:rgba(90,170,130,.35);color:#2f6e4c}
+  .chip.g{border-color:rgba(200,150,60,.38);color:#7a5c18}
+
+  .foot{position:absolute;left:74px;bottom:50px;display:flex;gap:9px;align-items:center}
+  .tag{font-size:13px;padding:4px 12px;border-radius:11px;background:var(--ink);color:#f2f4f8;letter-spacing:1px}
+  .tag.o{background:rgba(30,37,48,.06);border:1px solid rgba(30,37,48,.15);color:#4a5568}
+  .github{position:absolute;left:75px;bottom:16px;font-size:14px;color:#8a92a2;letter-spacing:.5px}
+  .github b{color:var(--ink)}
+
+  /* ❹ 3D 透视窗口：在线版市场真实截图（右缘/下缘被画布裁切） */
+  .scene{position:absolute;right:-58px;top:104px;width:640px;height:480px;
+         perspective:1500px;perspective-origin:30% 40%}
+  .win{width:640px;height:430px;border-radius:14px;overflow:hidden;position:relative;
+       background:#fff;border:1px solid rgba(255,255,255,.9);
+       transform:rotateX(10deg) rotateY(-13deg) rotate(1.5deg);
+       box-shadow:-26px 34px 64px rgba(35,40,80,.16), 0 8px 18px rgba(35,40,80,.07)}
+  .win .bar{height:30px;background:#f0f2f7;border-bottom:1px solid rgba(30,60,110,.07);
+       display:flex;align-items:center;gap:7px;padding:0 14px}
+  .win .bar i{width:10px;height:10px;border-radius:50%}
+  .win .bar i:nth-child(1){background:#f0908d}.win .bar i:nth-child(2){background:#f2ce7b}.win .bar i:nth-child(3){background:#93d3a0}
+  .win .bar s{text-decoration:none;margin-left:10px;font-size:11px;color:#8a92a2;letter-spacing:1px}
+  .win img{width:100%;height:calc(100% - 30px);object-fit:cover;object-position:top left;display:block}
+
+  /* ❺ 浮动小卡：SM-2 复习阶梯 */
+  .mini{position:absolute;right:428px;top:428px;width:250px;border-radius:12px;
+    background:#232a38;color:#e8ecf4;padding:14px 16px;
+    transform:rotate(-3deg);
+    box-shadow:0 16px 36px rgba(35,40,80,.24), 0 4px 12px rgba(35,40,80,.10);
+    font-size:12.5px;letter-spacing:.5px}
+  .mini .mt{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+  .mini .mt b{font-size:13px;color:#fff}
+  .mini .mt span{font-size:10px;color:#8f9ab0;border:1px solid rgba(255,255,255,.22);border-radius:8px;padding:1px 7px}
+  .mini .row{display:flex;gap:6px;flex-wrap:wrap}
+  .mini .z{background:rgba(255,255,255,.10);border-radius:7px;padding:3px 8px}
+  .mini .z.on{background:rgba(224,178,95,.32);color:#f0d9a8}
+
+  /* ❻ 点缀 ✦ */
+  .spark{position:absolute;left:600px;top:92px;color:#c9917f;font-size:26px;transform:rotate(-8deg)}
+  .spark.s2{left:52px;top:470px;font-size:17px;color:#d9b36a}
 </style>
 </head>
 <body>
-  <div class="bg"></div>
-  <div class="frame-outer"></div>
-  <div class="frame-inner"></div>
+  <div class="grid"></div>
 
-  <div class="kicker"><b>开源</b> · 单文件 · 隐私优先 · 无账号</div>
-  <h1>背字帖</h1>
-  <div class="en">BEIZITIE · STELE CHARACTER MEMORY · SM-2 SPACED REPETITION · MIT</div>
-  <div class="desc">碑帖拆成单字卡 · <b>字在帖中</b>（章法回看） · 集字成篇 · 断网可复习</div>
-  <div class="chips">
-    <div class="chip">市场订阅</div><div class="chip">SM-2 复习</div>
-    <div class="chip">原帖定位</div><div class="chip">集字导出</div>
+  <div class="brand">
+    <div class="seal"><span>日</span><span>课</span><span>一</span><span>字</span></div>
+    <div class="name">背字帖 <i>·</i> Beizitie</div>
   </div>
 
-  <!-- 迷你示意：九成宫醴泉铭 帖首四字（上海图书馆藏本真拓）× SM-2 记忆阶梯 -->
-  <div class="viz">
-    <div class="cards">
-      <div class="col hot"><div class="gen">新卡</div><div class="card"><img src="_cover-assets/jiu.jpg" alt="九"></div><div class="drop"></div></div>
-      <div class="arr">→</div>
-      <div class="col"><div class="gen">10 分</div><div class="card"><img src="_cover-assets/cheng.jpg" alt="成"></div><div class="drop"></div></div>
-      <div class="arr">→</div>
-      <div class="col"><div class="gen">1 天</div><div class="card"><img src="_cover-assets/gong.jpg" alt="宫"></div><div class="drop"></div></div>
-      <div class="arr">→</div>
-      <div class="col"><div class="gen">7 天</div><div class="card"><img src="_cover-assets/ming.jpg" alt="铭"></div><div class="drop"></div></div>
+  <div class="t1">背字帖</div>
+  <div class="t2"><span class="serif">字在帖中</span><span class="accent">看章法</span></div>
+  <div class="sub">SM-2 间隔重复 · 1431 部经核验碑帖 · 38 万张单字卡 · 隐私优先</div>
+  <div class="chips">
+    <div class="chip p">市场订阅</div>
+    <div class="chip m">集字成篇</div>
+    <div class="chip g">单文件离线</div>
+  </div>
+  <div class="spark">✦</div>
+  <div class="spark s2">✦</div>
+
+  <div class="scene">
+    <div class="win">
+      <div class="bar"><i></i><i></i><i></i><s>背字帖 · 碑帖市场</s></div>
+      <img src="_cover-shot.jpg" alt="">
     </div>
-    <div class="zhangfa">
-      <div class="page"><img src="_cover-assets/zhangfa.jpg" alt="原帖"><div class="box"></div></div>
-      <div class="cap"><b>字在帖中</b> · 原帖定位</div>
-      <div class="src">上图藏《九成宫醴泉铭》 CC BY-NC-ND 3.0</div>
+  </div>
+  <div class="mini">
+    <div class="mt"><b>SM-2 复习计划</b><span>到期</span></div>
+    <div class="row">
+      <span class="z">1 分</span><span class="z">10 分</span><span class="z on">4 天</span><span class="z">毕业</span>
     </div>
   </div>
 
   <div class="foot">
-    <div class="tag">184 位书家</div><div class="tag o">1386 部核验碑帖</div><div class="tag o">MIT License</div>
+    <div class="tag">v1.1.0</div><div class="tag o">MIT 开源</div><div class="tag o">上图 · YGSF</div>
   </div>
   <div class="github">github.com/<b>zaxchou/beizitie</b></div>
-
-  <div class="title-v">背字帖</div>
-  <div class="seal"><span>日</span><span>课</span><span>一</span><span>字</span></div>
 </body>
 </html>

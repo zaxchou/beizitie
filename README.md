@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/cover.png" alt="背字帖 Beizitie" width="100%">
+<img src="docs/cover.jpg" alt="背字帖 Beizitie" width="100%">
 
 # 背字帖 Beizitie
 
