@@ -9,6 +9,8 @@ export interface CatalogZuopin {
   s: string[];         // 书体（多值）
   c: string;           // 封面 URL（http）或 ''（回退首字图）
   g: number;           // 字数
+  src?: 'shlib' | 'ygsf'; // 数据来源（市场角标/署名用）
+  f?: number;          // 编辑精选（featured）标记：1=重点推荐
 }
 
 export interface CatalogIndex {

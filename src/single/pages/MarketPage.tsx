@@ -12,6 +12,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import { localDataSource } from '@/data/local/localAdapter';
 import type { CatalogZuopin } from '@/core/types';
+import { sourceMeta } from '@/lib/sourceMeta';
 import { fetchZitie, catalogIndex } from '@/data/local/localAdapter';
 import { DeckDetailDialog } from '@/single/components/DeckDetailDialog';
 
@@ -197,6 +198,34 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
         <Typography color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>没有匹配的碑帖</Typography>
       ) : (
         <>
+          {(() => {
+            const featured = catalogIndex.zuopins.filter((z) => z.f === 1);
+            if (featured.length === 0) return null;
+            return (
+              <Box>
+                <Typography sx={{ fontWeight: 600, fontSize: 13, mb: 0.75 }}>
+                  ✨ 编辑精选 <Typography component="span" variant="caption" color="text.secondary">最值得收藏的书法字帖</Typography>
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 5 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 3 } }}>
+                  {featured.map((z) => (
+                    <Box key={z.id} onClick={() => setDetailZuopin(z)} sx={{ flexShrink: 0, width: 104, cursor: 'pointer' }}>
+                      <Box sx={{ position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: 1.5, overflow: 'hidden', bgcolor: 'grey.100', boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)' }}>
+                        {z.c.startsWith('http') ? (
+                          <Box component="img" src={z.c} alt={z.n} loading="lazy" referrerPolicy="no-referrer"
+                            sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e: any) => { e.currentTarget.style.display = 'none'; }} />
+                        ) : null}
+                        <Box sx={{ position: 'absolute', top: 3, left: 3, px: 0.4, py: '1px', borderRadius: 0.5, bgcolor: 'rgba(156,39,176,0.85)', color: '#fff', fontSize: 8, fontWeight: 700 }}>
+                          荐
+                        </Box>
+                      </Box>
+                      <Typography noWrap sx={{ fontSize: 9, textAlign: 'center', mt: 0.25 }}>{z.n}</Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </Box>
+            );
+          })()}
           <Box
             sx={{
               display: 'grid',
@@ -240,6 +269,21 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                         {z.s[0] || '帖'}
                       </Typography>
                     </Box>
+                    {(() => {
+                      const sm = sourceMeta(z.src);
+                      return sm ? (
+                        <Box
+                          sx={{
+                            position: 'absolute', top: 4, left: 4, px: 0.5, py: '1px', borderRadius: 1,
+                            bgcolor: sm.tone === 'museum' ? 'rgba(224,178,95,0.92)' : 'rgba(80,96,120,0.66)',
+                            color: sm.tone === 'museum' ? '#3b2a10' : '#fff',
+                            fontSize: { xs: 8, sm: 9 }, fontWeight: 700, lineHeight: 1.2,
+                          }}
+                        >
+                          {sm.short}
+                        </Box>
+                      ) : null;
+                    })()}
                     <Box
                       sx={{
                         position: 'absolute', top: 4, right: 4, px: 0.5, py: '1px', borderRadius: 1,

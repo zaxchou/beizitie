@@ -22,6 +22,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { fetchZitie } from '@/data/local/localAdapter';
 import type { CatalogZuopin, CardContext } from '@/core/types';
 import OriginalPageView from '@/components/study/OriginalPageView';
+import { sourceMeta } from '@/lib/sourceMeta';
 
 interface Props {
   open: boolean;
@@ -79,6 +80,7 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
   if (!zuopin) return null;
 
   const who = [zuopin.d, zuopin.a].filter(Boolean).join('·');
+  const src = sourceMeta(zuopin.src || (zuopin.z.length === 16 ? 'shlib' : 'ygsf'));
 
   return (
     <Dialog
@@ -148,6 +150,21 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
               {zuopin.s.filter(Boolean).map((s) => (
                 <Chip key={s} label={s} size="small" variant="outlined" sx={{ fontSize: 11, height: 22 }} />
               ))}
+              {src && (
+                <Chip
+                  label={src.label}
+                  size="small"
+                  title={src.full}
+                  sx={{
+                    fontSize: 11, height: 22,
+                    ...(src.tone === 'museum' && {
+                      bgcolor: 'rgba(224,178,95,0.18)',
+                      borderColor: 'rgba(196,148,58,0.6)',
+                      color: '#8a6420',
+                    }),
+                  }}
+                />
+              )}
               <Typography variant="body2" color="text.secondary">{zuopin.g} 字</Typography>
             </Box>
             {desc && (
@@ -157,6 +174,11 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
                 sx={{ mt: 0.5, lineHeight: 1.7, whiteSpace: 'pre-wrap', maxHeight: 130, overflow: 'auto' }}
               >
                 {desc}
+              </Typography>
+            )}
+            {src && (
+              <Typography variant="caption" color="text.disabled">
+                {src.full}
               </Typography>
             )}
           </Box>

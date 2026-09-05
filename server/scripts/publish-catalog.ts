@@ -53,7 +53,7 @@ async function main() {
 
   const { rows: decks } = await db.query(
     `SELECT d.id, d.name, d.card_count, d.source_key, md.calligrapher, md.dynasty, md.style,
-            md.description, md.cover_thumb, md.cover_image
+            md.description, md.featured, md.cover_thumb, md.cover_image
      FROM decks d
      JOIN marketplace_decks md ON md.deck_id = d.id AND md.published_at IS NOT NULL
      WHERE d.card_count >= $1
@@ -158,6 +158,8 @@ async function main() {
       s: styles,
       c: d.cover_thumb || d.cover_image || '',
       g: glyphs.length,
+      src: isShlib ? 'shlib' : 'ygsf',
+      f: d.featured ? 1 : 0,
     });
   }
 

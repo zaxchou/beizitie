@@ -132,3 +132,21 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/html" \
 - [ ] 统计活跃用户（近 90 天 study_sessions）
 - [ ] 决策：保留 / 仅维护模式 / 导流单文件版后退役
 - [ ] 退役前：全量备份 + 市场数据导出为 catalog 快照 + 公告期
+
+## 双版本同步清单（2026-09-05 起，改任一版必对照）
+
+历史教训：来源角标、编辑精选、minWidth 布局等功能/修复多次只落在单边，用户逐一发现。
+**铁律：改市场/学习相关 UI 或目录字段时，按下表逐行检查另一版，一个提交里两版同时出。**
+
+| 功能 | 在线版 | 单文件版 |
+|---|---|---|
+| 市场来源角标（上图/YGSF） | src/pages/MarketPage.tsx 网格卡 | src/single/pages/MarketPage.tsx 网格卡 |
+| 编辑精选横滑条 | src/pages/MarketPage.tsx「编辑精选」 | src/single/pages/MarketPage.tsx「✨编辑精选」 |
+| 详情弹窗来源署名+chip | src/components/market/DeckDetailDialog.tsx | src/single/components/DeckDetailDialog.tsx |
+| 详情预览字点击看原拓 | 同上（context） | 同上（zitie pages/sents/g.c） |
+| 学习卡「原拓」按钮 | src/components/study/FlashCard.tsx（**两版共用，改一处即两版**） | 同左 |
+| 出卡顺序/每日上限 | server due/new-cards `mode` 参数 + deck.study_mode | LocalDeck.settings.mode + localAdapter queue |
+| 原拓坐标数据 | cards.context（JSONB） | 目录 zitie JSON `pages[]/sents[]/g[].c` |
+| 目录字段变更 | — | **三处同步**：core/types.ts + publish-catalog.ts + localAdapter.ts |
+
+发版顺序：代码提交 → `bash deploy.sh anki`（在线版+后端）→ `bash release-catalog.sh`（目录+beizitie.html+Pages）→ 两侧都要点开验证。
