@@ -53,6 +53,8 @@ async function main() {
      FROM decks d
      JOIN marketplace_decks md ON md.deck_id = d.id AND md.published_at IS NOT NULL
      WHERE d.card_count >= $1
+       -- 上架口径（宁缺勿错）：YGSF 帖必须已通过 jizi 字图校验（jizi_verified），未校验不进目录
+       AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
      ORDER BY d.name`,
     [MIN_CARDS],
   );

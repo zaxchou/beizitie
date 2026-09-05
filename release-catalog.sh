@@ -16,7 +16,8 @@ SKIP_BUILD=false
 echo "== 1/4 生产生成 catalog-out =="
 ssh "$SSH_HOST" "cd $ANKI_REMOTE && npx tsx server/scripts/publish-catalog.ts"
 
-echo "== 2/4 同步到本地 catalog/ =="
+echo "== 2/4 同步到本地 catalog/（整目录替换，清掉已下架帖的残留文件）=="
+rm -rf catalog
 mkdir -p catalog
 ssh "$SSH_HOST" "cd $ANKI_REMOTE/catalog-out && tar czf - ." | tar xzf - -C catalog/
 

@@ -58,6 +58,8 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
       FROM marketplace_decks md
       JOIN decks d ON d.id = md.deck_id
       WHERE 1=1
+      -- 上架口径（宁缺勿错）：YGSF 帖必须已通过 jizi 字图校验，未校验不在市场可见
+      AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
     `;
     const params: unknown[] = [userId];
     let paramIndex = 1;
@@ -171,10 +173,16 @@ marketplaceRouter.post('/marketplace/decks/:deckId/subscribe', async (req: Reque
     const db = getDb();
     const userId = req.user!.userId;
 
-    // 验证牌组在市场中存在
-    const { rows: existsRows } = await db.query('SELECT deck_id FROM marketplace_decks WHERE deck_id = $1', [deckId]);
+    // 验证牌组在市场中存在，且已通过上架校验（宁缺勿错：YGSF 帖必须已过 jizi 字图校验）
+    const { rows: existsRows } = await db.query(
+      `SELECT md.deck_id FROM marketplace_decks md
+       JOIN decks d ON d.id = md.deck_id
+       WHERE md.deck_id = $1 AND md.published_at IS NOT NULL
+       AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))`,
+      [deckId]
+    );
     if (existsRows.length === 0) {
-      res.status(404).json({ error: 'Marketplace deck not found' });
+      res.status(404).json({ error: '该帖未上架或未通过校验' });
       return;
     }
 
