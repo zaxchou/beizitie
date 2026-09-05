@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTheme } from '@mui/material';
 import type { Card } from '@/types';
 import { getImageUrl } from '@/lib/api';
+import OriginalPageView from './OriginalPageView';
 
 export interface FlashCardProps {
   card: Card;
@@ -26,6 +27,7 @@ function sanitizeHtml(text: string): string {
 const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const [viewingOriginal, setViewingOriginal] = useState(false);
 
   const faceStyle: React.CSSProperties = {
     backgroundColor: isDark ? '#2d2d2d' : '#fff',
@@ -79,9 +81,25 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
             ) : (
               <p className="text-ink-light text-sm">暂无内容</p>
             )}
+            {/* 字在帖中（馆方来源帖才有 context）：默认隐藏，点角标看整页原拓 */}
+            {card.context && (
+              <button
+                type="button"
+                aria-label="查看该字在整页原拓中的位置"
+                title="字在帖中 · 查看整页原拓"
+                onClick={(e) => { e.stopPropagation(); setViewingOriginal(true); }}
+                className="absolute bottom-2 right-2 z-10 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-tight"
+                style={{ backgroundColor: 'rgba(224,178,95,0.92)', color: '#3b2a10' }}
+              >
+                原拓
+              </button>
+            )}
           </div>
         </div>
       </div>
+      {viewingOriginal && card.context && (
+        <OriginalPageView char={card.front_text} context={card.context} onClose={() => setViewingOriginal(false)} />
+      )}
     </div>
   );
 };

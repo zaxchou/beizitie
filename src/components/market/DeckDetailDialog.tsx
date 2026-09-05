@@ -27,6 +27,7 @@ import {
 import type { MarketplaceDeck } from '@/types';
 import type { CardPreview } from '@/lib/api';
 import { sourceMeta } from '@/lib/sourceMeta';
+import OriginalPageView from '@/components/study/OriginalPageView';
 
 export interface DeckDetailDialogProps {
   open: boolean;
@@ -52,61 +53,6 @@ const CoverPlaceholder: React.FC<{ name: string; large?: boolean }> = ({ name, l
     {name?.charAt(0) || '?'}
   </Box>
 );
-
-/** 字在帖中：整页原拓 + 该字坐标高亮（馆方来源帖专属，坐标对应整页原始尺寸） */
-const OriginalPageView: React.FC<{ card: CardPreview; onClose: () => void }> = ({ card, onClose }) => {
-  const ctx = card.context!;
-  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
-  return (
-    <Dialog open onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
-      <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
-        <Typography component="span" className="font-kai" sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1 }}>
-          {card.front_text}
-        </Typography>
-        {ctx.s && (
-          <Typography component="span" variant="body2" color="text.secondary" noWrap sx={{ flex: 1 }}>
-            「{ctx.s}」
-          </Typography>
-        )}
-        <IconButton size="small" onClick={onClose} edge="end" aria-label="关闭">
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent sx={{ px: 2, pb: 2 }}>
-        <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', bgcolor: '#211d18' }}>
-          <Box
-            component="img"
-            src={ctx.p}
-            alt="整页原拓"
-            onLoad={(e) => {
-              const t = e.currentTarget;
-              setNatural({ w: t.naturalWidth, h: t.naturalHeight });
-            }}
-            sx={{ width: '100%', display: 'block' }}
-          />
-          {natural && (
-            <Box
-              sx={{
-                position: 'absolute',
-                left: `${(ctx.x / natural.w) * 100}%`,
-                top: `${(ctx.y / natural.h) * 100}%`,
-                width: `${(ctx.w / natural.w) * 100}%`,
-                height: `${(ctx.h / natural.h) * 100}%`,
-                border: '2px solid #e0b25f',
-                borderRadius: 0.5,
-                boxSizing: 'border-box',
-                boxShadow: '0 0 0 9999px rgba(0,0,0,0.42)',
-              }}
-            />
-          )}
-        </Box>
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          字在帖中 —— 该字在整卷拓片中的位置。看行气、看章法，理解单字在原帖中的姿态。
-        </Typography>
-      </DialogContent>
-    </Dialog>
-  );
-};
 
 const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose, onSubscribed }) => {
   const theme = useTheme();
@@ -417,7 +363,9 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
         </Button>
       </DialogActions>
     </Dialog>
-    {viewing && <OriginalPageView card={viewing} onClose={() => setViewing(null)} />}
+    {viewing && viewing.context && (
+        <OriginalPageView char={viewing.front_text} context={viewing.context} onClose={() => setViewing(null)} />
+      )}
     </>
   );
 };

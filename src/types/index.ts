@@ -4,12 +4,23 @@
 export type Rating = 1 | 2 | 3 | 4;
 
 /** 单张书法记忆卡片 */
+/** 单字的原拓上下文（馆方来源帖）：整页图 + 该字坐标（对应整页原始尺寸）+ 所在句 */
+export interface CardContext {
+  p: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  s?: string;
+}
+
 export interface Card {
   id: string;
   deck_id: string;
   front_text: string; // 正面文字（从文件名提取）
   back_text: string; // 背面文字（纯文字卡片）
   image_url: string; // 本地 ObjectURL 或远程 Supabase Storage URL
+  context?: CardContext | null; // 原拓上下文（shlib 来源帖才有）
   image_storage_path: string; // Supabase Storage 路径
   ease: number; // SM-2 ease factor，默认 2.5，最小 1.3
   interval: number; // 下次间隔（分钟），0 = 新卡未学

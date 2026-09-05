@@ -651,7 +651,7 @@ cardsRouter.get('/decks/:deckId/due-cards', async (req: Request, res: Response) 
     }
 
     const now = nowISO();
-    let sql = `SELECT c.id, c.deck_id, c.front_text, c.back_text, c.image_url,
+    let sql = `SELECT c.id, c.deck_id, c.front_text, c.back_text, c.image_url, c.context,
                       COALESCE(ucp.ease, 2.5) AS ease,
                       ucp.interval AS interval,
                       ucp.repetitions AS repetitions,
@@ -709,7 +709,7 @@ cardsRouter.get('/decks/:deckId/new-cards', async (req: Request, res: Response) 
       return;
     }
 
-    let sql = `SELECT c.id, c.deck_id, c.front_text, c.back_text, c.image_url,
+    let sql = `SELECT c.id, c.deck_id, c.front_text, c.back_text, c.image_url, c.context,
                       COALESCE(ucp.ease, 2.5) AS ease,
                       COALESCE(ucp.interval, 0) AS interval,
                       COALESCE(ucp.repetitions, 0) AS repetitions,

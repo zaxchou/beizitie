@@ -175,15 +175,8 @@ export function fetchCards(deckId: string): Promise<Card[]> {
   return request<Card[]>(`/api/decks/${deckId}/cards`);
 }
 
-/** 单字的原拓上下文（馆方来源帖）：整页图 + 该字在页上的坐标（px，对应整页原始尺寸） */
-export interface CardContext {
-  p: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  s?: string;
-}
+export type { CardContext } from '@/types';
+import type { CardContext } from '@/types';
 
 export interface CardPreview {
   front_text: string;
