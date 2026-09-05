@@ -6,7 +6,7 @@
 
 **书法碑帖单字记忆 · SM-2 间隔重复 · 开源 · 隐私优先**
 
-[![Version](https://img.shields.io/badge/版本-v1.1.0-b03a2e)](CHANGELOG.md)
+[![Version](https://img.shields.io/github/v/release/zaxchou/beizitie?sort=semver&label=%E7%89%88%E6%9C%AC&color=b03a2e)](https://github.com/zaxchou/beizitie/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-8a7d68)](LICENSE)
 [![在线版](https://img.shields.io/badge/在线版-beizitie.com-b03a2e)](https://beizitie.com)
 [![单文件版](https://img.shields.io/badge/单文件版-在线试用-3c7a4e)](https://zaxchou.github.io/beizitie/beizitie.html)
