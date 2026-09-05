@@ -358,11 +358,11 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - **单文件版原拓已移植**：目录 zitie JSON 对 shlib 帖输出 `pages[]`/`sents[]` 去重数组 + `g[].c=[页下标,x,y,w,h,句下标]`（九成宫仅 +25KB）；addFromZitie 落库到 LocalCard.context；学习卡复用 FlashCard 自动获得"原拓"按钮；市场详情预览字点击看整页高亮（与在线版共用 OriginalPageView）。Pages 实测通过。
 - 单文件版 MarketPage 本就有朝代筛选（DYNASTY_ORDER chips），无需另做。
 
-### 单文件版 vs 线上版 剩余差距清单（2026-09-05）
-1. 学习排序模式：线上 per-deck 可选顺序/随机/默认；单文件固定帖序
-2. 卡片管理页：线上可逐卡浏览/删除/重置；单文件仅整帖维度操作
-3. 统计深度：线上 AnalyticsPage（按帖/时段分布）比单文件 DataPage（基础图表）深
-4. 淳化阁帖订阅：单文件 zitie 文件带原拓坐标后 ~3.4MB，一次拉取偏慢（后续可按需分页）
+### 单文件版 vs 线上版 剩余差距清单（2026-09-05 更新）
+1. ~~学习排序模式~~ ✅ 已补齐（DashboardPage LimitEditor 出卡顺序：到期优先/按帖序/随机）
+2. 卡片管理页：线上可逐卡浏览/删除/重置；单文件仅整帖维度操作（用户暂不需要）
+3. ~~统计深度~~ ✅ 已补齐（单文件 DataPage：6 指标卡 + 近14天堆叠图 + 14天到期预测 + 按帖进度）
+4. ~~淳化阁帖订阅体积~~ ✅ 已压缩 2.85MB→1.05MB（见补记 4）
 5. 云同步/多用户：单文件设计如此（本地 IndexedDB），非缺陷
 
 ### 补记 4（同日）：淳化阁帖单文件体积优化完成
@@ -370,3 +370,9 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 淳化阁帖 2.85MB → 1.05MB（2.7×）；全目录 zitie 35.1MB → 约 13MB。
 - 重建 URL 与压缩前逐字节一致（抽样 200 全可访问；IIIF 服务器有并发限流，批量校验需串行+重试）。
 - 兼容性：g.rel 保留为异常回退路径；旧订阅数据自包含不受影响。
+
+### 补记 5（同日）：README 专业化 + 封面 + 编辑精选封面修复
+- **README 封面**：照 zupu 封面同一套做法（docs/_cover.html 设计稿 → 浏览器截图 2560×1280 docs/cover.png → README 顶部居中引用）。背字帖版式：文武线双框 + 右侧竖排「背字帖」+ 朱印「日课一字」+ 左侧文案；迷你示意 = 九成宫醴泉铭（上图藏本）帖首四字真拓卡（新卡→10分→1天→7天 SM-2 阶梯）+「字在帖中」整页定位小图（带 CC 署名）。设计稿与拓片素材（docs/_cover-assets/）已入库可复现。
+- **截图渲染坑**：① 上图 IIIF 直连 403，必须带浏览器 User-Agent；② `zoom:2` 截图时 body 背景传播到 canvas 不受 zoom 影响，正中会出硬接缝——背景必须放独立 .bg 层；CDP deviceScaleFactor 在 MCP 环境不生效，zoom 方案可用。
+- **真 bug：编辑精选封面空白**：精选帖（阴符经等 5 部）的封面是管理员上传的服务器相对路径 `/uploads/...`，在线版能解析，单文件版目录里没有主机名 → MarketPage `startsWith('http')` 判掉变灰块。修复：publish-catalog.ts `absCover()` 把 `/` 开头封面补全为 `https://beizitie.com` 前缀；deploy.sh anki + release-catalog.sh 重发后 Pages 已验证。
+- **README 重写**：功能特性表 / 界面速览（docs/screenshots/ 三张移动端真机图：市场/学习卡/字在帖中）/ 快速开始 / 单文件细节 / 自托管 / FAQ / 致谢与数据来源；删除过时的「统计页在 Roadmap 中」；补 LICENSE 文件（此前 README 声称 MIT 但仓库无 LICENSE，含数据许可说明）。
