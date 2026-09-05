@@ -96,8 +96,8 @@ export async function buildContentPackage(db: DbLike, deckId: string): Promise<{
     const imageFilename = filenameFromImageUrl(String(card.image_url || ''));
     let imageSha: string | null = null;
     if (imageFilename) {
-      const imagePath = path.join(uploadsDir, imageFilename);
-      if (fs.existsSync(imagePath)) {
+      const imagePath = path.resolve(uploadsDir, imageFilename);
+      if (imagePath.startsWith(path.resolve(uploadsDir) + path.sep) && fs.existsSync(imagePath)) {
         const imageBuffer = fs.readFileSync(imagePath);
         imageSha = sha256(imageBuffer);
         uploadsFolder?.file(imageFilename, imageBuffer);

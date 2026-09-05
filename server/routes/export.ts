@@ -464,8 +464,8 @@ exportRouter.get('/export', requireAdmin, async (req: Request, res: Response) =>
 
         if (imageUrl) {
           const imgFilename = path.basename(imageUrl);
-          const imgFilePath = path.join(uploadsDir, imgFilename);
-          if (fs.existsSync(imgFilePath)) {
+          const imgFilePath = path.resolve(uploadsDir, imgFilename);
+          if (imgFilePath.startsWith(path.resolve(uploadsDir) + path.sep) && fs.existsSync(imgFilePath)) {
             zip.file(imgFilename, fs.readFileSync(imgFilePath));
             mediaMap[String(mediaId)] = imgFilename;
             mediaId++;

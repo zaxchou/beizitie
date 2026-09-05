@@ -69,7 +69,11 @@ async function ensureUploads(parsed: ParsedContentPackage, dryRun: boolean, resu
       continue;
     }
 
-    const targetPath = path.join(uploadsDir, filename);
+    const targetPath = path.resolve(uploadsDir, filename);
+    if (!targetPath.startsWith(path.resolve(uploadsDir) + path.sep)) {
+      result.warnings.push(`Unsafe filename skipped: ${filename}`);
+      continue;
+    }
     if (fs.existsSync(targetPath)) {
       result.uploads.reused++;
       continue;
