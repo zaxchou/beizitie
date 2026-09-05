@@ -301,3 +301,23 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 ### 遗留
 - marketplace.ts 鉴权版 GET 详情仍是旧口径（死代码）；下次触碰该文件时顺手补齐。
 - 1366 部未校验帖待源站快照恢复后跑 `ygsf-majority-verify --apply --skip-verified` 补验，通过即自动回到市场。
+
+## 15. 2026-09-05 上图碑帖库接入打样（九成宫双版本）+ 跨源互证
+
+### 打样交付
+- **市场上架**：九成宫醴泉铭（四欧宝笈宋拓本）[shlib:eqqlcf4jly5i3w5v，1109 卡] + 九成宫醴泉铭 [ygsf:dee55057…，1093 卡，跨源互证收录] 同台，市场角标区分上图/YGSF，详情弹窗有完整署名（CC BY-NC-ND 3.0）。
+- **字在帖中**：cards.context 新列（JSONB：整页页图 + x/y/w/h + 所在句）；市场详情弹窗预览字卡点"原拓"→ 整页拓片高亮该字。公开预览接口已带 back_text+context。
+- **工具链**：`上图碑帖库/export_deck.py`（sqlite→deck JSON，**帖序必须用 ye,mian,hang**）；`server/scripts/shlib-import-deck.ts`（幂等整册重建）；`server/scripts/admit-verified.ts`（单帖收录+索引）。
+
+### 铁律与坑（后续 45 部必读）
+1. **收割库 pos_in_text 不可信**：九成宫 1109 字只有 101 个不同值（大量并列桶），排序会乱；真帖序 = ORDER BY ye, mian, hang（全局唯一，已跨源验证）。
+2. **馆方标注是简体+归一字**，拓片是繁体/异体（徵/魏征、敕/𠡠）；跨源对齐前必须先 t2s + 异体字归一，否则误判。
+3. **跨源互证通道**：同一经典文本、两个独立来源（馆方 vs YGSF）difflib 对齐，归一后重合 ≥90% 且差异全部可解释（异体/泐损）→ 双向收录。九成宫实测 91.2%，102 处差异零错字。
+4. 泐损字照常上架（宋拓原貌），context 原拓视图可补偿；shlib 卡 back_text=所在句。
+5. 导 cards 必须**显式 user_id=NULL**（生产库默认值是 ''，违反 fk_cards_user）。
+6. 市场总数 1388；Windows curl 测中文参数必须手工 %编码（--data-urlencode 在 Git Bash 会坏）。
+
+### 后续（待用户确认打样效果）
+- 45 部批量导入（脚本就绪，逐部跑 export+import+对齐验证）
+- 单文件版目录接入 shlib 来源（publish-catalog 目前只收 ygsf CDN 直链，需扩展 splitUrl）
+- 学习页"字在帖中"入口（当前只在市场详情弹窗）
