@@ -52,7 +52,7 @@ async function main() {
   fs.mkdirSync(path.join(out, 'zitie'), { recursive: true });
 
   const { rows: decks } = await db.query(
-    `SELECT d.id, d.name, d.card_count, md.calligrapher, md.dynasty, md.style,
+    `SELECT d.id, d.name, d.card_count, d.source_key, md.calligrapher, md.dynasty, md.style,
             md.description, md.cover_thumb, md.cover_image
      FROM decks d
      JOIN marketplace_decks md ON md.deck_id = d.id AND md.published_at IS NOT NULL
@@ -69,11 +69,14 @@ async function main() {
   let skipped = 0;
 
   for (const d of decks) {
+    // shlib（上图馆方来源）：IIIF 绝对直链，base/thumb 为空；ygsf：CDN 相对路径 + 统一缩放参数
+    const isShlib = (d.source_key || '').startsWith('shlib:');
+    const urlFilter = isShlib ? 'https://iiif.library.sh.cn/%' : 'https://ygsf.cdn.bcebos.com/autogen/areas/%';
     const { rows: cards } = await db.query(
       `SELECT front_text, image_url FROM cards
-       WHERE deck_id = $1 AND archived_at IS NULL AND image_url LIKE 'https://ygsf.cdn.bcebos.com/autogen/areas/%'
+       WHERE deck_id = $1 AND archived_at IS NULL AND image_url LIKE $2
        ORDER BY sort_order NULLS LAST, created_at`,
-      [d.id],
+      [d.id, urlFilter],
     );
     if (cards.length < MIN_CARDS) {
       skipped++;
@@ -83,21 +86,30 @@ async function main() {
     const zCount = new Map<string, number>();
     const glyphs: CatalogGlyph[] = [];
     const seen = new Set<string>();
-    for (const c of cards) {
-      const s = splitUrl(c.image_url);
-      if (!s) continue;
-      zCount.set(s.zitieId, (zCount.get(s.zitieId) || 0) + 1);
-      const rel = s.rel.split('?')[0]; // 缩放参数统一存 thumb，逐字不重复存
-      if (seen.has(rel)) continue;
-      seen.add(rel);
-      glyphs.push({ rel, h: (c.front_text || '').trim() });
+    if (isShlib) {
+      for (const c of cards) {
+        if (seen.has(c.image_url)) continue;
+        seen.add(c.image_url);
+        glyphs.push({ rel: c.image_url, h: (c.front_text || '').trim() });
+      }
+      zCount.set(d.source_key.split(':')[1], glyphs.length);
+    } else {
+      for (const c of cards) {
+        const s = splitUrl(c.image_url);
+        if (!s) continue;
+        zCount.set(s.zitieId, (zCount.get(s.zitieId) || 0) + 1);
+        const rel = s.rel.split('?')[0]; // 缩放参数统一存 thumb，逐字不重复存
+        if (seen.has(rel)) continue;
+        seen.add(rel);
+        glyphs.push({ rel, h: (c.front_text || '').trim() });
+      }
     }
     if (glyphs.length < MIN_CARDS || zCount.size === 0) {
       skipped++;
       continue;
     }
     const zitieId = [...zCount.entries()].sort((a, b) => b[1] - a[1])[0][0];
-    const base = `${CDN_BASE}${zitieId}/`;
+    const base = isShlib ? '' : `${CDN_BASE}${zitieId}/`;
     const styles = (d.style || '')
       .split(',')
       .map((s: string) => s.trim())
@@ -114,7 +126,7 @@ async function main() {
     fs.mkdirSync(path.join(out, 'zitie'), { recursive: true });
     fs.writeFileSync(
       path.join(out, 'zitie', `${zitieId}.json`),
-      JSON.stringify({ z: zitieId, base, thumb: THUMB, desc: (d.description || '').slice(0, 160), g: glyphs }),
+      JSON.stringify({ z: zitieId, base, thumb: isShlib ? '' : THUMB, desc: (d.description || '').slice(0, 160), g: glyphs }),
     );
     zitieFiles.set(zitieId, glyphs.length);
     zitieIndex.push({
