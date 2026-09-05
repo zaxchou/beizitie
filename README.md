@@ -1,6 +1,20 @@
+<div align="center">
+
+<img src="docs/cover.png" alt="背字帖 Beizitie" width="100%">
+
 # 背字帖 Beizitie
 
-> 书法碑帖单字记忆 · SM-2 间隔重复 · 开源 · 隐私优先
+**书法碑帖单字记忆 · SM-2 间隔重复 · 开源 · 隐私优先**
+
+[![License](https://img.shields.io/badge/license-MIT-8a7d68)](#license)
+[![在线版](https://img.shields.io/badge/在线版-beizitie.com-b03a2e)](https://beizitie.com)
+[![单文件版](https://img.shields.io/badge/单文件版-在线试用-3c7a4e)](https://zaxchou.github.io/beizitie/beizitie.html)
+
+*把背帖这件事，放回每个练字人的口袋里。*
+
+</div>
+
+---
 
 **背字帖**把历代碑帖拆成单字高清卡，用 SM-2 间隔重复算法帮你高效背记字形。上架 **184 位书家、1386 部碑帖、38 万张单字**（行 797 / 楷 237 / 草 269 / 隶 55 / 篆 29），覆盖楷行草隶篆。所有上架碑帖均经**字图一致性核验**——宁缺勿错，字与图对不上的帖一律不上架；核验通过的帖同时构成集字的取字范围（1476 部 / 41.7 万单字，含未上架的画作长卷）。
 

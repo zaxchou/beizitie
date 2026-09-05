@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1280px;height:640px;overflow:hidden}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;position:relative;color:#29231c;background:#efe6d2}
+  /* 背景独立成层：body 背景传播到 canvas 不受 zoom/缩放影响，会出接缝 */
+  .bg{position:absolute;inset:0;background:
+      radial-gradient(ellipse at 85% 15%, rgba(176,58,46,.05), transparent 55%),
+      radial-gradient(ellipse at 10% 90%, rgba(41,35,28,.08), transparent 50%),
+      linear-gradient(160deg,#faf6ec 0%,#f4eee0 55%,#efe6d2 100%)}
+  /* 文武线（外粗内细双框），与族谱封面同一家族版式 */
+  .frame-outer{position:absolute;inset:18px;border:2.5px solid rgba(93,80,60,.55);border-radius:2px}
+  .frame-inner{position:absolute;inset:26px;border:1px solid rgba(93,80,60,.35);border-radius:2px}
+  /* 右侧竖排大标题 */
+  .title-v{
+    position:absolute;top:92px;right:148px;
+    writing-mode:vertical-rl;text-orientation:upright;
+    font-family:"Songti SC","SimSun",serif;font-weight:700;
+    font-size:100px;letter-spacing:22px;color:#29231c;
+  }
+  /* 印章：日课一字 */
+  .seal{
+    position:absolute;right:118px;top:508px;width:104px;height:104px;
+    background:linear-gradient(150deg,#b03a2e,#96301f);
+    border-radius:8px;display:grid;grid-template-columns:1fr 1fr;place-items:center;
+    box-shadow:0 3px 10px rgba(150,48,31,.35);padding:10px;
+  }
+  .seal span{font-family:"KaiTi","STKaiti","SimSun",serif;font-weight:700;
+    font-size:30px;color:#fdf6ea;line-height:1}
+  /* 左侧文字区 */
+  .kicker{position:absolute;left:96px;top:104px;font-size:20px;letter-spacing:10px;color:#8a6a2a;font-weight:600}
+  .kicker b{color:#b03a2e}
+  h1{position:absolute;left:90px;top:146px;font-family:"Songti SC","SimSun",serif;
+     font-size:78px;font-weight:700;color:#1f1b14;letter-spacing:6px}
+  .en{position:absolute;left:96px;top:256px;font-size:15px;letter-spacing:4px;color:#8a7d68;font-weight:500}
+  .desc{position:absolute;left:96px;top:300px;font-size:19px;color:#4a4438;letter-spacing:2px}
+  .desc b{color:#b03a2e;font-weight:700}
+  .chips{position:absolute;left:96px;top:352px;display:flex;gap:12px}
+  .chip{font-size:15px;padding:5px 14px;border-radius:14px;background:rgba(93,80,60,.08);
+        border:1px solid rgba(93,80,60,.22);color:#4a4438;letter-spacing:1px}
+  /* 迷你示意：九成宫铭四字卡 × SM-2 记忆阶梯 ＋ 字在帖中定位 */
+  .viz{position:absolute;left:96px;top:414px;display:flex;gap:30px;align-items:flex-start}
+  .cards{display:flex;gap:18px;align-items:flex-start}
+  .col{display:flex;flex-direction:column;align-items:center}
+  .gen{font-size:12px;color:#9a8f79;letter-spacing:2px;margin-bottom:7px}
+  .card{width:88px;height:88px;background:rgba(255,253,248,.92);
+        border:1px solid rgba(93,80,60,.28);border-radius:8px;padding:5px;
+        box-shadow:0 2px 6px rgba(41,35,28,.10)}
+  .card img{width:100%;height:100%;object-fit:cover;border-radius:5px;display:block}
+  .col.hot .card{border:2px solid #c99b3f;box-shadow:0 0 0 3px rgba(224,178,95,.28),0 3px 8px rgba(41,35,28,.14)}
+  .col.hot .gen{color:#b03a2e;font-weight:700}
+  .drop{width:1.5px;height:11px;background:#b9ab90;margin-top:7px}
+  .arr{align-self:flex-start;font-size:15px;color:#b9ab90;margin-top:54px}
+  /* 字在帖中：整页原拓 + 金框定位 */
+  .zhangfa{margin-left:14px;display:flex;flex-direction:column;align-items:center}
+  .page{position:relative;width:112px;height:112px;border:1px solid rgba(93,80,60,.32);
+        border-radius:8px;overflow:hidden;background:#1c1c1c;box-shadow:0 2px 6px rgba(41,35,28,.12)}
+  .page img{width:100%;height:100%;object-fit:cover;display:block}
+  .page .box{position:absolute;left:38.7%;top:38.7%;width:22.5%;height:18.6%;
+             border:2px solid #e0b25f;box-shadow:0 0 0 9999px rgba(0,0,0,.34)}
+  .cap{margin-top:7px;font-size:12px;letter-spacing:3px;color:#8a7d68}
+  .cap b{color:#b03a2e}
+  .src{margin-top:2px;font-size:10px;letter-spacing:.5px;color:rgba(138,125,104,.75)}
+  /* 底部信息 */
+  .foot{position:absolute;left:96px;bottom:38px;display:flex;gap:10px}
+  .tag{font-size:14px;padding:4px 12px;border-radius:12px;background:#29231c;color:#f4eee0;letter-spacing:1px}
+  .tag.o{background:transparent;border:1px solid rgba(93,80,60,.4);color:#4a4438}
+  .github{position:absolute;right:300px;bottom:38px;font-size:15px;color:#6b6152;letter-spacing:1px}
+  .github b{color:#29231c}
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <div class="frame-outer"></div>
+  <div class="frame-inner"></div>
+
+  <div class="kicker"><b>开源</b> · 单文件 · 隐私优先 · 无账号</div>
+  <h1>背字帖</h1>
+  <div class="en">BEIZITIE · STELE CHARACTER MEMORY · SM-2 SPACED REPETITION · MIT</div>
+  <div class="desc">碑帖拆成单字卡 · <b>字在帖中</b>（章法回看） · 集字成篇 · 断网可复习</div>
+  <div class="chips">
+    <div class="chip">市场订阅</div><div class="chip">SM-2 复习</div>
+    <div class="chip">原帖定位</div><div class="chip">集字导出</div>
+  </div>
+
+  <!-- 迷你示意：九成宫醴泉铭 帖首四字（上海图书馆藏本真拓）× SM-2 记忆阶梯 -->
+  <div class="viz">
+    <div class="cards">
+      <div class="col hot"><div class="gen">新卡</div><div class="card"><img src="_cover-assets/jiu.jpg" alt="九"></div><div class="drop"></div></div>
+      <div class="arr">→</div>
+      <div class="col"><div class="gen">10 分</div><div class="card"><img src="_cover-assets/cheng.jpg" alt="成"></div><div class="drop"></div></div>
+      <div class="arr">→</div>
+      <div class="col"><div class="gen">1 天</div><div class="card"><img src="_cover-assets/gong.jpg" alt="宫"></div><div class="drop"></div></div>
+      <div class="arr">→</div>
+      <div class="col"><div class="gen">7 天</div><div class="card"><img src="_cover-assets/ming.jpg" alt="铭"></div><div class="drop"></div></div>
+    </div>
+    <div class="zhangfa">
+      <div class="page"><img src="_cover-assets/zhangfa.jpg" alt="原帖"><div class="box"></div></div>
+      <div class="cap"><b>字在帖中</b> · 原帖定位</div>
+      <div class="src">上图藏《九成宫醴泉铭》 CC BY-NC-ND 3.0</div>
+    </div>
+  </div>
+
+  <div class="foot">
+    <div class="tag">184 位书家</div><div class="tag o">1386 部核验碑帖</div><div class="tag o">MIT License</div>
+  </div>
+  <div class="github">github.com/<b>zaxchou/beizitie</b></div>
+
+  <div class="title-v">背字帖</div>
+  <div class="seal"><span>日</span><span>课</span><span>一</span><span>字</span></div>
+</body>
+</html>
