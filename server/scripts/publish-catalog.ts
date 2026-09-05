@@ -19,7 +19,14 @@ import { getDb, waitForDb } from '../db.js';
 
 const CDN_BASE = 'https://ygsf.cdn.bcebos.com/autogen/areas/';
 const THUMB = '?x-bce-process=style/jpg512';
+const SITE_ORIGIN = 'https://beizitie.com';
 const MIN_CARDS = 10;
+
+/** 服务器相对路径（/uploads/...）补全为绝对 URL，静态目录在 GitHub Pages 上无法解析相对路径 */
+function absCover(url: string): string {
+  if (url.startsWith('/')) return SITE_ORIGIN + url;
+  return url;
+}
 const JUNK_NAME = /(图|画)(轴|页|卷|册)?$|像$|教学|手稿|临摹指导|讲座|课件|教程/;
 
 interface CatalogGlyph {
@@ -165,7 +172,8 @@ async function main() {
       a: d.calligrapher || '',
       d: d.dynasty || '',
       s: styles,
-      c: d.cover_thumb || d.cover_image || '',
+      // 服务器相对路径（管理员上传封面）补全为绝对 URL，单文件版无法解析相对路径
+      c: absCover(d.cover_thumb || d.cover_image || ''),
       g: glyphs.length,
       src: isShlib ? 'shlib' : 'ygsf',
       f: d.featured ? 1 : 0,
