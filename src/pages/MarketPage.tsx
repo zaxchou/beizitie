@@ -25,6 +25,7 @@ import {
 import type { MarketplaceDeck } from '@/types';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import EditDeckDialog from '@/components/market/EditDeckDialog';
+import { sourceMeta } from '@/lib/sourceMeta';
 import DeckDetailDialog from '@/components/market/DeckDetailDialog';
 import { LoadingState, EmptyState } from '@/components/common/LoadingState';
 import { useAuthStore } from '@/stores/useAuthStore';
@@ -232,6 +233,22 @@ const MarketPage: React.FC = () => {
         ) : (
           <CoverPlaceholder name={deck.name} />
         )}
+        {(() => {
+          const sm = sourceMeta(deck.source_key);
+          return sm ? (
+            <Box
+              sx={{
+                position: 'absolute', top: 4, left: 4,
+                px: 0.5, py: '1px', borderRadius: 1,
+                bgcolor: sm.tone === 'museum' ? 'rgba(224,178,95,0.92)' : 'rgba(80,96,120,0.66)',
+                color: sm.tone === 'museum' ? '#3b2a10' : '#fff',
+                fontSize: { xs: 8, sm: 9 }, fontWeight: 700, lineHeight: 1.2,
+              }}
+            >
+              {sm.short}
+            </Box>
+          ) : null;
+        })()}
         {deck.style && (
           <Box
             sx={{

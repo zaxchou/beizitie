@@ -26,6 +26,7 @@ import {
 } from '@/lib/api';
 import type { MarketplaceDeck } from '@/types';
 import type { CardPreview } from '@/lib/api';
+import { sourceMeta } from '@/lib/sourceMeta';
 
 export interface DeckDetailDialogProps {
   open: boolean;
@@ -35,8 +36,7 @@ export interface DeckDetailDialogProps {
 }
 
 /** 封面占位 */
-const CoverPlaceholder: React.FC<{ name: string; large?: boolean }> = ({ name, large }) => (
-  <Box
+const CoverPlaceholder: React.FC<{ name: string; large?: boolean }> = ({ name, large }) => (  <Box
     sx={{
       width: '100%',
       height: '100%',
@@ -53,6 +53,61 @@ const CoverPlaceholder: React.FC<{ name: string; large?: boolean }> = ({ name, l
   </Box>
 );
 
+/** 字在帖中：整页原拓 + 该字坐标高亮（馆方来源帖专属，坐标对应整页原始尺寸） */
+const OriginalPageView: React.FC<{ card: CardPreview; onClose: () => void }> = ({ card, onClose }) => {
+  const ctx = card.context!;
+  const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  return (
+    <Dialog open onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+      <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
+        <Typography component="span" className="font-kai" sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1 }}>
+          {card.front_text}
+        </Typography>
+        {ctx.s && (
+          <Typography component="span" variant="body2" color="text.secondary" noWrap sx={{ flex: 1 }}>
+            「{ctx.s}」
+          </Typography>
+        )}
+        <IconButton size="small" onClick={onClose} edge="end" aria-label="关闭">
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ px: 2, pb: 2 }}>
+        <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', bgcolor: '#211d18' }}>
+          <Box
+            component="img"
+            src={ctx.p}
+            alt="整页原拓"
+            onLoad={(e) => {
+              const t = e.currentTarget;
+              setNatural({ w: t.naturalWidth, h: t.naturalHeight });
+            }}
+            sx={{ width: '100%', display: 'block' }}
+          />
+          {natural && (
+            <Box
+              sx={{
+                position: 'absolute',
+                left: `${(ctx.x / natural.w) * 100}%`,
+                top: `${(ctx.y / natural.h) * 100}%`,
+                width: `${(ctx.w / natural.w) * 100}%`,
+                height: `${(ctx.h / natural.h) * 100}%`,
+                border: '2px solid #e0b25f',
+                borderRadius: 0.5,
+                boxSizing: 'border-box',
+                boxShadow: '0 0 0 9999px rgba(0,0,0,0.42)',
+              }}
+            />
+          )}
+        </Box>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          字在帖中 —— 该字在整卷拓片中的位置。看行气、看章法，理解单字在原帖中的姿态。
+        </Typography>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose, onSubscribed }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -63,6 +118,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
   const [cardsLoading, setCardsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState(false);
+  const [viewing, setViewing] = useState<CardPreview | null>(null);
 
   /** 加载数据 */
   useEffect(() => {
@@ -70,6 +126,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
       setLoading(true);
       setCardsLoading(true);
       setError(null);
+      setViewing(null);
       fetchMarketplaceDeck(deck.deck_id)
         .then(setDetail)
         .catch((err) => setError(err instanceof Error ? err.message : '加载详情失败'))
@@ -83,6 +140,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
 
   const current = detail || deck;
   const isSubscribed = current?.is_subscribed ?? false;
+  const src = sourceMeta(current?.source_key ?? deck?.source_key);
 
   /** 订阅/退订 */
   const handleToggle = useCallback(async () => {
@@ -108,6 +166,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
   if (!deck) return null;
 
   return (
+    <>
     <Dialog
       open={open}
       onClose={onClose}
@@ -189,6 +248,21 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                   {current?.style && current.style.split(',').filter(Boolean).map((s) => (
                     <Chip key={s} label={s} size="small" variant="outlined" sx={{ fontSize: 11, height: 22 }} />
                   ))}
+                  {src && (
+                    <Chip
+                      label={src.label}
+                      size="small"
+                      title={src.full}
+                      sx={{
+                        fontSize: 11, height: 22,
+                        ...(src.tone === 'museum' && {
+                          bgcolor: 'rgba(224,178,95,0.18)',
+                          borderColor: 'rgba(196,148,58,0.6)',
+                          color: '#8a6420',
+                        }),
+                      }}
+                    />
+                  )}
                   {current?.card_count != null && (
                     <Typography variant="body2" color="text.secondary">
                       {current.card_count} 张字帖
@@ -209,6 +283,11 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                     }}
                   >
                     {current.description}
+                  </Typography>
+                )}
+                {src && (
+                  <Typography variant="caption" color="text.disabled" sx={{ mt: -0.5 }}>
+                    {src.full}
                   </Typography>
                 )}
               </Box>
@@ -250,7 +329,10 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                     }}
                   >
                     <Box
+                      onClick={card.context ? () => setViewing(card) : undefined}
+                      title={card.context ? '查看整页原拓中的位置' : undefined}
                       sx={{
+                        position: 'relative',
                         width: 100,
                         height: 100,
                         borderRadius: 1,
@@ -260,6 +342,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        cursor: card.context ? 'zoom-in' : 'default',
                       }}
                     >
                       {card.image_url ? (
@@ -274,6 +357,18 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                         <Typography variant="body2" color="text.disabled">
                           {card.front_text}
                         </Typography>
+                      )}
+                      {card.context && (
+                        <Box
+                          sx={{
+                            position: 'absolute', top: 2, right: 2,
+                            px: 0.4, py: '1px', borderRadius: 0.5,
+                            bgcolor: 'rgba(224,178,95,0.92)', color: '#3b2a10',
+                            fontSize: 9, fontWeight: 700, lineHeight: 1.3,
+                          }}
+                        >
+                          原拓
+                        </Box>
                       )}
                     </Box>
                     <Typography
@@ -322,6 +417,8 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
         </Button>
       </DialogActions>
     </Dialog>
+    {viewing && <OriginalPageView card={viewing} onClose={() => setViewing(null)} />}
+    </>
   );
 };
 

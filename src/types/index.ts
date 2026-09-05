@@ -111,6 +111,7 @@ export interface MarketplaceDeck {
   style: string; // 楷/行/草/隶/篆
   description: string;
   cover_image: string;
+  source_key?: string; // ygsf:<zitieId> | shlib:<workId>（数据来源标注）
   cover_thumb?: string;
   featured: number; // 0 or 1
   card_count: number;

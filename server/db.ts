@@ -203,6 +203,8 @@ async function migrateSchema(db: pkg.Pool): Promise<void> {
   try { await db.query(`ALTER TABLE decks ADD COLUMN IF NOT EXISTS content_version INTEGER DEFAULT 1`); } catch { /* ignore */ }
   try { await db.query(`ALTER TABLE cards ADD COLUMN IF NOT EXISTS source_key TEXT DEFAULT ''`); } catch { /* ignore */ }
   try { await db.query(`ALTER TABLE cards ADD COLUMN IF NOT EXISTS archived_at TEXT DEFAULT NULL`); } catch { /* ignore */ }
+  // 馆方来源帖（shlib）单字的原拓上下文：{ p: 整页图URL, x, y, w, h, s: 所在句 }
+  try { await db.query(`ALTER TABLE cards ADD COLUMN IF NOT EXISTS context JSONB`); } catch { /* ignore */ }
   try { await db.query(`ALTER TABLE decks ADD COLUMN IF NOT EXISTS paused_at TEXT DEFAULT NULL`); } catch { /* ignore */ }
   try { await db.query(`CREATE INDEX IF NOT EXISTS idx_cards_sort_order ON cards(deck_id, sort_order)`); } catch { /* ignore */ }
   try { await db.query(`CREATE INDEX IF NOT EXISTS idx_decks_source_key ON decks(source_key)`); } catch { /* ignore */ }

@@ -53,7 +53,7 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
                  WHERE deck_id = md.deck_id AND image_url != '' ORDER BY created_at ASC LIMIT 1
              ), '') AS cover_image,
              md.featured, md.sort_order, md.published_at, md.created_at,
-             d.name, d.card_count, d.daily_new_card_limit, d.daily_review_limit,
+             d.name, d.source_key, d.card_count, d.daily_new_card_limit, d.daily_review_limit,
              EXISTS(SELECT 1 FROM user_subscriptions us WHERE us.user_id = $1 AND us.deck_id = md.deck_id) AS is_subscribed
       FROM marketplace_decks md
       JOIN decks d ON d.id = md.deck_id
@@ -134,7 +134,7 @@ marketplaceRouter.get('/marketplace/decks/:deckId', async (req: Request, res: Re
     const { rows } = await db.query(
       `SELECT md.deck_id, md.calligrapher, md.dynasty, md.style, md.description, md.cover_image, md.cover_thumb,
               md.featured, md.sort_order, md.published_at, md.created_at,
-              d.name, d.card_count, d.daily_new_card_limit, d.daily_review_limit,
+              d.name, d.source_key, d.card_count, d.daily_new_card_limit, d.daily_review_limit,
               EXISTS(SELECT 1 FROM user_subscriptions us WHERE us.user_id = $1 AND us.deck_id = md.deck_id) AS is_subscribed
        FROM marketplace_decks md
        JOIN decks d ON d.id = md.deck_id

@@ -48,7 +48,7 @@ app.get('/api/decks/:deckId/cards/preview', async (req, res) => {
     const { deckId } = req.params;
     const db = getDb();
     const { rows } = await db.query(
-      `SELECT c.front_text, c.image_url
+      `SELECT c.front_text, c.back_text, c.image_url, c.context
        FROM cards c
        JOIN marketplace_decks md ON md.deck_id = c.deck_id
        JOIN decks d ON d.id = c.deck_id
@@ -94,7 +94,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
                  WHERE deck_id = md.deck_id AND image_url != '' ORDER BY created_at ASC LIMIT 1
              ), '') AS cover_image,
              md.featured, md.sort_order, md.published_at, md.created_at,
-             d.name, d.card_count, d.daily_new_card_limit, d.daily_review_limit
+             d.name, d.source_key, d.card_count, d.daily_new_card_limit, d.daily_review_limit
     `;
     if (userId) {
       sql += `, EXISTS(SELECT 1 FROM user_subscriptions us WHERE us.user_id = $1 AND us.deck_id = md.deck_id) AS is_subscribed`;
@@ -192,7 +192,7 @@ app.get('/api/marketplace/decks/:deckId', async (req, res) => {
 
     const sql = `SELECT md.deck_id, md.calligrapher, md.dynasty, md.style, md.description, md.cover_image, md.cover_thumb,
               md.featured, md.sort_order, md.published_at, md.created_at,
-              d.name, d.card_count, d.daily_new_card_limit, d.daily_review_limit
+              d.name, d.source_key, d.card_count, d.daily_new_card_limit, d.daily_review_limit
               ${userId ? `, EXISTS(SELECT 1 FROM user_subscriptions us WHERE us.user_id = $1 AND us.deck_id = md.deck_id) AS is_subscribed` : ', false AS is_subscribed'}
        FROM marketplace_decks md
        JOIN decks d ON d.id = md.deck_id
