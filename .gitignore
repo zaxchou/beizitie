@@ -16,5 +16,6 @@ dist-server/
 _gsdata_/
 .claude/settings.local.json
 .ygsf-token
+.mimosa/
 server/backups-local/
 tmp-test-local-backup.js
