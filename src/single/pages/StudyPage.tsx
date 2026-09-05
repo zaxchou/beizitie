@@ -35,6 +35,7 @@ function toCard(c: LocalCard, p: LocalProgress | null): Card {
     front_text: c.hanzi,
     back_text: '',
     image_url: c.imageUrl,
+    context: c.context ?? null,
     image_storage_path: '',
     ease: p?.ease ?? 2.5,
     interval: p?.interval ?? 0,

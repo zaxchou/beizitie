@@ -73,7 +73,7 @@ async function main() {
     const isShlib = (d.source_key || '').startsWith('shlib:');
     const urlFilter = isShlib ? 'https://iiif.library.sh.cn/%' : 'https://ygsf.cdn.bcebos.com/autogen/areas/%';
     const { rows: cards } = await db.query(
-      `SELECT front_text, image_url FROM cards
+      `SELECT front_text, image_url${isShlib ? ', context' : ''} FROM cards
        WHERE deck_id = $1 AND archived_at IS NULL AND image_url LIKE $2
        ORDER BY sort_order NULLS LAST, created_at`,
       [d.id, urlFilter],
@@ -86,12 +86,29 @@ async function main() {
     const zCount = new Map<string, number>();
     const glyphs: CatalogGlyph[] = [];
     const seen = new Set<string>();
+    let shlibPages: string[] | undefined;
+    let shlibSents: string[] | undefined;
     if (isShlib) {
+      // 原拓上下文压缩存储：整页图/所在句各自去重成数组，单字只存下标
+      const pages: string[] = []; const pageIdx = new Map<string, number>();
+      const sents: string[] = []; const sentIdx = new Map<string, number>();
+      const idxOf = (arr: string[], map: Map<string, number>, v: string) => {
+        let i = map.get(v);
+        if (i === undefined) { i = arr.length; map.set(v, i); arr.push(v); }
+        return i;
+      };
       for (const c of cards) {
         if (seen.has(c.image_url)) continue;
         seen.add(c.image_url);
-        glyphs.push({ rel: c.image_url, h: (c.front_text || '').trim() });
+        const ctx = c.context as { p: string; x: number; y: number; w: number; h: number; s?: string } | null;
+        glyphs.push({
+          rel: c.image_url,
+          h: (c.front_text || '').trim(),
+          c: [idxOf(pages, pageIdx, ctx?.p || ''), ctx?.x || 0, ctx?.y || 0, ctx?.w || 0, ctx?.h || 0, idxOf(sents, sentIdx, ctx?.s || '')],
+        });
       }
+      shlibPages = pages;
+      shlibSents = sents;
       zCount.set(d.source_key.split(':')[1], glyphs.length);
     } else {
       for (const c of cards) {
@@ -126,7 +143,10 @@ async function main() {
     fs.mkdirSync(path.join(out, 'zitie'), { recursive: true });
     fs.writeFileSync(
       path.join(out, 'zitie', `${zitieId}.json`),
-      JSON.stringify({ z: zitieId, base, thumb: isShlib ? '' : THUMB, desc: (d.description || '').slice(0, 160), g: glyphs }),
+      JSON.stringify({
+        z: zitieId, base, thumb: isShlib ? '' : THUMB, desc: (d.description || '').slice(0, 160), g: glyphs,
+        ...(isShlib ? { pages: shlibPages, sents: shlibSents } : {}),
+      }),
     );
     zitieFiles.set(zitieId, glyphs.length);
     zitieIndex.push({

@@ -4,15 +4,8 @@
 export type Rating = 1 | 2 | 3 | 4;
 
 /** 单张书法记忆卡片 */
-/** 单字的原拓上下文（馆方来源帖）：整页图 + 该字坐标（对应整页原始尺寸）+ 所在句 */
-export interface CardContext {
-  p: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  s?: string;
-}
+export type { CardContext } from '../core/types';
+import type { CardContext } from '../core/types';
 
 export interface Card {
   id: string;

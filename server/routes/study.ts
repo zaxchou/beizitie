@@ -335,7 +335,7 @@ studyRouter.get('/due-counts', async (req: Request, res: Response) => {
       const db = getDb();
       const isAdmin = req.user!.role === 'admin';
       const r = await db.query(
-        `SELECT d.id, d.name, COUNT(c.id) as due_count
+        `SELECT d.id, d.name, COUNT(c.id)::int as due_count
          FROM decks d
          INNER JOIN cards c ON c.deck_id = d.id
          INNER JOIN user_card_progress ucp ON ucp.card_id = c.id AND ucp.user_id = $1

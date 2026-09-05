@@ -20,7 +20,8 @@ import {
 import CloseIcon from '@mui/icons-material/Close';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { fetchZitie } from '@/data/local/localAdapter';
-import type { CatalogZuopin } from '@/core/types';
+import type { CatalogZuopin, CardContext } from '@/core/types';
+import OriginalPageView from '@/components/study/OriginalPageView';
 
 interface Props {
   open: boolean;
@@ -37,7 +38,8 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const [previews, setPreviews] = useState<Array<{ url: string; hanzi: string }>>([]);
+  const [previews, setPreviews] = useState<Array<{ url: string; hanzi: string; context?: CardContext }>>([]);
+  const [viewing, setViewing] = useState<{ hanzi: string; context: CardContext } | null>(null);
   const [desc, setDesc] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -46,14 +48,20 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
     let alive = true;
     setLoading(true);
     setPreviews([]);
+    setViewing(null);
     setDesc('');
     fetchZitie(zuopin.z)
       .then((zitie) => {
         if (!alive) return;
         setDesc(zitie.desc || '');
+        const pages = zitie.pages || [];
+        const sents = zitie.sents || [];
         const sample = (zitie.g || []).slice(0, PREVIEW_COUNT).map((gl) => ({
-          url: `${zitie.base}${gl.rel}${zitie.thumb || '?x-bce-process=style/jpg256'}`,
+          url: `${zitie.base}${gl.rel}${zitie.thumb ?? '?x-bce-process=style/jpg256'}`,
           hanzi: gl.h,
+          context: gl.c
+            ? { p: pages[gl.c[0]] || '', x: gl.c[1], y: gl.c[2], w: gl.c[3], h: gl.c[4], s: sents[gl.c[5]] }
+            : undefined,
         }));
         setPreviews(sample);
       })
@@ -173,10 +181,14 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
             {previews.map((p, i) => (
               <Box
                 key={`${p.hanzi}-${i}`}
+                onClick={p.context ? () => setViewing({ hanzi: p.hanzi, context: p.context! }) : undefined}
+                title={p.context ? '查看整页原拓中的位置' : undefined}
                 sx={{
+                  position: 'relative',
                   aspectRatio: '1/1', borderRadius: 1, overflow: 'hidden', bgcolor: 'grey.50',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.06)',
+                  cursor: p.context ? 'zoom-in' : 'default',
                 }}
               >
                 <Box
@@ -190,6 +202,18 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
                     e.currentTarget.style.display = 'none';
                   }}
                 />
+                {p.context && (
+                  <Box
+                    sx={{
+                      position: 'absolute', top: 2, right: 2,
+                      px: 0.4, py: '1px', borderRadius: 0.5,
+                      bgcolor: 'rgba(224,178,95,0.92)', color: '#3b2a10',
+                      fontSize: 9, fontWeight: 700, lineHeight: 1.3,
+                    }}
+                  >
+                    原拓
+                  </Box>
+                )}
               </Box>
             ))}
           </Box>
@@ -213,6 +237,9 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
           </Button>
         )}
       </DialogActions>
+      {viewing && (
+        <OriginalPageView char={viewing.hanzi} context={viewing.context} onClose={() => setViewing(null)} />
+      )}
     </Dialog>
   );
 };

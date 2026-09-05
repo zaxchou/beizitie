@@ -59,7 +59,7 @@ function useDashboardData() {
       ]);
 
       return {
-        dueCount: dueCounts.reduce((sum, d) => sum + d.due_count, 0),
+        dueCount: dueCounts.reduce((sum, d) => sum + Number(d.due_count), 0),
         newCardRemaining: Math.max(0, DEFAULT_DAILY_NEW_CARD_LIMIT - (todayStats?.new_cards_learned ?? 0)),
         streakDays: calculateStreak(allStats),
         totalStudied: allStats.reduce((s, d) => s + d.cards_studied, 0),
@@ -82,7 +82,7 @@ export const useDashboardStats = (): DashboardStats => {
   const { data, loading } = useDashboardData();
 
   const newCount = useMemo(
-    () => decks.reduce((sum, d) => sum + ((d as any).new_available_today ?? d.new_count ?? 0), 0),
+    () => decks.reduce((sum, d) => sum + Number((d as any).new_available_today ?? d.new_count ?? 0), 0),
     [decks]
   );
 

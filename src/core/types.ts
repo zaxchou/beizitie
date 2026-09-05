@@ -24,17 +24,30 @@ export interface CatalogStyleCount {
 }
 
 /** catalog/zitie/<zitieId>.json */
+/** 单字的原拓上下文（馆方来源帖）：整页图 + 该字坐标（对应整页原始尺寸）+ 所在句 */
+export interface CardContext {
+  p: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  s?: string;
+}
+
 export interface ZitieGlyphList {
   z: string;
   base: string;        // CDN 目录前缀
   thumb: string;       // 统一缩放参数（如 ?x-bce-process=style/jpg512）
   desc?: string;       // 市场简介（详情弹窗用，懒加载不进目录索引）
   g: CatalogGlyph[];
+  pages?: string[];    // shlib：整页原拓图 URL 去重数组（配合 g[].c）
+  sents?: string[];    // shlib：所在句去重数组（配合 g[].c）
 }
 
 export interface CatalogGlyph {
   rel: string;         // base 之后的相对路径（无查询参数）
   h: string;           // 汉字
+  c?: [number, number, number, number, number, number]; // shlib：[pages 下标, x, y, w, h, sents 下标]
 }
 
 export function glyphUrl(z: Pick<ZitieGlyphList, 'base' | 'thumb'>, g: CatalogGlyph): string {
@@ -65,6 +78,7 @@ export interface LocalCard {
   hanzi: string;
   imageUrl: string;          // 完整直链
   sortOrder: number;
+  context?: CardContext | null; // 原拓上下文（shlib 来源帖才有）
 }
 
 /** 本地学习进度（IndexedDB progress store，键 cardId） */

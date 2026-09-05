@@ -66,12 +66,12 @@ decksRouter.get('/decks', async (req: Request, res: Response) => {
             WHERE deck_id = d.id AND image_url != '' AND archived_at IS NULL ORDER BY created_at ASC LIMIT 1
         ), '') AS cover_image,
         COALESCE((
-          SELECT COUNT(*) FROM cards c
+          SELECT COUNT(*)::int FROM cards c
             LEFT JOIN user_card_progress ucp ON ucp.user_id = ${newCountP} AND ucp.card_id = c.id
             WHERE c.deck_id = d.id AND c.archived_at IS NULL AND (ucp.card_id IS NULL OR ucp.interval = 0)
         ), 0) AS new_count,
         COALESCE((
-          SELECT COUNT(*) FROM cards c
+          SELECT COUNT(*)::int FROM cards c
             INNER JOIN user_card_progress ucp ON ucp.card_id = c.id AND ucp.user_id = ${dueUserP}
             WHERE c.deck_id = d.id AND c.archived_at IS NULL AND ucp.interval > 0 AND ucp.next_review <= ${dueNowP}
         ), 0) AS due_count,

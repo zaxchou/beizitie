@@ -146,12 +146,18 @@ export const localDataSource: LocalDataSource = {
         createdAt: new Date().toISOString(),
         settings: { dailyNewLimit: 20, dailyReviewLimit: 200, paused: false },
       };
+      const pages = z.pages || [];
+      const sents = z.sents || [];
       const cards: LocalCard[] = z.g.map((g, i) => ({
         id: crypto.randomUUID(),
         deckId: deck.id,
         hanzi: g.h,
         imageUrl: glyphUrl(z, g.rel),
         sortOrder: i,
+        // shlib 馆方来源帖：原拓上下文（学习卡可回看字在帖中）
+        context: g.c
+          ? { p: pages[g.c[0]] || '', x: g.c[1], y: g.c[2], w: g.c[3], h: g.c[4], s: sents[g.c[5]] }
+          : undefined,
       }));
       await putDeck(deck);
       await putCards(cards);
