@@ -364,3 +364,9 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 3. 统计深度：线上 AnalyticsPage（按帖/时段分布）比单文件 DataPage（基础图表）深
 4. 淳化阁帖订阅：单文件 zitie 文件带原拓坐标后 ~3.4MB，一次拉取偏慢（后续可按需分页）
 5. 云同步/多用户：单文件设计如此（本地 IndexedDB），非缺陷
+
+### 补记 4（同日）：淳化阁帖单文件体积优化完成
+- 目录 shlib 条目从「完整 IIIF 链接 + 6 元组」压缩为「pages[]（svc 去重）+ 9 元组 c（页下标, 裁切x/y/边长, 紧bbox x/y/w/h, 句下标）」，链接运行时由 shlibGlyphUrl/shlibPageUrl 拼回。
+- 淳化阁帖 2.85MB → 1.05MB（2.7×）；全目录 zitie 35.1MB → 约 13MB。
+- 重建 URL 与压缩前逐字节一致（抽样 200 全可访问；IIIF 服务器有并发限流，批量校验需串行+重试）。
+- 兼容性：g.rel 保留为异常回退路径；旧订阅数据自包含不受影响。
