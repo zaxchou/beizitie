@@ -352,3 +352,15 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 修复：网格项加 `minWidth: 0`（web + single 两个 MarketPage 都加了）。修复后实测 50 格全部 141×141。
 - 教训：验证布局问题必须看**渲染后的 DOM 几何**（playwright getBoundingClientRect），光看数据/图片内容会误判两次。
 - 防复发：API 已加 `Cache-Control: no-cache`（此前浏览器缓存旧接口数据也会造成"改了没生效"的错觉）。
+
+### 补记 3（同日）：待复习 011134 之谜 + 单文件原拓移植完成
+- **待复习"011134"** = 字符串拼接 bug：/api/due-counts 的 `COUNT(c.id)` 未转 int（pg bigint→string），前端 `sum + due_count` 变成 "0"+"1"+"1"+"13"+"4"。真实值 19。修复：COUNT 全部 `::int`（decks.ts 的 new_count/due_count 同修）+ 前端 Number() 兜底 + API 显式 `Cache-Control: no-cache`。
+- **单文件版原拓已移植**：目录 zitie JSON 对 shlib 帖输出 `pages[]`/`sents[]` 去重数组 + `g[].c=[页下标,x,y,w,h,句下标]`（九成宫仅 +25KB）；addFromZitie 落库到 LocalCard.context；学习卡复用 FlashCard 自动获得"原拓"按钮；市场详情预览字点击看整页高亮（与在线版共用 OriginalPageView）。Pages 实测通过。
+- 单文件版 MarketPage 本就有朝代筛选（DYNASTY_ORDER chips），无需另做。
+
+### 单文件版 vs 线上版 剩余差距清单（2026-09-05）
+1. 学习排序模式：线上 per-deck 可选顺序/随机/默认；单文件固定帖序
+2. 卡片管理页：线上可逐卡浏览/删除/重置；单文件仅整帖维度操作
+3. 统计深度：线上 AnalyticsPage（按帖/时段分布）比单文件 DataPage（基础图表）深
+4. 淳化阁帖订阅：单文件 zitie 文件带原拓坐标后 ~3.4MB，一次拉取偏慢（后续可按需分页）
+5. 云同步/多用户：单文件设计如此（本地 IndexedDB），非缺陷
