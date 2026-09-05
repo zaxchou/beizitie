@@ -38,18 +38,31 @@ export interface CardContext {
 
 export interface ZitieGlyphList {
   z: string;
-  base: string;        // CDN 目录前缀
-  thumb: string;       // 统一缩放参数（如 ?x-bce-process=style/jpg512）
+  base: string;        // CDN 目录前缀（ygsf）
+  thumb: string;       // 统一缩放参数（如 ?x-bce-process=style/jpg512，ygsf）
   desc?: string;       // 市场简介（详情弹窗用，懒加载不进目录索引）
   g: CatalogGlyph[];
-  pages?: string[];    // shlib：整页原拓图 URL 去重数组（配合 g[].c）
-  sents?: string[];    // shlib：所在句去重数组（配合 g[].c）
+  // shlib（上图）压缩格式：IIIF 链接不整条存储，运行时由 iiif+pages+c 拼回
+  iiif?: string;       // 如 https://iiif.library.sh.cn/i/3/
+  pages?: string[];    // [svc...] IIIF 页 service id 去重数组
+  sents?: string[];    // 所在句去重数组（配合 g[].c）
 }
 
 export interface CatalogGlyph {
-  rel: string;         // base 之后的相对路径（无查询参数）
+  rel?: string;        // ygsf：base 之后的相对路径（无查询参数）
   h: string;           // 汉字
-  c?: [number, number, number, number, number, number]; // shlib：[pages 下标, x, y, w, h, sents 下标]
+  // shlib：[pages 下标, 裁切 x, 裁切 y, 裁切边长, 紧bbox x, y, w, h, sents 下标]
+  c?: [number, number, number, number, number, number, number, number, number];
+}
+
+/** shlib 单字卡图 URL：由压缩坐标拼回 IIIF 链接 */
+export function shlibGlyphUrl(iiif: string, svc: string, c: [number, number, number, number, number, number, number, number, number]): string {
+  return `${iiif}${svc}/${c[1]},${c[2]},${c[3]},${c[3]}/256,256/0/default.jpg`;
+}
+
+/** shlib 整页原拓图 URL */
+export function shlibPageUrl(iiif: string, svc: string): string {
+  return `${iiif}${svc}/full/full/0/default.jpg`;
 }
 
 export function glyphUrl(z: Pick<ZitieGlyphList, 'base' | 'thumb'>, g: CatalogGlyph): string {

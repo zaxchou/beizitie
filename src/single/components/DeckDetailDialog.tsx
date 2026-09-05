@@ -23,6 +23,7 @@ import { fetchZitie } from '@/data/local/localAdapter';
 import type { CatalogZuopin, CardContext } from '@/core/types';
 import OriginalPageView from '@/components/study/OriginalPageView';
 import { sourceMeta } from '@/lib/sourceMeta';
+import { shlibGlyphUrl, shlibPageUrl } from '@/core/types';
 
 interface Props {
   open: boolean;
@@ -55,15 +56,20 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
       .then((zitie) => {
         if (!alive) return;
         setDesc(zitie.desc || '');
-        const pages = zitie.pages || [];
         const sents = zitie.sents || [];
-        const sample = (zitie.g || []).slice(0, PREVIEW_COUNT).map((gl) => ({
-          url: `${zitie.base}${gl.rel}${zitie.thumb ?? '?x-bce-process=style/jpg256'}`,
-          hanzi: gl.h,
-          context: gl.c
-            ? { p: pages[gl.c[0]] || '', x: gl.c[1], y: gl.c[2], w: gl.c[3], h: gl.c[4], s: sents[gl.c[5]] }
-            : undefined,
-        }));
+        const sample = (zitie.g || []).slice(0, PREVIEW_COUNT).map((gl) => {
+          const hasIIIF = !!zitie.iiif && !!gl.c && !!zitie.pages;
+          const svc = hasIIIF ? zitie.pages![gl.c![0]] : '';
+          return {
+            url: hasIIIF
+              ? shlibGlyphUrl(zitie.iiif!, svc, gl.c!)
+              : `${zitie.base}${gl.rel}${zitie.thumb ?? '?x-bce-process=style/jpg256'}`,
+            hanzi: gl.h,
+            context: gl.c && hasIIIF
+              ? { p: shlibPageUrl(zitie.iiif!, svc), x: gl.c[4], y: gl.c[5], w: gl.c[6], h: gl.c[7], s: sents[gl.c[8]] }
+              : undefined,
+          };
+        });
         setPreviews(sample);
       })
       .catch(() => {

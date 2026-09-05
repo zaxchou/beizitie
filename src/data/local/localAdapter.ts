@@ -13,6 +13,7 @@ import type {
   LocalProgress,
   ZitieGlyphList,
 } from '../../core/types';
+import { shlibGlyphUrl, shlibPageUrl } from '../../core/types';
 import type { LocalDataSource, StudyQueue } from '../adapter';
 import {
   deleteCardsByDeck,
@@ -146,19 +147,27 @@ export const localDataSource: LocalDataSource = {
         createdAt: new Date().toISOString(),
         settings: { dailyNewLimit: 20, dailyReviewLimit: 200, paused: false },
       };
-      const pages = z.pages || [];
       const sents = z.sents || [];
-      const cards: LocalCard[] = z.g.map((g, i) => ({
-        id: crypto.randomUUID(),
-        deckId: deck.id,
-        hanzi: g.h,
-        imageUrl: glyphUrl(z, g.rel),
-        sortOrder: i,
-        // shlib 馆方来源帖：原拓上下文（学习卡可回看字在帖中）
-        context: g.c
-          ? { p: pages[g.c[0]] || '', x: g.c[1], y: g.c[2], w: g.c[3], h: g.c[4], s: sents[g.c[5]] }
-          : undefined,
-      }));
+      const cards: LocalCard[] = z.g.map((g, i) => {
+        let imageUrl: string;
+        let context: LocalCard['context'] = undefined;
+        if (z.iiif && g.c && z.pages) {
+          // shlib 压缩格式：运行时拼 IIIF 链接；原拓整页图同页拼出
+          const svc = z.pages[g.c[0]];
+          imageUrl = shlibGlyphUrl(z.iiif, svc, g.c);
+          context = { p: shlibPageUrl(z.iiif, svc), x: g.c[4], y: g.c[5], w: g.c[6], h: g.c[7], s: sents[g.c[8]] };
+        } else {
+          imageUrl = glyphUrl(z, g.rel || '');
+        }
+        return {
+          id: crypto.randomUUID(),
+          deckId: deck.id,
+          hanzi: g.h,
+          imageUrl,
+          sortOrder: i,
+          context,
+        };
+      });
       await putDeck(deck);
       await putCards(cards);
       return deck;

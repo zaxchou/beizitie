@@ -89,7 +89,8 @@ async function main() {
     let shlibPages: string[] | undefined;
     let shlibSents: string[] | undefined;
     if (isShlib) {
-      // 原拓上下文压缩存储：整页图/所在句各自去重成数组，单字只存下标
+      // 压缩存储：IIIF 链接拆成 svc（去重成 pages 数组）+ 裁切区/紧bbox（数字元组），
+      // 所在句去重成 sents 数组——单字条目约为完整 URL 的 1/3
       const pages: string[] = []; const pageIdx = new Map<string, number>();
       const sents: string[] = []; const sentIdx = new Map<string, number>();
       const idxOf = (arr: string[], map: Map<string, number>, v: string) => {
@@ -100,11 +101,18 @@ async function main() {
       for (const c of cards) {
         if (seen.has(c.image_url)) continue;
         seen.add(c.image_url);
+        // image_url: https://iiif.library.sh.cn/i/3/{svc}/{sx},{sy},{side},{side}/256,256/0/default.jpg
+        const m = c.image_url.match(/^https:\/\/iiif\.library\.sh\.cn\/i\/3\/([0-9a-f]+)\/(\d+),(\d+),(\d+),(\d+)\/256,256\//);
         const ctx = c.context as { p: string; x: number; y: number; w: number; h: number; s?: string } | null;
+        if (!m || !ctx) {
+          glyphs.push({ rel: c.image_url, h: (c.front_text || '').trim() }); // 异常回退：整链存储
+          continue;
+        }
+        const pi = idxOf(pages, pageIdx, m[1]);
+        const si = idxOf(sents, sentIdx, ctx.s || '');
         glyphs.push({
-          rel: c.image_url,
           h: (c.front_text || '').trim(),
-          c: [idxOf(pages, pageIdx, ctx?.p || ''), ctx?.x || 0, ctx?.y || 0, ctx?.w || 0, ctx?.h || 0, idxOf(sents, sentIdx, ctx?.s || '')],
+          c: [+m[2], +m[3], +m[4], +m[5], ctx.x, ctx.y, ctx.w, ctx.h, si],
         });
       }
       shlibPages = pages;
@@ -145,7 +153,7 @@ async function main() {
       path.join(out, 'zitie', `${zitieId}.json`),
       JSON.stringify({
         z: zitieId, base, thumb: isShlib ? '' : THUMB, desc: (d.description || '').slice(0, 160), g: glyphs,
-        ...(isShlib ? { pages: shlibPages, sents: shlibSents } : {}),
+        ...(isShlib ? { iiif: 'https://iiif.library.sh.cn/i/3/', pages: shlibPages, sents: shlibSents } : {}),
       }),
     );
     zitieFiles.set(zitieId, glyphs.length);
