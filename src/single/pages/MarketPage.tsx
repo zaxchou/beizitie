@@ -207,7 +207,7 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
             {zuopins.map((z) => {
               const isSub = subscribed.has(z.z);
               return (
-                <Box key={z.id} sx={{ display: 'flex', flexDirection: 'column' }}>
+                <Box key={z.id} sx={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
                   <Box
                     onClick={() => setDetailZuopin(z)}
                     sx={{

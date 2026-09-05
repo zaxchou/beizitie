@@ -214,7 +214,7 @@ const MarketPage: React.FC = () => {
     <Box
       key={deck.deck_id}
       onClick={() => setDetailDeck(deck)}
-      sx={{ display: 'flex', flexDirection: 'column', cursor: 'pointer' }}
+      sx={{ display: 'flex', flexDirection: 'column', cursor: 'pointer', minWidth: 0 }}
     >
       <Box
         sx={{
