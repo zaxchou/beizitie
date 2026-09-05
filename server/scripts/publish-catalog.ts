@@ -112,7 +112,8 @@ async function main() {
         const si = idxOf(sents, sentIdx, ctx.s || '');
         glyphs.push({
           h: (c.front_text || '').trim(),
-          c: [+m[2], +m[3], +m[4], +m[5], ctx.x, ctx.y, ctx.w, ctx.h, si],
+          // [页下标, 裁切x, 裁切y, 裁切边长, 紧bbox x, y, w, h, 句下标]
+          c: [pi, +m[2], +m[3], +m[4], ctx.x, ctx.y, ctx.w, ctx.h, si],
         });
       }
       shlibPages = pages;
