@@ -27,6 +27,12 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(compression()); // gzip 压缩所有 JSON 响应
 app.use(express.json({ limit: '50mb' }));
+// API 响应禁浏览器启发式缓存：每次都带 ETag 协商，数据变了必定拿到新数据
+// （此前市场封面更新后部分浏览器仍显示旧数据，即缺显式 Cache-Control 所致）
+app.use('/api', (_req, res, next) => {
+  res.set('Cache-Control', 'no-cache');
+  next();
+});
 
 // 静态文件服务 —— uploads 目录（项目根目录）
 // 启用浏览器缓存：图片不可变，缓存 7 天，immutable 标记
