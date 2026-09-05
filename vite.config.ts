@@ -1,8 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
+import { readFileSync } from 'fs';
+const json = JSON.parse(readFileSync('./package.json', 'utf-8'));
+
 
 export default defineConfig({
+  define: {
+    // 版本号唯一来源是 package.json；应用内（设置页「关于」）与 CHANGELOG 均以此为准
+    __APP_VERSION__: JSON.stringify(json.version),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+  },
   plugins: [react()],
   resolve: {
     alias: {

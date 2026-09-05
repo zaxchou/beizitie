@@ -10,6 +10,7 @@ import {
   Switch,
 } from '@mui/material';
 import { localDataSource } from '@/data/local/localAdapter';
+import { APP_VERSION, BUILD_DATE } from '@/core/version';
 import { clearImageCache, imageCacheCount } from '@/data/local/imageCache';
 import { kvGet, kvSet } from '@/data/local/db';
 
@@ -155,11 +156,11 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 0.5 }}>关于</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.8 }}>
-            背字帖 · 单文件开源版（MIT）
+            背字帖 · 单文件开源版（MIT）{APP_VERSION !== 'dev' && <> · v{APP_VERSION}{BUILD_DATE ? `（${BUILD_DATE} 构建）` : ''}</>}
             <br />
             碑帖单字图来自公开字库 CDN，仅供学习
             <br />
-            学习记录仅存本机 · <a href="https://github.com/zaxchou/beizitie" target="_blank" rel="noreferrer">GitHub</a>
+            学习记录仅存本机 · <a href="https://github.com/zaxchou/beizitie/releases" target="_blank" rel="noreferrer">GitHub · 更新日志</a>
           </Typography>
         </CardContent>
       </Card>

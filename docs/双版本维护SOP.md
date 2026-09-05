@@ -150,3 +150,12 @@ curl -s -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: text/html" \
 | 目录字段变更 | — | **三处同步**：core/types.ts + publish-catalog.ts + localAdapter.ts |
 
 发版顺序：代码提交 → `bash deploy.sh anki`（在线版+后端）→ `bash release-catalog.sh`（目录+beizitie.html+Pages）→ 两侧都要点开验证。
+
+## 版本规范（2026-09-05 起）
+
+- **唯一版本源是 `package.json` 的 version**；`build:single` 经 vite define 注入应用，设置页「关于」可见（`vX.Y.Z（日期 构建）`）。
+- **语义化版本**：major=数据格式/接口不兼容；minor=新功能；patch=修复。
+- **发版只走 `bash scripts/release-version.sh <x.y.z>`**：校验 CHANGELOG 已有对应小节 → 写版本 → 重编 beizitie.html → commit + tag + push → 创建 GitHub Release 并挂当版本 beizitie.html 附件。先写 CHANGELOG 再发版（防呆）。
+- README 的下载链接固定用 `releases/latest/download/beizitie.html`（永远指向最新 Release 附件），不要指向 raw main（那是未发版的工作区）。
+- 目录数据发版仍走 `release-catalog.sh`，与版本发版互不代替：改了 src/ 要发版（release-version.sh），只改目录数据走 release-catalog.sh。
+

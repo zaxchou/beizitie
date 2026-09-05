@@ -6,6 +6,7 @@
 
 **书法碑帖单字记忆 · SM-2 间隔重复 · 开源 · 隐私优先**
 
+[![Version](https://img.shields.io/badge/版本-v1.1.0-b03a2e)](CHANGELOG.md)
 [![License](https://img.shields.io/badge/license-MIT-8a7d68)](LICENSE)
 [![在线版](https://img.shields.io/badge/在线版-beizitie.com-b03a2e)](https://beizitie.com)
 [![单文件版](https://img.shields.io/badge/单文件版-在线试用-3c7a4e)](https://zaxchou.github.io/beizitie/beizitie.html)
@@ -44,7 +45,7 @@
 | 方式 | 适合谁 | 入口 |
 |---|---|---|
 | 🌐 **在线版** | 打开就用，注册即学，数据云端保存 | **[beizitie.com](https://beizitie.com)** ✅ 运营中 |
-| 📄 **单文件版** | 无账号，学习记录只存本机 | **[在线试用](https://zaxchou.github.io/beizitie/beizitie.html)** · [下载 beizitie.html](https://github.com/zaxchou/beizitie/raw/main/beizitie.html)（约 1.2MB，双击即用） |
+| 📄 **单文件版** | 无账号，学习记录只存本机 | **[在线试用](https://zaxchou.github.io/beizitie/beizitie.html)** · [下载最新版 beizitie.html](https://github.com/zaxchou/beizitie/releases/latest/download/beizitie.html)（约 1.2MB，双击即用；版本见应用「设置 → 关于」） |
 | 🛠 **自托管平台版** | 学校 / 书院 / 团队自建，多用户管理 | 见下文 |
 
 > 单文件版下载后双击打开即可（Chrome / Edge / Safari）。市场目录已内联，订阅和学习时需联网拉取字帖图片。
