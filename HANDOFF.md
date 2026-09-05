@@ -376,3 +376,13 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - **截图渲染坑**：① 上图 IIIF 直连 403，必须带浏览器 User-Agent；② `zoom:2` 截图时 body 背景传播到 canvas 不受 zoom 影响，正中会出硬接缝——背景必须放独立 .bg 层；CDP deviceScaleFactor 在 MCP 环境不生效，zoom 方案可用。
 - **真 bug：编辑精选封面空白**：精选帖（阴符经等 5 部）的封面是管理员上传的服务器相对路径 `/uploads/...`，在线版能解析，单文件版目录里没有主机名 → MarketPage `startsWith('http')` 判掉变灰块。修复：publish-catalog.ts `absCover()` 把 `/` 开头封面补全为 `https://beizitie.com` 前缀；deploy.sh anki + release-catalog.sh 重发后 Pages 已验证。
 - **README 重写**：功能特性表 / 界面速览（docs/screenshots/ 三张移动端真机图：市场/学习卡/字在帖中）/ 快速开始 / 单文件细节 / 自托管 / FAQ / 致谢与数据来源；删除过时的「统计页在 Roadmap 中」；补 LICENSE 文件（此前 README 声称 MIT 但仓库无 LICENSE，含数据许可说明）。
+
+### 补记 6（同日）：deep review 修复——口令轮换 + 重建保进度 + 并发丢设置
+- **口令轮换（P1）**：review 发现 `zi2anki_pg_2026` 以代码默认值形式散布在 db.ts/backup-db.sh/deploy.sh/deploy.md/auto-verify.sh（仓库公开=已永久泄露）。处置：生产 `ALTER USER` 轮换新随机口令 → `/opt/zi2anki/.db-password`(600, 不入库) 为唯一事实源 → db.ts 改 环境变量→cwd 文件 两级解析，生产缺失即 FATAL（对齐 JWT_SECRET 模式）→ 四个脚本/文档全改读文件 → 全仓扫描 0 残留。本地开发在仓库根放本地 .db-password（已 gitignore）。注意：deploy.sh 整个文件在 .gitignore 里，它的修改不会随 git 走。
+- **shlib 导入器重写（P1）**：旧版 DELETE 全部卡片+进度+订阅后重建，重跑一次=清空所有学习者的进度。新版：单事务；deck id 不变（订阅不动）；卡片按 source_key 复用 id 只更内容（进度保留）；包里移除的字才连带删进度。已在生产用《麻姑山仙坛记》实测：deck_id 不变、更新 757/新增 0/移除 0、test 的订阅保留。
+- **LimitEditor 并发丢设置（P1）**：保存按钮连发 3 个并发 updateSettings（读-改-写），最后一次写覆盖前两次→同时改上限+出卡顺序会静默丢设置。改单次合并 patch 保存。
+- **majority-verify ok 分支（P2）**：mismatch≤5 的帖此前不应用 fixes 直接放行，带错字进集字。现在两个分支都应用 fixes（MISMATCH_LIMIT 只区分报告 verdict）。注：已放行的存量帖要修字需重跑一轮不带 --skip-verified 的核验（源站窗口轮转，耗时长，暂缓）。
+- **MARKET_VERIFIED_SQL 收拢（P2）**：上架口径谓词 9 处引用统一到 server/services/marketScope.ts。教训：模板字符串里替换裸标识符不生效（会被当 SQL 列名），必须 `${CONST}`——已在线上踩过一次（market 列表 500，column "market_verified_sql" does not exist）。
+- **P3**：cards.ts 第二道路径守卫删除（恒真无防护意义）；随机出卡改 Fisher-Yates；OriginalPageView IIIF 加载失败给提示；tsconfig.tsbuildinfo 退库。
+- **实测纠正一个 review 误判**：上图整页原拓并不大（页宽约 1100px、100–500KB），此前"十几 MB"的估计错了；且该 IIIF 默认禁止放大（小于原尺寸的 size 请求返回 400 要 ^ 前缀），保持 full/full 即可。
+
