@@ -143,7 +143,7 @@ Issue / PR 都欢迎。`HANDOFF.md` 里有完整的架构说明与踩坑记录�
 ## 🙏 致谢与数据来源
 
 - **[上海图书馆碑帖知识库《翰墨瑰宝》](https://iiif.library.sh.cn)** — 45 部馆藏碑帖的整卷原拓与单字坐标（CC BY-NC-ND 3.0 CN），「字在帖中」功能的数据来源
-- **以观书法（YGSF）** — 碑帖单字图数据
+- **[以观书法（YGSF）](https://www.ygsf.com/)** — 碑帖单字图数据
 - **[zupu](https://github.com/zaxchou/zupu)** — 单文件开源族谱工具，本仓库单文件版的架构灵感来源
 - **[molin.wiki](https://molin.wiki)** — 中国书画 AI 分析与知识平台（姊妹项目）
 
