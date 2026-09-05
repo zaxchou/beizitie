@@ -340,3 +340,9 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 匹配/对齐脚本拉序列必须 ORDER BY d.id, c.sort_order（漏排会得到 0-15% 的假结果）。
 - 上图收割库 inst.temporal 语义混杂（拓本年代/碑刻年代混用，出现过"春秋拓本"），命名统一（上图藏本），底本信息放 description。
 - jizi 索引对古文字（石鼓文 371 字只收 12）会正确过滤，非 bug。
+
+### 补记（同日）：单文件版目录已接入上图来源
+- publish-catalog.ts 分流：shlib 帖 IIIF 绝对直链（rel=完整 URL，base/thumb 置空），ygsf 仍走 CDN 相对路径；前端 glyphUrl=base+rel+thumb 天然兼容，零改动。
+- 张从申书李玄靖碑书体缺失（上图元数据缺 script_form）→ STYLE_OVERRIDES 补楷书，重导。
+- Pages 实测：目录 1431 帖（含上图 45 部），九成宫 zitie 文件 IIIF 链接 200 ✓；beizitie.html 已重编内联。
+- 已知边界：cards.context（原拓坐标）未进单文件目录（文件体积+前端 UI），"字在帖中"目前仅在线版。
