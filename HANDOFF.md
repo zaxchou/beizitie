@@ -275,3 +275,29 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 敦煌遗书佛说父母恩重经：611 错字 → 复检 971/971，经文连贯 ✓
 - 50 帖随机抽样：OK 4 / 需修 8 / 未决 38（快照覆盖不足，待复验）；8 中 7 帖已修并放行集字（意不殊前因快照空本轮跳过）；苏轼西湖诗复检 398/399（余 1 为源站多义字正常波动，二次投票 399/399 一致）
 - 集字已验证放行：敦煌 + 7 帖（8 帖，共 ~2700 字）
+
+## 14. 2026-09-05 上架口径收紧：市场仅展示已校验帖（宁缺勿错全量贯彻）
+
+### 决策
+- 用户拍板：`jizi_verified` 不只管集字，**市场也只上已校验帖**；未校验 YGSF 帖 = 废弃下架状态（数据保留，不可在市场学习）。补验通过后自动恢复上架，无需改代码。
+
+### 实现（谓词已内联进各 SQL，注释指向 HANDOFF §14）
+- `server/index.ts` 公开路由（**注意：这些在 authMiddleware 之前，遮蔽 marketplaceRouter 同名 GET**）：市场列表 + 书体/朝代/书家 facet（facet 原本漏 published 过滤，已一并修正）+ 帖详情 + 卡片预览，均加 `AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:'||zitie_id FROM jizi_verified))`。
+- `server/routes/marketplace.ts`：订阅 POST 加同款闸口 + `published_at IS NOT NULL`（404 "该帖未上架或未通过校验"）；鉴权版 GET 列表同步（实际被遮蔽）；鉴权版 GET 详情未改（被遮蔽的死代码，Mimosa hook 误报拦编辑，无实际影响）。
+- `server/scripts/publish-catalog.ts`：目录同口径 + **输出目录先 rmSync 重建**（修复 catalog-out 累加导致旧帖 JSON 残留进发版的 bug）。
+- `release-catalog.sh`：步骤 2 改为整目录替换（rm -rf catalog 再解包），防本地残留。
+
+### 数字口径（对外统一用这个）
+- **市场上架 = 1386 部 / 184 书家 / 380,954 单字**（行 797 / 楷 237 / 草 269 / 隶 55 / 篆 29；明 709 / 宋 179 / 清 164 / 元 125）。
+- 集字范围 = 1476 部 / 41.7 万字（比市场多的是 100 部未上架画题长卷，如九歌图/孝经图——校验过但市场不收画题）。
+- 单文件版目录 = 1385 帖（1386 里 1 帖因目录收录规则被跳过）。
+- 库房总量仍是 2707 部/172 万卡（未删），只是不上架。
+
+### 验证记录（2026-09-05）
+- 线上 API total=1386 ✓；未校验帖详情 404 ✓ 预览 0 卡 ✓；已校验帖 200/50 卡 ✓。
+- catalog/index.json（Pages）total=1385 ✓；zitie 文件 1385=目录数 ✓。
+- 提交：84ded8a（代码）、dcc9765/1a13c23（目录发版，后者清理 1322 个残留 JSON）。
+
+### 遗留
+- marketplace.ts 鉴权版 GET 详情仍是旧口径（死代码）；下次触碰该文件时顺手补齐。
+- 1366 部未校验帖待源站快照恢复后跑 `ygsf-majority-verify --apply --skip-verified` 补验，通过即自动回到市场。

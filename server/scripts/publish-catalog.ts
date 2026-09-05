@@ -47,6 +47,10 @@ async function main() {
   const db = getDb();
   const out = outDir();
 
+  // 输出目录整体重建：清掉上一轮已下架帖的残留 JSON，避免发版带出过期文件
+  fs.rmSync(out, { recursive: true, force: true });
+  fs.mkdirSync(path.join(out, 'zitie'), { recursive: true });
+
   const { rows: decks } = await db.query(
     `SELECT d.id, d.name, d.card_count, md.calligrapher, md.dynasty, md.style,
             md.description, md.cover_thumb, md.cover_image
