@@ -86,10 +86,11 @@ async function main() {
         JSON.stringify({ p: c.page_url, x: c.x, y: c.y, w: c.w, h: c.h, s: c.sentence || '' }),
         now, now,
       );
+      // 注意：生产库 cards.user_id 默认值是 ''（历史迁移），必须显式 NULL，否则违反 fk_cards_user
       return `($${b + 1}, $${b + 2}, NULL, $${b + 3}, $${b + 4}, $${b + 5}, $${b + 6}, $${b + 7}, $${b + 8}, 2.5, 0, 0, $${b + 9}, $${b + 10}, $${b + 10})`;
     });
     await db.query(
-      `INSERT INTO cards (id, deck_id, front_text, back_text, image_url, source_key, sort_order, context, ease, interval, repetitions, next_review, created_at, updated_at)
+      `INSERT INTO cards (id, deck_id, user_id, front_text, back_text, image_url, source_key, sort_order, context, ease, interval, repetitions, next_review, created_at, updated_at)
        VALUES ${tuples.join(',')}`,
       values,
     );
