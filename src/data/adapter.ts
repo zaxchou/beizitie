@@ -22,6 +22,7 @@ export interface DeckSettingsPatch {
   dailyNewLimit?: number;
   dailyReviewLimit?: number;
   paused?: boolean;
+  mode?: 'default' | 'sequential' | 'random';
 }
 
 export interface StudyQueue {
@@ -61,6 +62,7 @@ export interface LocalDataSource {
     rate(cardId: string, rating: Rating): Promise<void>;
   };
   stats: {
+    dueForecast(days?: number): Promise<{ date: string; count: number }[]>;
     today(): Promise<LocalDailyStat>;
     range(days: number): Promise<LocalDailyStat[]>;
   };

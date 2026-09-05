@@ -8,6 +8,7 @@ import {
   Chip,
   IconButton,
   LinearProgress,
+  MenuItem,
   TextField,
 } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -16,7 +17,7 @@ import PauseCircleIcon from '@mui/icons-material/PauseCircle';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { localDataSource } from '@/data/local/localAdapter';
-import type { LocalDeck } from '@/core/types';
+import type { LocalDeck, StudyMode } from '@/core/types';
 
 type DeckRow = LocalDeck & {
   newCount: number;
@@ -86,6 +87,12 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
 
   const saveLimit = async (deck: DeckRow, key: 'dailyNewLimit' | 'dailyReviewLimit', value: number) => {
     await localDataSource.library.updateSettings(deck.id, { [key]: value });
+    setSettingsFor(null);
+    load();
+  };
+
+  const saveMode = async (deck: DeckRow, mode: StudyMode) => {
+    await localDataSource.library.updateSettings(deck.id, { mode });
     setSettingsFor(null);
     load();
   };
@@ -220,6 +227,7 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
           deck={settingsFor}
           onClose={() => setSettingsFor(null)}
           onSaved={(key, value) => { void saveLimit(settingsFor, key, value); }}
+          onModeSaved={(mode) => { void saveMode(settingsFor, mode); }}
         />
       )}
     </Box>
@@ -229,13 +237,15 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
 /** 每日上限编辑（点击设置图标出现） */
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
-function LimitEditor({ deck, onClose, onSaved }: {
+function LimitEditor({ deck, onClose, onSaved, onModeSaved }: {
   deck: DeckRow;
   onClose: () => void;
   onSaved: (key: 'dailyNewLimit' | 'dailyReviewLimit', value: number) => void;
+  onModeSaved: (mode: StudyMode) => void;
 }) {
   const [newLimit, setNewLimit] = useState(deck.settings.dailyNewLimit);
   const [reviewLimit, setReviewLimit] = useState(deck.settings.dailyReviewLimit);
+  const [mode, setMode] = useState<StudyMode>(deck.settings.mode || 'default');
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle sx={{ fontSize: 16 }}>学习设置 · {deck.name}</DialogTitle>
@@ -256,6 +266,17 @@ function LimitEditor({ deck, onClose, onSaved }: {
             inputProps={{ min: 0 }}
           />
         </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mt: 2 }}>
+          <Typography variant="body2">出卡顺序</Typography>
+          <TextField
+            select size="small" value={mode} sx={{ width: 150 }}
+            onChange={(e) => setMode(e.target.value as StudyMode)}
+          >
+            <MenuItem value="default">默认（到期优先）</MenuItem>
+            <MenuItem value="sequential">按帖序</MenuItem>
+            <MenuItem value="random">随机</MenuItem>
+          </TextField>
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>取消</Button>
@@ -264,6 +285,7 @@ function LimitEditor({ deck, onClose, onSaved }: {
           onClick={() => {
             onSaved('dailyNewLimit', newLimit);
             onSaved('dailyReviewLimit', reviewLimit);
+            if (mode !== (deck.settings.mode || 'default')) onModeSaved(mode);
             onClose();
           }}
         >

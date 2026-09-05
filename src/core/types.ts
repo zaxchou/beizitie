@@ -68,8 +68,12 @@ export interface LocalDeck {
     dailyNewLimit: number;   // 默认 20
     dailyReviewLimit: number; // 默认 200
     paused: boolean;
+    mode?: StudyMode;        // 出卡顺序：default=到期优先 sequential=按帖序 random=随机
   };
 }
+
+/** 出卡顺序模式 */
+export type StudyMode = 'default' | 'sequential' | 'random';
 
 /** 本地卡片（IndexedDB cards store） */
 export interface LocalCard {

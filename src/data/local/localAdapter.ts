@@ -223,20 +223,28 @@ export const localDataSource: LocalDataSource = {
         getProgressByDeck(deckId),
       ]);
       const settings = deck?.settings || { dailyNewLimit: 20, dailyReviewLimit: 200, paused: false };
+      const mode = settings.mode || 'default';
       const pMap = new Map(progress.map((p) => [p.cardId, p]));
       const now = new Date();
-      const reviews = cards
+      const byOrder = (a: LocalCard, b: LocalCard) => a.sortOrder - b.sortOrder;
+      const dueAll = cards
         .filter((c) => {
           const p = pMap.get(c.id);
           return p && new Date(p.dueAt) <= now;
-        })
-        .slice(0, settings.dailyReviewLimit);
-      const fresh = cards.filter((c) => !pMap.get(c.id)).slice(0, settings.dailyNewLimit);
-      const toShuffle = settings.paused ? [] : [...reviews, ...fresh];
-      // 轻微洗牌（新卡穿插）：稳定排序让新卡靠后
-      toShuffle.sort(() => Math.random() - 0.5);
+        });
+      const reviews = (
+        mode === 'sequential'
+          ? [...dueAll].sort(byOrder)
+          : [...dueAll].sort((a, b) => (pMap.get(a.id)!.dueAt || '').localeCompare(pMap.get(b.id)!.dueAt || ''))
+      ).slice(0, settings.dailyReviewLimit);
+      const fresh = cards.filter((c) => !pMap.get(c.id)).sort(byOrder).slice(0, settings.dailyNewLimit);
+      let ordered: LocalCard[];
+      if (settings.paused) ordered = [];
+      else if (mode === 'random') ordered = [...reviews, ...fresh].sort(() => Math.random() - 0.5);
+      else if (mode === 'sequential') ordered = [...reviews, ...fresh].sort(byOrder);
+      else ordered = [...reviews, ...fresh]; // 默认：到期优先（按到期时间），新卡按帖序
       return {
-        items: toShuffle.map((c) => ({ card: c, progress: pMap.get(c.id) || null })),
+        items: ordered.map((c) => ({ card: c, progress: pMap.get(c.id) || null })),
         newCount: fresh.length,
         reviewCount: reviews.length,
       };
@@ -273,6 +281,24 @@ export const localDataSource: LocalDataSource = {
     async today() {
       const date = todayLocal();
       return (await getStat(date)) || { date, studied: 0, newLearned: 0 };
+    },
+    async dueForecast(days = 14) {
+      const decks = await getAllDecks();
+      const buckets = new Map<string, number>();
+      const key = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+      for (let i = 0; i < days; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        buckets.set(key(d), 0);
+      }
+      for (const d of decks) {
+        const progress = await getProgressByDeck(d.id);
+        for (const p of progress) {
+          const k = key(new Date(p.dueAt));
+          if (buckets.has(k)) buckets.set(k, (buckets.get(k) || 0) + 1);
+        }
+      }
+      return [...buckets.entries()].map(([date, count]) => ({ date: date.slice(5), count }));
     },
     async range(days) {
       const all = await getAllStats();
