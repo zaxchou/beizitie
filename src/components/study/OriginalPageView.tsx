@@ -22,6 +22,8 @@ export interface OriginalPageViewProps {
 
 const OriginalPageView: React.FC<OriginalPageViewProps> = ({ char, context, onClose }) => {
   const [natural, setNatural] = useState<{ w: number; h: number } | null>(null);
+  const [failed, setFailed] = useState(false);
+  // 整页图走馆方 IIIF（有并发限流 403/429）：失败给明确提示，避免整块黑图无解释
   return (
     <Dialog open onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
       <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
@@ -38,6 +40,14 @@ const OriginalPageView: React.FC<OriginalPageViewProps> = ({ char, context, onCl
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ px: 2, pb: 2 }}>
+        {failed ? (
+          <Box sx={{ py: 6, textAlign: 'center', bgcolor: '#211d18', borderRadius: 1 }}>
+            <Typography sx={{ color: '#f4eee0', mb: 0.5 }}>整页原拓加载失败</Typography>
+            <Typography variant="caption" sx={{ color: 'rgba(244,238,224,0.6)' }}>
+              图片源（上海图书馆 IIIF）可能限流，请稍后重试
+            </Typography>
+          </Box>
+        ) : (
         <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', bgcolor: '#211d18' }}>
           <Box
             component="img"
@@ -47,6 +57,7 @@ const OriginalPageView: React.FC<OriginalPageViewProps> = ({ char, context, onCl
               const t = e.currentTarget;
               setNatural({ w: t.naturalWidth, h: t.naturalHeight });
             }}
+            onError={() => setFailed(true)}
             sx={{ width: '100%', display: 'block' }}
           />
           {natural && (
@@ -65,6 +76,7 @@ const OriginalPageView: React.FC<OriginalPageViewProps> = ({ char, context, onCl
             />
           )}
         </Box>
+        )}
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
           字在帖中 —— 该字在整卷拓片中的位置。看行气、看章法，理解单字在原帖中的姿态。
         </Typography>

@@ -85,14 +85,9 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
     load();
   };
 
-  const saveLimit = async (deck: DeckRow, key: 'dailyNewLimit' | 'dailyReviewLimit', value: number) => {
-    await localDataSource.library.updateSettings(deck.id, { [key]: value });
-    setSettingsFor(null);
-    load();
-  };
-
-  const saveMode = async (deck: DeckRow, mode: StudyMode) => {
-    await localDataSource.library.updateSettings(deck.id, { mode });
+  // 一次性合并保存：updateSettings 是读-改-写，拆成多次并发调用会互相覆盖（丢设置）
+  const saveSettings = async (deck: DeckRow, patch: { dailyNewLimit: number; dailyReviewLimit: number; mode: StudyMode }) => {
+    await localDataSource.library.updateSettings(deck.id, patch);
     setSettingsFor(null);
     load();
   };
@@ -226,8 +221,7 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
         <LimitEditor
           deck={settingsFor}
           onClose={() => setSettingsFor(null)}
-          onSaved={(key, value) => { void saveLimit(settingsFor, key, value); }}
-          onModeSaved={(mode) => { void saveMode(settingsFor, mode); }}
+          onSaved={(patch) => { void saveSettings(settingsFor, patch); }}
         />
       )}
     </Box>
@@ -237,11 +231,10 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
 /** 每日上限编辑（点击设置图标出现） */
 import { Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
-function LimitEditor({ deck, onClose, onSaved, onModeSaved }: {
+function LimitEditor({ deck, onClose, onSaved }: {
   deck: DeckRow;
   onClose: () => void;
-  onSaved: (key: 'dailyNewLimit' | 'dailyReviewLimit', value: number) => void;
-  onModeSaved: (mode: StudyMode) => void;
+  onSaved: (patch: { dailyNewLimit: number; dailyReviewLimit: number; mode: StudyMode }) => void;
 }) {
   const [newLimit, setNewLimit] = useState(deck.settings.dailyNewLimit);
   const [reviewLimit, setReviewLimit] = useState(deck.settings.dailyReviewLimit);
@@ -283,9 +276,7 @@ function LimitEditor({ deck, onClose, onSaved, onModeSaved }: {
         <Button
           variant="contained"
           onClick={() => {
-            onSaved('dailyNewLimit', newLimit);
-            onSaved('dailyReviewLimit', reviewLimit);
-            if (mode !== (deck.settings.mode || 'default')) onModeSaved(mode);
+            onSaved({ dailyNewLimit: newLimit, dailyReviewLimit: reviewLimit, mode });
             onClose();
           }}
         >

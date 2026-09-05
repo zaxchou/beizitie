@@ -118,6 +118,15 @@ export async function isZitieSubscribed(zitieId: string): Promise<boolean> {
 }
 
 // ---- LocalDataSource 实现 ----
+/** Fisher-Yates 均匀洗牌（出卡顺序「随机」模式） */
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 export const localDataSource: LocalDataSource = {
   catalog: {
     index: () => catalogIndex,
@@ -249,7 +258,7 @@ export const localDataSource: LocalDataSource = {
       const fresh = cards.filter((c) => !pMap.get(c.id)).sort(byOrder).slice(0, settings.dailyNewLimit);
       let ordered: LocalCard[];
       if (settings.paused) ordered = [];
-      else if (mode === 'random') ordered = [...reviews, ...fresh].sort(() => Math.random() - 0.5);
+      else if (mode === 'random') ordered = shuffle([...reviews, ...fresh]);
       else if (mode === 'sequential') ordered = [...reviews, ...fresh].sort(byOrder);
       else ordered = [...reviews, ...fresh]; // 默认：到期优先（按到期时间），新卡按帖序
       return {
