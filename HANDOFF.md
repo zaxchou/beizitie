@@ -346,3 +346,9 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 张从申书李玄靖碑书体缺失（上图元数据缺 script_form）→ STYLE_OVERRIDES 补楷书，重导。
 - Pages 实测：目录 1431 帖（含上图 45 部），九成宫 zitie 文件 IIIF 链接 200 ✓；beizitie.html 已重编内联。
 - 已知边界：cards.context（原拓坐标）未进单文件目录（文件体积+前端 UI），"字在帖中"目前仅在线版。
+
+### 补记 2（同日）：市场缩略图大小不一的真因 = 1fr 网格被长帖名撑爆
+- 现象：市场网格 tile 出现 143/165/176/209 四种宽度。排查发现**与封面图无关**——是 CSS 布局：`repeat(6,1fr)` 的每列最小值默认为内容的 min-content，市场卡片题名 noWrap（不换行），上图帖名带（上图藏本）后缀长达 14-18 字（≈209px），把所在列硬撑宽。YGSF 帖名短所以历史上从未触发。
+- 修复：网格项加 `minWidth: 0`（web + single 两个 MarketPage 都加了）。修复后实测 50 格全部 141×141。
+- 教训：验证布局问题必须看**渲染后的 DOM 几何**（playwright getBoundingClientRect），光看数据/图片内容会误判两次。
+- 防复发：API 已加 `Cache-Control: no-cache`（此前浏览器缓存旧接口数据也会造成"改了没生效"的错觉）。
