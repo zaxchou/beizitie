@@ -1,9 +1,29 @@
 import pkg from 'pg';
 const { Pool } = pkg;
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * DB 口令解析：环境变量 PG_PASSWORD → cwd 下 .db-password 文件（生产 /opt/zi2anki 与
+ * cron 脚本共用，文件不入库）。旧版曾内置默认口令，已随密码轮换移除——代码里不存口令。
+ */
+function resolvePgPassword(): string {
+  if (process.env.PG_PASSWORD) return process.env.PG_PASSWORD;
+  try {
+    const f = path.resolve(process.cwd(), '.db-password');
+    if (fs.existsSync(f)) return fs.readFileSync(f, 'utf-8').trim();
+  } catch { /* ignore */ }
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error(
+      '[FATAL] 生产环境未设置 PG_PASSWORD 且找不到 .db-password 文件。' +
+      '请在服务器 /opt/zi2anki/.db-password 写入口令（chmod 600，不入库），或设置 PG_PASSWORD 环境变量。',
+    );
+  }
+  return '';
+}
 
 let pool: pkg.Pool | null = null;
 let initPromise: Promise<void> | null = null;
@@ -17,7 +37,7 @@ export function getDb(): pkg.Pool {
     port: parseInt(process.env.PG_PORT || '5432', 10),
     database: process.env.PG_DATABASE || 'zi2anki',
     user: process.env.PG_USER || 'zi2anki',
-    password: process.env.PG_PASSWORD || 'zi2anki_pg_2026',
+    password: resolvePgPassword(),
     max: 10,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 5000,

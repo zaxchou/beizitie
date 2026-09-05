@@ -21,7 +21,11 @@ BACKUP_DIR="${BACKUP_DIR:-/opt/zi2anki/backups}"
 DB_NAME="${PG_DATABASE:-zi2anki}"
 DB_USER="${PG_USER:-zi2anki}"
 DB_HOST="${PG_HOST:-localhost}"
-PGPASSWORD="${PG_PASSWORD:-zi2anki_pg_2026}"
+# 口令：环境变量 PG_PASSWORD 或 cwd 下 .db-password 文件（不写入本文件，仓库是公开的）
+if [ -z "${PG_PASSWORD:-}" ] && [ -f "$(dirname "$0")/../.db-password" ]; then
+  PG_PASSWORD=$(tr -d '[:space:]' < "$(dirname "$0")/../.db-password")
+fi
+PGPASSWORD="${PG_PASSWORD:?缺少 DB 口令：请设置 PG_PASSWORD 或在项目根放 .db-password}"
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 OPERATION="${1:-manual}"
 GIT_COMMIT="${2:-unknown}"

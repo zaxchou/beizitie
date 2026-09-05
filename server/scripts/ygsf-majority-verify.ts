@@ -160,25 +160,32 @@ async function main() {
       continue;
     }
 
+    // 众数票即真值：只要算出了 fixes 就必须应用——错字不论多少都不该进集字（宁缺勿错）。
+    // MISMATCH_LIMIT 只区分报告口径（fixed=大改，ok=微调）。
+    const applyFixes = async (): Promise<boolean> => {
+      if (!apply || !fixes.length) return false;
+      const CHUNK = 500;
+      for (let i = 0; i < fixes.length; i += CHUNK) {
+        const chunk = fixes.slice(i, i + CHUNK);
+        const values: unknown[] = [];
+        const ph = chunk.map((f, j) => { const b = j * 2; values.push(f.to, f.id); return `($${b + 1},$${b + 2})`; }).join(',');
+        await db.query(`UPDATE cards SET front_text = v.hanzi, updated_at = now() FROM (VALUES ${ph}) AS v(hanzi, id) WHERE cards.id = v.id`, values);
+      }
+      return true;
+    };
+
     if (mismatch > MISMATCH_LIMIT) {
       bad++;
-      if (apply && fixes.length) {
-        const CHUNK = 500;
-        for (let i = 0; i < fixes.length; i += CHUNK) {
-          const chunk = fixes.slice(i, i + CHUNK);
-          const values: unknown[] = [];
-          const ph = chunk.map((f, j) => { const b = j * 2; values.push(f.to, f.id); return `($${b + 1},$${b + 2})`; }).join(',');
-          await db.query(`UPDATE cards SET front_text = v.hanzi, updated_at = now() FROM (VALUES ${ph}) AS v(hanzi, id) WHERE cards.id = v.id`, values);
-        }
-        await admitVerified(db, dk.deck_id, zitieId);
-      }
+      await applyFixes();
+      if (apply) await admitVerified(db, dk.deck_id, zitieId);
       console.log(`${apply ? '🔧' : '[dry-修]'} ${dk.name}：错字 ${mismatch}/${cards.length}（对 ${match}）${apply ? '已修并放行' : ''}`);
       report.push({ deck: dk.name, zitie: zitieId, verdict: 'fixed', cards: cards.length, mismatch, match, missing });
     } else {
       ok++;
+      const fixedNow = await applyFixes();
       if (apply) await admitVerified(db, dk.deck_id, zitieId);
-      console.log(`${apply ? '✅' : '[dry-留]'} ${dk.name}：一致 ${match}/${cards.length}（错 ${mismatch}）${apply ? '已放行' : ''}`);
-      report.push({ deck: dk.name, zitie: zitieId, verdict: 'ok', cards: cards.length, mismatch, match });
+      console.log(`${apply ? '✅' : '[dry-留]'} ${dk.name}：一致 ${match}/${cards.length}（错 ${mismatch}）${apply ? (fixedNow ? '已微调并放行' : '已放行') : ''}`);
+      report.push({ deck: dk.name, zitie: zitieId, verdict: 'ok', cards: cards.length, mismatch, match, fixed: fixes.length });
     }
 
     if (done % 20 === 0) {

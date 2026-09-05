@@ -82,7 +82,7 @@
 
 4. **验证用户数据完整性**
    ```bash
-   ssh xcx "PGPASSWORD=zi2anki_pg_2026 psql -h localhost -U zi2anki -d zi2anki -At <<'SQL'
+   ssh xcx "PGPASSWORD="$(cat /opt/zi2anki/.db-password)" psql -h localhost -U zi2anki -d zi2anki -At <<'SQL'
    SELECT 'users=' || COUNT(*) FROM users;
    SELECT 'user_card_progress=' || COUNT(*) FROM user_card_progress;
    SELECT 'user_subscriptions=' || COUNT(*) FROM user_subscriptions;
@@ -171,7 +171,7 @@ ssh xcx "sudo pkill -f 'tsx.*server/index'; sleep 2; pm2 restart zi2anki"
 ### 生产 DB 崩溃（服务起不来，PG 错误）
 排查 DDL 顺序：
 ```bash
-ssh xcx "PGPASSWORD=zi2anki_pg_2026 psql -h localhost -U zi2anki -d zi2anki -c 'SELECT * FROM pg_indexes WHERE tablename IN (''decks'',''cards'')'"
+ssh xcx "PGPASSWORD="$(cat /opt/zi2anki/.db-password)" psql -h localhost -U zi2anki -d zi2anki -c 'SELECT * FROM pg_indexes WHERE tablename IN (''decks'',''cards'')'"
 ```
 
 ---

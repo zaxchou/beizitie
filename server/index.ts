@@ -5,6 +5,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { getDb, waitForDb } from './db.js';
+import { MARKET_VERIFIED_SQL } from './services/marketScope.js';
 import { authRouter } from './routes/auth.js';
 import { authMiddleware, JWT_SECRET } from './middleware/auth.js';
 import jwt from 'jsonwebtoken';
@@ -59,7 +60,7 @@ app.get('/api/decks/:deckId/cards/preview', async (req, res) => {
        JOIN marketplace_decks md ON md.deck_id = c.deck_id
        JOIN decks d ON d.id = c.deck_id
        WHERE c.deck_id = $1 AND md.published_at IS NOT NULL AND c.archived_at IS NULL
-         AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
+         AND ${MARKET_VERIFIED_SQL}
        ORDER BY c.created_at ASC
        LIMIT 50`,
       [deckId]
@@ -111,8 +112,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
       FROM marketplace_decks md
       JOIN decks d ON d.id = md.deck_id
       WHERE md.published_at IS NOT NULL
-      -- 上架口径（宁缺勿错）：YGSF 帖必须已通过 jizi 字图校验，未校验不在市场可见
-      AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
+      AND ${MARKET_VERIFIED_SQL}
     `;
     const params: unknown[] = userId ? [userId] : [];
 
@@ -143,7 +143,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
         `SELECT DISTINCT md.calligrapher FROM marketplace_decks md
          JOIN decks d ON d.id = md.deck_id
          WHERE md.published_at IS NOT NULL AND md.calligrapher <> ''
-         AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
+         AND ${MARKET_VERIFIED_SQL}
          ORDER BY md.calligrapher`,
       );
       const styleCounts = await db.query(
@@ -151,7 +151,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
          FROM marketplace_decks md
          JOIN decks d ON d.id = md.deck_id, unnest(string_to_array(md.style, ',')) AS s(s)
          WHERE md.published_at IS NOT NULL AND md.style <> ''
-         AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
+         AND ${MARKET_VERIFIED_SQL}
          GROUP BY 1 ORDER BY 2 DESC`,
       );
       const dynastyCounts = await db.query(
@@ -159,7 +159,7 @@ app.get('/api/marketplace/decks', async (req, res) => {
          FROM marketplace_decks md
          JOIN decks d ON d.id = md.deck_id
          WHERE md.published_at IS NOT NULL AND md.dynasty <> ''
-         AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
+         AND ${MARKET_VERIFIED_SQL}
          GROUP BY 1 ORDER BY 2 DESC`,
       );
       const paged = `${sql} LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -203,8 +203,7 @@ app.get('/api/marketplace/decks/:deckId', async (req, res) => {
        FROM marketplace_decks md
        JOIN decks d ON d.id = md.deck_id
        WHERE md.deck_id = ${userId ? '$2' : '$1'} AND md.published_at IS NOT NULL
-       -- 上架口径（宁缺勿错）：YGSF 帖必须已通过 jizi 字图校验，未校验不在市场可见
-       AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))`;
+        AND ${MARKET_VERIFIED_SQL}`;
 
     const params = userId ? [userId, deckId] : [deckId];
     const { rows } = await db.query(sql, params);

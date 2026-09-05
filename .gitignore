@@ -20,3 +20,6 @@ _gsdata_/
 server/backups-local/
 tmp-test-local-backup.js
 dist-single/
+.env
+.db-password
+tsconfig.tsbuildinfo

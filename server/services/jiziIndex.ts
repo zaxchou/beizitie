@@ -172,7 +172,7 @@ export async function buildIncremental(db: pkg.Pool): Promise<{ indexed: number;
 }
 
 /** 按牌组索引（导入单帖后调用，行数有限，开销可忽略） */
-export async function indexDeck(db: pkg.Pool, deckId: string): Promise<number> {
+export async function indexDeck(db: pkg.Pool | pkg.PoolClient, deckId: string): Promise<number> {
   const { rows } = await db.query(
     `SELECT c.id, c.deck_id, c.front_text, c.image_url, c.created_at,
             d.name AS deck_name, md.style, md.calligrapher

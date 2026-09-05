@@ -16,6 +16,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getDb, waitForDb } from '../db.js';
+import { MARKET_VERIFIED_SQL } from '../services/marketScope.js';
 
 const CDN_BASE = 'https://ygsf.cdn.bcebos.com/autogen/areas/';
 const THUMB = '?x-bce-process=style/jpg512';
@@ -65,7 +66,7 @@ async function main() {
      JOIN marketplace_decks md ON md.deck_id = d.id AND md.published_at IS NOT NULL
      WHERE d.card_count >= $1
        -- 上架口径（宁缺勿错）：YGSF 帖必须已通过 jizi 字图校验（jizi_verified），未校验不进目录
-       AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
+       AND ${MARKET_VERIFIED_SQL}
      ORDER BY d.name`,
     [MIN_CARDS],
   );

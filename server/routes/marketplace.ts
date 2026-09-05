@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getDb, getUploadsDir } from '../db.js';
+import { MARKET_VERIFIED_SQL } from '../services/marketScope.js';
 import { requireAdmin } from '../middleware/auth.js';
 import multer from 'multer';
 import crypto from 'node:crypto';
@@ -58,8 +59,7 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
       FROM marketplace_decks md
       JOIN decks d ON d.id = md.deck_id
       WHERE 1=1
-      -- 上架口径（宁缺勿错）：YGSF 帖必须已通过 jizi 字图校验，未校验不在市场可见
-      AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))
+      AND ${MARKET_VERIFIED_SQL}
     `;
     const params: unknown[] = [userId];
     let paramIndex = 1;
@@ -125,6 +125,8 @@ marketplaceRouter.get('/marketplace/decks', async (req: Request, res: Response) 
 });
 
 // GET /api/marketplace/decks/:deckId —— 单个市场牌组详情
+// 注意：index.ts 的公开 handler 先注册，本 handler 当前被遮蔽不可达；保留作纵深防御，
+// 口径谓词与公开路径保持一致（MARKET_VERIFIED_SQL）。
 marketplaceRouter.get('/marketplace/decks/:deckId', async (req: Request, res: Response) => {
   try {
     const { deckId } = req.params;
@@ -138,7 +140,8 @@ marketplaceRouter.get('/marketplace/decks/:deckId', async (req: Request, res: Re
               EXISTS(SELECT 1 FROM user_subscriptions us WHERE us.user_id = $1 AND us.deck_id = md.deck_id) AS is_subscribed
        FROM marketplace_decks md
        JOIN decks d ON d.id = md.deck_id
-       WHERE md.deck_id = $2`,
+       WHERE md.deck_id = $2 AND md.published_at IS NOT NULL
+       AND ${MARKET_VERIFIED_SQL}`,
       [userId, deckId]
     );
     let row = rows[0] as Record<string, unknown> | undefined;
@@ -178,7 +181,7 @@ marketplaceRouter.post('/marketplace/decks/:deckId/subscribe', async (req: Reque
       `SELECT md.deck_id FROM marketplace_decks md
        JOIN decks d ON d.id = md.deck_id
        WHERE md.deck_id = $1 AND md.published_at IS NOT NULL
-       AND (d.source_key IS NULL OR d.source_key NOT LIKE 'ygsf:%' OR d.source_key IN (SELECT 'ygsf:' || zitie_id FROM jizi_verified))`,
+       AND ${MARKET_VERIFIED_SQL}`,
       [deckId]
     );
     if (existsRows.length === 0) {

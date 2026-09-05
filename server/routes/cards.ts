@@ -51,7 +51,6 @@ function deleteImageFile(imageUrl: string): void {
   const filename = imageUrl.replace(/^\/uploads\//, '');
   const filePath = path.resolve(uploadsDir, filename);
   if (!filePath.startsWith(path.resolve(uploadsDir) + path.sep)) return; // 防路径穿越
-  if (!path.basename(filePath).includes(filename.split('/').pop() || '')) return;
   try {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
