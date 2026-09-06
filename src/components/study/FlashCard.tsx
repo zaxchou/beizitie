@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTheme } from '@mui/material';
 import type { Card } from '@/types';
 import { getImageUrl } from '@/lib/imageUrl';
+import { parseAtlasUrl, atlasBgPosition } from '@/core/types';
 import OriginalPageView from './OriginalPageView';
 
 export interface FlashCardProps {
@@ -28,6 +29,8 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const [viewingOriginal, setViewingOriginal] = useState(false);
+  // mini 离线包：字图为 4×4 图集切片，用背景定位替代 <img>
+  const atlas = __MINI__ ? parseAtlasUrl(card.image_url) : null;
 
   const faceStyle: React.CSSProperties = {
     backgroundColor: isDark ? '#2d2d2d' : '#fff',
@@ -71,7 +74,20 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
             style={{ backgroundColor: isDark ? '#2d2d2d' : '#fafafa', borderColor: isDark ? '#444' : '#e5e7eb' }}
           >
             {card.image_url ? (
-              <img src={getImageUrl(card.image_url)} alt={`书法：${card.front_text}`} className="object-contain max-h-full max-w-full p-4" draggable={false} />
+              atlas ? (
+                <div
+                  aria-label={`书法：${card.front_text}`}
+                  className="w-full h-full"
+                  style={{
+                    backgroundImage: `url(${atlas.atlas})`,
+                    backgroundSize: '400% 400%',
+                    backgroundPosition: atlasBgPosition(atlas),
+                    backgroundRepeat: 'no-repeat',
+                  }}
+                />
+              ) : (
+                <img src={getImageUrl(card.image_url)} alt={`书法：${card.front_text}`} className="object-contain max-h-full max-w-full p-4" draggable={false} />
+              )
             ) : card.back_text ? (
               backHasHtml ? (
                 <span className="card-front-text text-center px-4 break-all" dangerouslySetInnerHTML={{ __html: backSanitized }} />

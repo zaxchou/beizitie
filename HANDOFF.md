@@ -410,3 +410,10 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - **正面确认**：闪卡正面字体 card-front-text = Noto Serif SC/楷体 栈（衬线打印体，符合"像背单词"的卡面设计，非 font-kai，子集不影响）；DataPageMini 不用 dueForecast/recharts；modulepreload 垫片已关；audit 持续 PASS。
 - 预览方式沉淀：dist-mini 下 `python -m http.server 8080` 即可用浏览器完整预览（用户已验证 OK）；file:// 双击也能跑但布局在部分环境有渲染怪象，建议一律走 http。
 
+### 补记 10（同日）：图集化解决文件数上限 + 升级迁移
+- 平台第三条规则：**zip 内文件数 ≤200**。1369 张单字文件超限 7 倍。解法 = 4×4 图集（1536² webp，16 字/张）→ 86 个图集文件，全包 91 文件。管线拼图（sharp composite，缩放后单次编码无二次损失），前端 CSS background-position（闪卡）与 canvas 源矩形（集字）切图；parseAtlasUrl/atlasBgPosition 在 core/types。
+- 图集还白赚 0.2MB（整图编码比单字小文件更高效），zip 9.01→8.82。
+- **升级迁移**：老包 IDB 里的卡指向旧单字文件路径，图集化后全 404。resyncBundledImages()（localAdapter）按汉字匹配清单刷 imageUrl；App 每次启动无条件执行（轻量内存比对）。实测：老进度数据 + 新图集包 → 图全部恢复、进度保留、零 404。
+- 打包门禁累计四条：体积 ≤10MiB、类型白名单、html 仅根目录 index.html、文件数 ≤200（build-mini.sh）。
+- 教训：共享组件（FlashCard）加 __MINI__ 分支时 JSX 括号嵌套写错一次；改 vite.config.* 后必须两版都重建冒烟。
+

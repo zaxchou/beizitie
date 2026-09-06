@@ -37,6 +37,10 @@ with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
             z.write(p, rel)
     if htmls != ['index.html']:
         print('ERROR: html must be exactly [index.html] at root, got:', htmls); sys.exit(1)
+    count = sum(len(files) for _, _, files in os.walk('dist-mini'))
+    if count > 200:
+        print('ERROR: file count', count, '> 200'); sys.exit(1)
+    print('  files:', count, '/ 200')
 size = os.path.getsize(zp)
 print(f'  {zp}: {size/1048576:.2f} MiB / limit 10 MiB')
 assert size <= 10 * 1024 * 1024, 'ERROR: over 10MiB'

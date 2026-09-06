@@ -58,6 +58,32 @@ const ZITIE_BASES = [
 ];
 let resolvedBase: string | null = null;
 
+/**
+ * mini 专用：把已导入牌组的字图地址刷成当前包内的图集引用。
+ * 升级包后旧 URL 会 404；按汉字匹配清单迁移（独字帖内汉字唯一），进度不受影响。
+ * 返回更新的卡数。
+ */
+export async function resyncBundledImages(): Promise<number> {
+  if (!bundledZitie) return 0;
+  let updated = 0;
+  const decks = await getAllDecks();
+  for (const deck of decks) {
+    const manifest = bundledZitie[deck.zitieId];
+    if (!manifest) continue;
+    const relByHanzi = new Map(manifest.g.map((g) => [g.h, g.rel as string]));
+    const cards = await getCardsByDeck(deck.id);
+    const updates = cards.filter((c) => {
+      const rel = relByHanzi.get(c.hanzi);
+      return rel && c.imageUrl !== rel;
+    }).map((c) => ({ ...c, imageUrl: relByHanzi.get(c.hanzi) as string }));
+    if (updates.length) {
+      await putCards(updates);
+      updated += updates.length;
+    }
+  }
+  return updated;
+}
+
 export async function fetchZitie(zitieId: string): Promise<ZitieGlyphList> {
   // mini：离线清单内联（构建期下方 fetch 分支随 if(false) 消除）
   if (__MINI__) {

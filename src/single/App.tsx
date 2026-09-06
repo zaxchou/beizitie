@@ -20,7 +20,7 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import StoreIcon from '@mui/icons-material/Store';
 import BrushIcon from '@mui/icons-material/Brush';
 import { buildThemeOptions } from '@/theme';
-import { localDataSource, catalogIndex } from '@/data/local/localAdapter';
+import { localDataSource, catalogIndex, resyncBundledImages } from '@/data/local/localAdapter';
 import { kvGet, kvSet } from '@/data/local/db';
 import DashboardPage from './pages/DashboardPage';
 import MarketPage from '@pages/market';
@@ -64,8 +64,10 @@ export default function SingleApp() {
   useEffect(() => {
     if (!__MINI__) return;
     (async () => {
+      // 图地址迁移每次启动都跑：极轻（内存比对），兜住升级竞态
+      await resyncBundledImages();
       const stamp = (catalogIndex as { updatedAt?: string }).updatedAt || '';
-      if ((await kvGet('miniDataStamp')) === stamp) return;
+      if ((await kvGet('miniDataStamp')) === stamp) { bumpRefresh(); return; }
       for (const zp of catalogIndex.zuopins) {
         try {
           const z = await localDataSource.catalog.zitie(zp.z);

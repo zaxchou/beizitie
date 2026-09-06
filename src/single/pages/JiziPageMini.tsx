@@ -6,12 +6,29 @@
 import React, { useMemo, useState } from 'react';
 import { Box, Typography, Button, Card, CardContent, Chip, TextField } from '@mui/material';
 import { bundledZitie, catalogJson } from '@catalog/source';
+import { parseAtlasUrl } from '../../core/types';
 import type { CatalogZuopin } from '../../core/types';
 
 interface Hit {
   h: string;
   rel: string;
   deckName: string;
+}
+
+/** 图集图片缓存：同一图集只加载一次 */
+const atlasImages = new Map<string, Promise<HTMLImageElement>>();
+function loadAtlas(atlasPath: string): Promise<HTMLImageElement> {
+  let p = atlasImages.get(atlasPath);
+  if (!p) {
+    p = new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => rej(new Error('atlas load'));
+      img.src = atlasPath;
+    });
+    atlasImages.set(atlasPath, p);
+  }
+  return p;
 }
 
 /** char → 命中（两帖合并索引；同字多帖取先出现，帖序即用户学习顺序） */
@@ -53,16 +70,17 @@ async function composeCanvas(hits: Hit[], missing: string[], text: string): Prom
   ctx.fillText(`集字 · ${text.slice(0, 18)}`, W / 2, 52);
   // 字块（真拓图 + 朱线框）
   for (let i = 0; i < hits.length; i++) {
-    const img = new Image();
-    // eslint-disable-next-line no-await-in-loop
-    await new Promise<void>((res, rej) => { img.onload = () => res(); img.onerror = () => rej(new Error('img')); img.src = hits[i].rel; });
+    const ref = parseAtlasUrl(hits[i].rel);
+    if (!ref) continue;
+    const atlasImg = await loadAtlas(ref.atlas);
+    const src = atlasImg.naturalWidth / 4; // 图集为 4×4
     const col = i % COLS;
     const row = Math.floor(i / COLS);
     const x = PAD + col * CELL + 10;
     const y = HEAD + row * CELL + 10;
     ctx.fillStyle = '#1c1c1c';
     ctx.fillRect(x, y, CELL - 20, CELL - 20);
-    ctx.drawImage(img, x, y, CELL - 20, CELL - 20);
+    ctx.drawImage(atlasImg, ref.col * src, ref.row * src, src, src, x, y, CELL - 20, CELL - 20);
     ctx.strokeStyle = 'rgba(180,120,60,.55)';
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, CELL - 20, CELL - 20);
@@ -158,7 +176,12 @@ export const JiziPageMini: React.FC = () => {
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {hits.map((h) => (
                 <Box key={h.rel} sx={{ width: 64, height: 64, borderRadius: 1, overflow: 'hidden', bgcolor: '#1c1c1c', boxShadow: '0 0 0 1px rgba(0,0,0,.25)' }}>
-                  <Box component="img" src={h.rel} alt={h.h} sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  <Box sx={{
+                    width: '100%', height: '100%',
+                    backgroundImage: `url(${parseAtlasUrl(h.rel)?.atlas})`,
+                    backgroundSize: '400% 400%',
+                    backgroundPosition: (() => { const r = parseAtlasUrl(h.rel); return r ? `${r.col * (100 / 3)}% ${r.row * (100 / 3)}%` : '0 0'; })(),
+                  }} />
                 </Box>
               ))}
             </Box>

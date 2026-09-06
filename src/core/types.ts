@@ -65,6 +65,25 @@ export function shlibPageUrl(iiif: string, svc: string): string {
   return `${iiif}${svc}/full/full/0/default.jpg`;
 }
 
+/** 图集切图引用：rel 形如 img/atlas/<帖>-<n>.webp#列,行（mini 离线包） */
+export interface AtlasRef { atlas: string; col: number; row: number }
+
+export function parseAtlasUrl(url: string): AtlasRef | null {
+  const i = url.indexOf('#');
+  if (i < 0) return null;
+  const atlas = url.slice(0, i);
+  const parts = url.slice(i + 1).split(',');
+  const col = Number(parts[0]);
+  const row = Number(parts[1]);
+  if (!atlas || !Number.isFinite(col) || !Number.isFinite(row)) return null;
+  return { atlas, col, row };
+}
+
+/** 4×4 图集在 background-size:400% 下的百分比定位 */
+export function atlasBgPosition(ref: AtlasRef): string {
+  return `${ref.col * (100 / 3)}% ${ref.row * (100 / 3)}%`;
+}
+
 export function glyphUrl(z: Pick<ZitieGlyphList, 'base' | 'thumb'>, g: CatalogGlyph): string {
   return `${z.base}${g.rel}${z.thumb}`;
 }
