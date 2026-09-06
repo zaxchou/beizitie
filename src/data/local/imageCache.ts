@@ -35,18 +35,19 @@ async function cacheEnabled(): Promise<boolean> {
 
 /** 下载并缓存一张字图（静默失败，不影响渲染） */
 export async function cacheImage(url: string): Promise<void> {
-  if (!url || !/^https?:/i.test(url)) return;
-  if (objectUrlMemo.has(url)) return;
-  try {
-    if (!(await cacheEnabled())) return;
-    if ((await countImages()) >= MAX_CACHED) return;
-    if (await getImageBlob(url)) return;
-    const r = await fetch(url, { mode: 'cors' });
-    if (!r.ok) return;
-    const blob = await r.blob();
-    await putImageBlob(url, blob);
-  } catch {
-    /* 离线/限流/隐私模式：静默跳过 */
+  // mini：字图全部为包内相对路径，无网络缓存（fetch 分支随 if(false) 构建期消除）
+  if (!__MINI__ && url && /^https?:/i.test(url) && !objectUrlMemo.has(url)) {
+    try {
+      if (!(await cacheEnabled())) return;
+      if ((await countImages()) >= MAX_CACHED) return;
+      if (await getImageBlob(url)) return;
+      const r = await fetch(url, { mode: 'cors' });
+      if (!r.ok) return;
+      const blob = await r.blob();
+      await putImageBlob(url, blob);
+    } catch {
+      /* 离线/限流/隐私模式：静默跳过 */
+    }
   }
 }
 

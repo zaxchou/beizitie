@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": [
+      "ES2020",
+      "DOM",
+      "DOM.Iterable"
+    ],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -18,9 +22,30 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@catalog/source": [
+        "src/single/catalog-source.ts"
+      ],
+      "@settings/backup-card": [
+        "src/single/SettingsBackupCard.tsx"
+      ],
+      "@data-page": [
+        "src/single/pages/DataPage.tsx"
+      ],
+      "@pages/market": [
+        "src/single/pages/MarketPage.tsx"
+      ],
+      "@pages/jizi": [
+        "src/single/pages/JiziPage.tsx"
+      ]
     }
   },
-  "include": ["src"],
-  "exclude": ["src/__tests__"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "src/__tests__"
+  ]
 }

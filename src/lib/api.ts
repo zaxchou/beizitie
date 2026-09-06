@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/useAuthStore';
 
 const API_BASE = '';
 
+export { getImageUrl } from './imageUrl';
+
 /** 获取本地日期字符串 YYYY-MM-DD（不受 UTC 时区偏移影响） */
 export function todayLocal(): string {
   const d = new Date();
@@ -14,14 +16,6 @@ export function todayLocal(): string {
   return `${y}-${m}-${day}`;
 }
 
-/** 将服务端图片路径转为完整 URL（用于 <img src> 显示） */
-export function getImageUrl(imageUrl: string): string {
-  if (!imageUrl) return '';
-  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-    return imageUrl;
-  }
-  return `${API_BASE}${imageUrl}`;
-}
 
 // ===== 通用 fetch 封装 =====
 

@@ -20,22 +20,27 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import StoreIcon from '@mui/icons-material/Store';
 import BrushIcon from '@mui/icons-material/Brush';
 import { buildThemeOptions } from '@/theme';
+import { localDataSource, catalogIndex } from '@/data/local/localAdapter';
 import DashboardPage from './pages/DashboardPage';
-import MarketPage from './pages/MarketPage';
+import MarketPage from '@pages/market';
 import StudyPage from './pages/StudyPage';
-import JiziPage from './pages/JiziPage';
-import DataPage from './pages/DataPage';
+import JiziPage from '@pages/jizi';
+import DataPage from '@data-page';
 import SettingsPage from './pages/SettingsPage';
 
 type Tab = 'dashboard' | 'market' | 'jizi' | 'data' | 'settings';
 
-const TABS: { key: Tab; label: string; icon: JSX.Element }[] = [
+const ALL_TABS: { key: Tab; label: string; icon: JSX.Element }[] = [
   { key: 'dashboard', label: '背字帖', icon: <DashboardIcon /> },
   { key: 'market', label: '市场', icon: <StoreIcon /> },
   { key: 'jizi', label: '集字', icon: <BrushIcon /> },
   { key: 'data', label: '数据', icon: <BarChartIcon /> },
   { key: 'settings', label: '设置', icon: <SettingsIcon /> },
 ];
+// mini 构建：无市场（帖已内置）、无集字，三个 tab
+const TABS = __MINI__
+  ? ALL_TABS.filter((t) => t.key === 'dashboard' || t.key === 'data' || t.key === 'settings')
+  : ALL_TABS;
 
 export default function SingleApp() {
   const [darkMode, setDarkMode] = useState<'system' | 'light' | 'dark'>(() => {
@@ -54,12 +59,28 @@ export default function SingleApp() {
     localStorage.setItem('beizitie-dark', darkMode);
   }, [darkMode]);
 
+  // mini：首启把包内字帖自动加进书库（addFromZitie 幂等，已加入会抛错忽略）
+  useEffect(() => {
+    if (!__MINI__) return;
+    (async () => {
+      for (const zp of catalogIndex.zuopins) {
+        try {
+          const z = await localDataSource.catalog.zitie(zp.z);
+          await localDataSource.library.addFromZitie(z, {
+            name: zp.n, author: zp.a, dynasty: zp.d, styles: zp.s, cover: zp.c,
+          });
+        } catch { /* 已在书库 */ }
+      }
+      bumpRefresh();
+    })();
+  }, []);
+
   const bumpRefresh = () => setRefreshKey((k) => k + 1);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ pb: '64px', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ pb: 'calc(64px + env(safe-area-inset-bottom, 0px))', minHeight: '100vh', bgcolor: 'background.default' }}>
         {studyingDeck ? (
           <StudyPage
             studyingDeck={studyingDeck}
@@ -77,7 +98,7 @@ export default function SingleApp() {
             >
               <Typography className="font-kai" sx={{ fontSize: 20, fontWeight: 700 }}>背字帖</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
-                单文件版 · 数据仅存本机
+                {__MINI__ ? '离线版 · 进度保存在本机' : '单文件版 · 数据仅存本机'}
               </Typography>
             </Box>
 
@@ -103,6 +124,7 @@ export default function SingleApp() {
               sx={{
                 position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
                 display: 'flex', bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider',
+                paddingBottom: 'env(safe-area-inset-bottom, 0px)',
               }}
             >
               {TABS.map((t) => (

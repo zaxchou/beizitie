@@ -120,9 +120,13 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
           <Typography color="text.secondary" sx={{ mb: 2 }}>
             创建你的第一个书法记忆牌组，开始学习之旅吧！
           </Typography>
-          <Button variant="contained" onClick={() => onChangeTab('market')} sx={{ borderRadius: 2 }}>
-            去市场订阅碑帖
-          </Button>
+          {__MINI__ ? (
+            <Typography color="text.secondary" sx={{ fontSize: 13 }}>内置字帖准备中…</Typography>
+          ) : (
+            <Button variant="contained" onClick={() => onChangeTab('market')} sx={{ borderRadius: 2 }}>
+              去市场订阅碑帖
+            </Button>
+          )}
         </Box>
       ) : (
         decks.map((d) => {
@@ -199,7 +203,7 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
         })
       )}
 
-      {decks.length > 0 && (
+      {decks.length > 0 && !__MINI__ && (
         <Box sx={{ textAlign: 'center', pt: 1 }}>
           <Button size="small" color="inherit" onClick={() => onChangeTab('market')}>
             + 去市场添加更多碑帖

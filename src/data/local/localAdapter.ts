@@ -34,10 +34,10 @@ import {
   putStat,
   todayLocal,
 } from './db';
-import catalogRaw from '../../../catalog/index.json?raw';
+import { catalogJson, bundledZitie } from '@catalog/source';
 
 // ---- 目录 ----
-export const catalogIndex: CatalogIndex = JSON.parse(catalogRaw as unknown as string);
+export const catalogIndex: CatalogIndex = JSON.parse(catalogJson as unknown as string);
 
 const ZITIE_BASES = [
   'catalog/',                                          // GitHub Pages 同源
@@ -47,27 +47,35 @@ const ZITIE_BASES = [
 let resolvedBase: string | null = null;
 
 export async function fetchZitie(zitieId: string): Promise<ZitieGlyphList> {
-  const override = (await kvGet('zitieBase')) as string | undefined;
-  const bases = [
-    ...(override ? [override] : []),
-    ...(resolvedBase ? [resolvedBase] : []),
-    ...(location.protocol === 'http:' || location.protocol === 'https:'
-      ? [new URL('catalog/', location.href).href]
-      : []),
-    ...ZITIE_BASES,
-  ];
-  const tried = new Set<string>();
-  for (const base of bases) {
-    if (tried.has(base)) continue;
-    tried.add(base);
-    try {
-      const r = await fetch(`${base}zitie/${zitieId}.json`);
-      if (!r.ok) continue;
-      const data = (await r.json()) as ZitieGlyphList;
-      resolvedBase = base;
-      return data;
-    } catch {
-      /* 尝试下一个源 */
+  // mini：离线清单内联（构建期下方 fetch 分支随 if(false) 消除）
+  if (__MINI__) {
+    const m = bundledZitie?.[zitieId];
+    if (!m) throw new Error('该帖不在离线包内');
+    return m;
+  }
+  if (!__MINI__) {
+    const override = (await kvGet('zitieBase')) as string | undefined;
+    const bases = [
+      ...(override ? [override] : []),
+      ...(resolvedBase ? [resolvedBase] : []),
+      ...(location.protocol === 'http:' || location.protocol === 'https:'
+        ? [new URL('catalog/', location.href).href]
+        : []),
+      ...ZITIE_BASES,
+    ];
+    const tried = new Set<string>();
+    for (const base of bases) {
+      if (tried.has(base)) continue;
+      tried.add(base);
+      try {
+        const r = await fetch(`${base}zitie/${zitieId}.json`);
+        if (!r.ok) continue;
+        const data = (await r.json()) as ZitieGlyphList;
+        resolvedBase = base;
+        return data;
+      } catch {
+        /* 尝试下一个源 */
+      }
     }
   }
   throw new Error('单字清单拉取失败（所有分发源不可达）');

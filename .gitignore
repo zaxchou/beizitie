@@ -23,3 +23,7 @@ dist-single/
 .env
 .db-password
 tsconfig.tsbuildinfo
+mini/.cache/
+dist-mini/
+
+beizitie-mini.zip

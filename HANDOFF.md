@@ -386,3 +386,12 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - **P3**：cards.ts 第二道路径守卫删除（恒真无防护意义）；随机出卡改 Fisher-Yates；OriginalPageView IIIF 加载失败给提示；tsconfig.tsbuildinfo 退库。
 - **实测纠正一个 review 误判**：上图整页原拓并不大（页宽约 1100px、100–500KB），此前"十几 MB"的估计错了；且该 IIIF 默认禁止放大（小于原尺寸的 size 请求返回 400 要 ^ 前缀），保持 full/full 即可。
 
+### 补记 7（2026-09-06）：小红书离线小工具包（platforms/mini 构建变体）
+- **形态**：`bash build-mini.sh` 一键产出 beizitie-mini.zip（9.01MiB，audit PASS）。内容 = 九成宫醴泉铭（620 独字）+ 集王圣教序（749 独字）+ 完整 SM-2 学习/记录，纯离线。
+- **压缩实测推翻推算**：两帖拓片 256px q78 仅 3.73MB（瘗鹤铭样本 11.7KB/字是特例，九成宫/圣教序黑底平滑压缩极好），网格搜索最终选 **384px q85 = 8.44MB**——比线上 512px JPEG 还省，清晰度几乎无损。管线 `mini/build-data.mjs`：去重独字卡（首现排序）→ 下载 512 原图（缓存 mini/.cache）→ 尺寸×质量网格搜索自动选档 → 产出 mini/public/img + mini/data 清单。
+- **构建变体**：`vite.config.mini.ts` + `mini.html`（target es2017/chrome61、define `__MINI__`、publicDir=mini/public、modulePreload polyfill 关闭）。seam 靠 alias：`@catalog/source`/`@data-page`/`@settings/backup-card`/`@pages/market`/`@pages/jizi` 五个 alias，single 与 mini 各指一套实现；tsconfig paths 同步（类型用单文件版）。
+- **禁用 API 清扫**（容器禁 fetch/下载/剪贴板/外链）：mini bundle 实测 0 fetch / 0 auth store / 0 a.download / 0 外链。手法：`if (!__MINI__) { 网络代码 }` 让 esbuild 按 if(false) 整段消除（`if(__MINI__) return;` 后置死代码**不会**被消除，别用那种写法）；市场/集字页换空实现 stub 防拖入 auth store；getImageUrl 从 lib/api 拆到 lib/imageUrl.ts（FlashCard 引它会拖进 auth store）。
+- **mini 专属**：首启自动导入两帖进书库（addFromZitie 幂等）；tabs 砍市场/集字；设置页备份卡换进度说明卡；DataPageMini 手写条形图（砍 recharts，壳 830→474KB）；楷体子集字体（霞鹜文楷 OFL，1102 字 252KB woff2，运行时注入 @font-face 需 !important 才能压过 index.css）；flex-gap 行为检测垫片（Chrome 61 不支持 flex gap）；底部导航 env(safe-area-inset-bottom)。
+- **真机验证清单（上传小红书前必做，均未实测）**：①工具重启/小红书重启/清缓存后 IndexedDB 进度是否保留 ②工具升级（新 zip）后进度是否保留 ③低端机流畅度（MUI+1369 卡）④安全区（刘海/手势条）⑤发布合规：名称/类目/简介不引导站外。
+- **回归**：single 重建验证（全量目录/市场/学习流程）+ 本地浏览器冒烟通过；vite.config.single.ts 曾因 define 块重复声明 json 构建失败+运行时 __MINI__ undefined 白屏，已重写干净——改该文件后务必两版都重建冒烟。
+

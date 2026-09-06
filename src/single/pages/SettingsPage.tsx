@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -9,10 +9,10 @@ import {
   Alert,
   Switch,
 } from '@mui/material';
-import { localDataSource } from '@/data/local/localAdapter';
 import { APP_VERSION, BUILD_DATE } from '@/core/version';
 import { clearImageCache, imageCacheCount } from '@/data/local/imageCache';
 import { kvGet, kvSet } from '@/data/local/db';
+import SettingsBackupCard from '@settings/backup-card';
 
 interface Props {
   darkMode: 'system' | 'light' | 'dark';
@@ -27,8 +27,6 @@ const DARK_OPTIONS: { key: 'system' | 'light' | 'dark'; label: string }[] = [
 ];
 
 export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onChanged }) => {
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ sev: 'success' | 'error'; text: string } | null>(null);
 
   // 字图离线缓存
@@ -46,38 +44,6 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
     await clearImageCache();
     setImgCacheCount(0);
     setMsg({ sev: 'success', text: '字图缓存已清空' });
-  };
-
-  const handleExport = async () => {
-    setBusy(true);
-    try {
-      const blob = await localDataSource.backup.exportAll();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `beizitie-backup-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setMsg({ sev: 'success', text: '备份已导出' });
-    } catch (e: any) {
-      setMsg({ sev: 'error', text: e.message });
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleImport = async (file: File) => {
-    setBusy(true);
-    try {
-      const text = await file.text();
-      const report = await localDataSource.backup.importAll(text, 'merge');
-      setMsg({ sev: 'success', text: `导入完成：${report.decks} 个牌组、${report.cards} 张卡、${report.progress} 条进度` });
-      onChanged?.();
-    } catch (e: any) {
-      setMsg({ sev: 'error', text: `导入失败：${e.message}` });
-    } finally {
-      setBusy(false);
-    }
   };
 
   return (
@@ -104,33 +70,10 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
         </CardContent>
       </Card>
 
-      {/* 数据备份 */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: 600, mb: 0.5 }}>数据备份</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-            学习记录只保存在本机浏览器中。定期导出 JSON 备份，换机或清缓存时可恢复。备份格式与在线版互通。
-          </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="contained" onClick={handleExport} disabled={busy} sx={{ borderRadius: 2 }}>
-              导出备份
-            </Button>
-            <Button variant="outlined" onClick={() => fileRef.current?.click()} disabled={busy} sx={{ borderRadius: 2 }}>
-              导入备份
-            </Button>
-            <input
-              ref={fileRef} type="file" accept=".json" hidden
-              onChange={(e) => {
-                const f = e.target.files?.[0];
-                if (f) handleImport(f);
-                e.target.value = '';
-              }}
-            />
-          </Box>
-        </CardContent>
-      </Card>
+      <SettingsBackupCard onChanged={onChanged} />
 
-      {/* 字图离线缓存 */}
+      {/* 字图离线缓存（mini 全字图已内置，无网络缓存概念） */}
+      {!__MINI__ && (
       <Card variant="outlined" sx={{ borderRadius: 2 }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -150,17 +93,22 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
           </Box>
         </CardContent>
       </Card>
+      )}
 
       {/* 关于 */}
       <Card variant="outlined" sx={{ borderRadius: 2 }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 0.5 }}>关于</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.8 }}>
-            背字帖 · 单文件开源版（MIT）{APP_VERSION !== 'dev' && <> · v{APP_VERSION}{BUILD_DATE ? `（${BUILD_DATE} 构建）` : ''}</>}
+            背字帖 · {__MINI__ ? '离线版' : '单文件开源版'}（MIT）{APP_VERSION !== 'dev' && <> · v{APP_VERSION}{BUILD_DATE ? `（${BUILD_DATE} 构建）` : ''}</>}
             <br />
-            碑帖单字图来自公开字库 CDN，仅供学习
+            {__MINI__
+              ? <>字图来源：上海图书馆藏本《九成宫醴泉铭》《集王圣教序》（CC BY-NC-ND 3.0），仅供学习</>
+              : <>碑帖单字图来自公开字库 CDN，仅供学习</>}
             <br />
-            学习记录仅存本机 · <a href="https://github.com/zaxchou/beizitie/releases" target="_blank" rel="noreferrer">GitHub · 更新日志</a>
+            {__MINI__
+              ? '进度仅存本机'
+              : <>学习记录仅存本机 · <a href="https://github.com/zaxchou/beizitie/releases" target="_blank" rel="noreferrer">GitHub · 更新日志</a></>}
           </Typography>
         </CardContent>
       </Card>

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useTheme } from '@mui/material';
 import type { Card } from '@/types';
-import { getImageUrl } from '@/lib/api';
+import { getImageUrl } from '@/lib/imageUrl';
 import OriginalPageView from './OriginalPageView';
 
 export interface FlashCardProps {

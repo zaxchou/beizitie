@@ -1,0 +1,30 @@
+{
+  "decks": [
+    {
+      "z": "eqqlcf4jly5i3w5v",
+      "n": "九成宫醴泉铭",
+      "a": "欧阳询",
+      "d": "唐",
+      "cover": "https://iiif.library.sh.cn/i/3/d63ebfe6a1311799590525903fe9d201/full/!480,480/0/default.jpg"
+    },
+    {
+      "z": "g2cea0s4ydl1mfrv",
+      "n": "集王羲之书三藏圣教序",
+      "a": "怀仁集王羲之书",
+      "d": "唐",
+      "cover": ""
+    }
+  ],
+  "imageBudgetMB": 9.0,
+  "sizes": [
+    256,
+    320,
+    352,
+    384
+  ],
+  "qualities": [
+    75,
+    80,
+    85
+  ]
+}
