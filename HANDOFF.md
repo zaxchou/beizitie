@@ -395,3 +395,10 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - **真机验证清单（上传小红书前必做，均未实测）**：①工具重启/小红书重启/清缓存后 IndexedDB 进度是否保留 ②工具升级（新 zip）后进度是否保留 ③低端机流畅度（MUI+1369 卡）④安全区（刘海/手势条）⑤发布合规：名称/类目/简介不引导站外。
 - **回归**：single 重建验证（全量目录/市场/学习流程）+ 本地浏览器冒烟通过；vite.config.single.ts 曾因 define 块重复声明 json 构建失败+运行时 __MINI__ undefined 白屏，已重写干净——改该文件后务必两版都重建冒烟。
 
+### 补记 8（同日）：mini 离线集字上线（第二期）
+- JiziPageMini.tsx 替换空 stub（alias @pages/jizi 指向它），mini 恢复第 4 个 tab。
+- 匹配 = 包内两帖清单直接建索引（char→rel），纯本地零请求；输入去重逐字匹配，缺字明示。
+- 作品 = Canvas 生成（宣纸底 + 真拓块 + 集字 · 文案头 + 署名），保存走 JSBridge saveImageToPhotosAlbum（PC 模拟器无 bridge 时显示预览+提示），补上了在线版都没有的保存能力。
+- 基线兼容补丁（deep review 发现）：crypto.randomUUID（Chrome 92+）与 Object.fromEntries（Chrome 73+）在基线 WebView 缺失——前者让首启导入静默失败书库空白，后者直接白屏。uuid 兜底用 getRandomValues（Chrome 11+），fromEntries 改 reduce。教训：es2017 target 只转语法，API 缺失要单独审计。
+- 用户反馈"预览看不到底部 tab"未复现：http/file 双路径渲染均有 tab（file:// 用 headless Chrome 复现到一次布局异常但 DOM 三 tab 齐全）。待用户说明预览方式后进一步定位。
+

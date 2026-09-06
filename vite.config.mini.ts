@@ -22,7 +22,7 @@ export default defineConfig({
       '@data-page': path.resolve(__dirname, 'src/single/pages/DataPageMini.tsx'),
       '@settings/backup-card': path.resolve(__dirname, 'src/single/SettingsBackupCard.mini.tsx'),
       '@pages/market': path.resolve(__dirname, 'src/single/pages/MarketPage.mini.tsx'),
-      '@pages/jizi': path.resolve(__dirname, 'src/single/pages/JiziPage.mini.tsx'),
+      '@pages/jizi': path.resolve(__dirname, 'src/single/pages/JiziPageMini.tsx'),
     },
   },
   define: {

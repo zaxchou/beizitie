@@ -37,9 +37,9 @@ const ALL_TABS: { key: Tab; label: string; icon: JSX.Element }[] = [
   { key: 'data', label: '数据', icon: <BarChartIcon /> },
   { key: 'settings', label: '设置', icon: <SettingsIcon /> },
 ];
-// mini 构建：无市场（帖已内置）、无集字，三个 tab
+// mini 构建：无市场（帖已内置），集字为离线限定版（取字范围=包内帖）
 const TABS = __MINI__
-  ? ALL_TABS.filter((t) => t.key === 'dashboard' || t.key === 'data' || t.key === 'settings')
+  ? ALL_TABS.filter((t) => t.key !== 'market')
   : ALL_TABS;
 
 export default function SingleApp() {
