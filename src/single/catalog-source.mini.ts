@@ -13,9 +13,12 @@ const modules = import.meta.glob('../../mini/data/zitie-*.json', {
   eager: true,
 }) as Record<string, string>;
 
-export const bundledZitie: Record<string, ZitieGlyphList> = Object.fromEntries(
-  Object.entries(modules).map(([_p, rawJson]) => {
-    const d = JSON.parse(rawJson) as ZitieGlyphList;
-    return [d.z, d];
-  }),
+// Object.fromEntries 需 Chrome 73+，基线用 reduce
+export const bundledZitie: Record<string, ZitieGlyphList> = Object.keys(modules).reduce(
+  (acc, key) => {
+    const d = JSON.parse(modules[key]) as ZitieGlyphList;
+    acc[d.z] = d;
+    return acc;
+  },
+  {} as Record<string, ZitieGlyphList>,
 );

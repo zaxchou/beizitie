@@ -36,6 +36,18 @@ import {
 } from './db';
 import { catalogJson, bundledZitie } from '@catalog/source';
 
+// ---- 兼容 ----
+/** crypto.randomUUID 需 Chrome 92+；基线 Chrome 61 用 getRandomValues 兜底 */
+function uuid(): string {
+  const c = crypto as Crypto & { randomUUID?: () => string };
+  if (typeof c.randomUUID === 'function') return c.randomUUID();
+  const b = c.getRandomValues(new Uint8Array(16));
+  b[6] = (b[6] & 0x0f) | 0x40;
+  b[8] = (b[8] & 0x3f) | 0x80;
+  const hex = Array.from(b).map((x) => x.toString(16).padStart(2, '0')).join('');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+}
+
 // ---- 目录 ----
 export const catalogIndex: CatalogIndex = JSON.parse(catalogJson as unknown as string);
 
@@ -154,7 +166,7 @@ export const localDataSource: LocalDataSource = {
       const dup = existing.find((d) => d.zitieId === z.z);
       if (dup) throw new Error('该帖已在书库中');
       const deck: LocalDeck = {
-        id: crypto.randomUUID(),
+        id: uuid(),
         zitieId: z.z,
         name: meta.name,
         author: meta.author,
@@ -177,7 +189,7 @@ export const localDataSource: LocalDataSource = {
           imageUrl = glyphUrl(z, g.rel || '');
         }
         return {
-          id: crypto.randomUUID(),
+          id: uuid(),
           deckId: deck.id,
           hanzi: g.h,
           imageUrl,
