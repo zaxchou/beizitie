@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useTheme } from '@mui/material';
 import type { Card } from '@/types';
 import { getImageUrl } from '@/lib/imageUrl';
@@ -29,8 +29,22 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const [viewingOriginal, setViewingOriginal] = useState(false);
-  // mini 离线包：字图为 4×4 图集切片，用背景定位替代 <img>
+  // mini 离线包：字图为 4×4 图集切片，量出卡内可用空间后以正方形显示（防拉伸、兼容 Chrome 61 无 aspect-ratio）
   const atlas = __MINI__ ? parseAtlasUrl(card.image_url) : null;
+  const atlasBoxRef = useRef<HTMLDivElement | null>(null);
+  const [tileSide, setTileSide] = useState(0);
+  useLayoutEffect(() => {
+    if (!__MINI__ || !atlas) return;
+    const measure = () => {
+      const el = atlasBoxRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setTileSide(Math.max(0, Math.min(r.width, r.height) - 32));
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [atlas]);
 
   const faceStyle: React.CSSProperties = {
     backgroundColor: isDark ? '#2d2d2d' : '#fff',
@@ -70,6 +84,7 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
 
           {/* 背面：优先显示图片 */}
           <div
+            ref={atlasBoxRef}
             className="backface-hidden rotate-y-180 absolute inset-0 flex items-center justify-center rounded-lg border card-image-back overflow-hidden"
             style={{ backgroundColor: isDark ? '#2d2d2d' : '#fafafa', borderColor: isDark ? '#444' : '#e5e7eb' }}
           >
@@ -77,8 +92,8 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
               atlas ? (
                 <div
                   aria-label={`书法：${card.front_text}`}
-                  className="w-full h-full"
                   style={{
+                    width: tileSide, height: tileSide,
                     backgroundImage: `url(${atlas.atlas})`,
                     backgroundSize: '400% 400%',
                     backgroundPosition: atlasBgPosition(atlas),
