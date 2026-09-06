@@ -22,15 +22,24 @@ ZIP=beizitie-mini.zip
 rm -f "$ZIP"
 python - "$ZIP" <<'PY'
 import zipfile, os, sys
+ALLOWED = {'.html', '.css', '.js', '.json', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.woff', '.woff2'}
 zp = sys.argv[1]
 with zipfile.ZipFile(zp, 'w', zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+    htmls = []
     for root, dirs, files in os.walk('dist-mini'):
         for f in files:
             p = os.path.join(root, f)
-            z.write(p, os.path.relpath(p, 'dist-mini'))
+            rel = os.path.relpath(p, 'dist-mini')
+            if os.path.splitext(f)[1].lower() not in ALLOWED:
+                print(f'ERROR: whitelist file: {rel}'); sys.exit(1)
+            if f.lower().endswith('.html'):
+                htmls.append(rel)
+            z.write(p, rel)
+    if htmls != ['index.html']:
+        print('ERROR: html must be exactly [index.html] at root, got:', htmls); sys.exit(1)
 size = os.path.getsize(zp)
-print(f'  {zp}: {size/1048576:.2f} MiB / 上限 10 MiB')
-assert size <= 10 * 1024 * 1024, '❌ 超过 10MiB 上限'
+print(f'  {zp}: {size/1048576:.2f} MiB / limit 10 MiB')
+assert size <= 10 * 1024 * 1024, 'ERROR: over 10MiB'
 PY
 
 node "$HOME/.agents/skills/minitool-zip-builder/scripts/audit_artifact.mjs" "$ZIP" || {
