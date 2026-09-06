@@ -103,7 +103,8 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
             背字帖 · {__MINI__ ? '离线版' : '单文件开源版'}（MIT）{APP_VERSION !== 'dev' && <> · v{APP_VERSION}{BUILD_DATE ? `（${BUILD_DATE} 构建）` : ''}</>}
             <br />
             {__MINI__
-              ? <>字图来源：上海图书馆藏本《九成宫醴泉铭》《集王圣教序》（CC BY-NC-ND 3.0），仅供学习</>
+              ? <>字图来源：上海图书馆藏本《九成宫醴泉铭》《集王圣教序》（CC BY-NC-ND 3.0），仅供学习
+                  <br />界面字体：霞鹜文楷（SIL OFL 1.1），许可见包内 fonts/OFL.txt</>
               : <>碑帖单字图来自公开字库 CDN，仅供学习</>}
             <br />
             {__MINI__

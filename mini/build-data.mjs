@@ -8,7 +8,11 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import sharp from 'sharp';
+
+/** 缓存键 = 内容 URL 哈希：catalog 数据更新导致字符顺序变化时不会字图错位 */
+const cacheKey = (url) => crypto.createHash('sha1').update(url).digest('hex').slice(0, 16);
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const DATA_DIR = path.join(ROOT, 'mini', 'data');
@@ -56,7 +60,10 @@ async function main() {
       if (!h || h === '□') continue;
       if (!seen.has(h)) seen.set(h, g);
     }
-    deck.cards = [...seen.entries()].map(([h, g]) => ({ h, g }));
+    deck.cards = [...seen.entries()].map(([h, g]) => {
+      const url = `${deck.data.iiif}${deck.data.pages[g.c[0]]}/${g.c[1]},${g.c[2]},${g.c[3]},${g.c[3]}/512,512/0/default.jpg`;
+      return { h, g, url, key: cacheKey(url) };
+    });
     console.log(`${deck.n}: ${deck.data.g.length} 字 → 去重 ${deck.cards.length} 独字`);
   }
   const totalCards = decks.reduce((s, d) => s + d.cards.length, 0);
@@ -66,12 +73,11 @@ async function main() {
     const dir = path.join(CACHE, deck.z);
     fs.mkdirSync(dir, { recursive: true });
     let done = 0;
-    for (let i = 0; i < deck.cards.length; i++) {
-      const out = path.join(dir, `${i}.jpg`);
+    for (const card of deck.cards) {
+      const out = path.join(dir, `${card.key}.jpg`);
       done++;
       if (fs.existsSync(out) && fs.statSync(out).size > 500) continue;
-      const url = glyph512Url(deck.data, deck.cards[i].g);
-      const buf = await fetchBin(url);
+      const buf = await fetchBin(card.url);
       fs.writeFileSync(out, buf);
       if (done % 25 === 0) console.log(`  [${deck.n}] ${done}/${deck.cards.length}`);
     }
@@ -84,7 +90,7 @@ async function main() {
     return deck.cards.filter((_, i) => i % step === 0).slice(0, 16);
   };
   async function encodeSize(card, size, q) {
-    const raw = fs.readFileSync(path.join(CACHE, deckOf(card).z, `${indexOf(card)}.jpg`));
+    const raw = fs.readFileSync(path.join(CACHE, deckOf(card).z, `${card.key}.jpg`));
     const buf = await sharp(raw).resize(size, size, { fit: 'cover' }).webp({ quality: q, effort: 5, smartSubsample: true }).toBuffer();
     return buf.length;
   }
@@ -119,8 +125,9 @@ async function main() {
     fs.mkdirSync(outDir, { recursive: true });
     let sum = 0;
     for (let i = 0; i < deck.cards.length; i++) {
+      const card = deck.cards[i];
       const out = path.join(outDir, `${i}.webp`);
-      const raw = fs.readFileSync(path.join(CACHE, deck.z, `${i}.jpg`));
+      const raw = fs.readFileSync(path.join(CACHE, deck.z, `${card.key}.jpg`));
       const buf = await sharp(raw).resize(chosen.size, chosen.size, { fit: 'cover' })
         .webp({ quality: chosen.q, effort: 5, smartSubsample: true }).toBuffer();
       fs.writeFileSync(out, buf);

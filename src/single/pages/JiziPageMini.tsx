@@ -91,8 +91,11 @@ export const JiziPageMini: React.FC = () => {
     return t.filter((x) => x.full).map((x) => x.tpl);
   }, []);
 
+  const MAX_CHARS = 40; // 超长输入会把生成画布撑过移动端上限
   const run = (input: string) => {
-    const chars = [...new Set([...input.replace(/\s/g, '')])].filter((c) => /[\u4e00-\u9fff\u3400-\u4dbf]/.test(c));
+    const chars = [...new Set([...input.replace(/\s/g, '')])]
+      .filter((c) => /[\u4e00-\u9fff\u3400-\u4dbf]/.test(c))
+      .slice(0, MAX_CHARS);
     const hit: Hit[] = [];
     const miss: string[] = [];
     for (const c of chars) {
@@ -132,7 +135,8 @@ export const JiziPageMini: React.FC = () => {
         <CardContent>
           <TextField
             fullWidth multiline rows={2} size="small"
-            placeholder="输入要集的字或短句…"
+            placeholder="输入要集的字或短句（最多 40 字）…"
+            inputProps={{ maxLength: MAX_CHARS }}
             value={text}
             onChange={(e) => setText(e.target.value)}
             sx={{ mb: 1.5 }}
@@ -163,13 +167,19 @@ export const JiziPageMini: React.FC = () => {
                 缺字 {missing.length} 个（包内两帖没有）：{missing.join(' ')}
               </Typography>
             )}
-            <Button fullWidth variant="contained" sx={{ borderRadius: 2, mt: 1.5 }} onClick={async () => {
-              const dataUrl = await composeCanvas(hits, missing, text.replace(/\s/g, ''));
-              setWork(dataUrl);
-              setSaveTip(null);
-            }}>
-              生成作品
-            </Button>
+            {hits.length === 0 ? (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, textAlign: 'center' }}>
+                输入的字都不在包内两帖中，换个短句试试
+              </Typography>
+            ) : (
+              <Button fullWidth variant="contained" sx={{ borderRadius: 2, mt: 1.5 }} onClick={async () => {
+                const dataUrl = await composeCanvas(hits, missing, text.replace(/\s/g, ''));
+                setWork(dataUrl);
+                setSaveTip(null);
+              }}>
+                生成作品
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}

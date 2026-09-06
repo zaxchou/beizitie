@@ -21,6 +21,7 @@ import StoreIcon from '@mui/icons-material/Store';
 import BrushIcon from '@mui/icons-material/Brush';
 import { buildThemeOptions } from '@/theme';
 import { localDataSource, catalogIndex } from '@/data/local/localAdapter';
+import { kvGet, kvSet } from '@/data/local/db';
 import DashboardPage from './pages/DashboardPage';
 import MarketPage from '@pages/market';
 import StudyPage from './pages/StudyPage';
@@ -59,10 +60,12 @@ export default function SingleApp() {
     localStorage.setItem('beizitie-dark', darkMode);
   }, [darkMode]);
 
-  // mini：首启把包内字帖自动加进书库（addFromZitie 幂等，已加入会抛错忽略）
+  // mini：包内字帖自动进书库。按数据版本 stamp 跳过——用户删过的帖不会每次启动都复活
   useEffect(() => {
     if (!__MINI__) return;
     (async () => {
+      const stamp = (catalogIndex as { updatedAt?: string }).updatedAt || '';
+      if ((await kvGet('miniDataStamp')) === stamp) return;
       for (const zp of catalogIndex.zuopins) {
         try {
           const z = await localDataSource.catalog.zitie(zp.z);
@@ -71,6 +74,7 @@ export default function SingleApp() {
           });
         } catch { /* 已在书库 */ }
       }
+      await kvSet('miniDataStamp', stamp);
       bumpRefresh();
     })();
   }, []);

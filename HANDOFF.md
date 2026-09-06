@@ -402,3 +402,11 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 基线兼容补丁（deep review 发现）：crypto.randomUUID（Chrome 92+）与 Object.fromEntries（Chrome 73+）在基线 WebView 缺失——前者让首启导入静默失败书库空白，后者直接白屏。uuid 兜底用 getRandomValues（Chrome 11+），fromEntries 改 reduce。教训：es2017 target 只转语法，API 缺失要单独审计。
 - 用户反馈"预览看不到底部 tab"未复现：http/file 双路径渲染均有 tab（file:// 用 headless Chrome 复现到一次布局异常但 DOM 三 tab 齐全）。待用户说明预览方式后进一步定位。
 
+### 补记 9（同日）：mini deep review 第二轮——4 项修复
+- **P1 管线缓存键 = 位置下标**：mini/.cache/<z>/<i>.jpg 按"去重后位置"存图，catalog 数据一更新（修字/增删卡）字符顺序就变，缓存按位置命中会**字图错位**——恰是产品最忌讳的 bug 类型。改 URL sha1 前 16 位做键；换数据自动重下，顺序稳定时全部命中。
+- **P1 集字无长度上限**：超长输入 → canvas 高度 = 行数×170，几百字就超移动端画布上限直接崩。限 40 字（maxLength+slice），空命中禁用生成并给文案。
+- **P2 霞鹜文楷 OFL 许可缺失**：子集 woff2 随包分发需附许可，fonts/OFL.txt 已带上（其 ADDITIONAL PERMISSION 明确允许子集/转 woff2 用于 webfont 交付，只要不做可安装字体分发）；关于页加署名行。
+- **P2 启动导入 stamp**：mini 每次启动都重跑导入（throw 控制流）且删过的帖每次复活。改 kv 'miniDataStamp' 比对 catalog updatedAt：数据没变不重复导入、用户删除被尊重；换新包（updatedAt 变）自动补齐新帖。
+- **正面确认**：闪卡正面字体 card-front-text = Noto Serif SC/楷体 栈（衬线打印体，符合"像背单词"的卡面设计，非 font-kai，子集不影响）；DataPageMini 不用 dueForecast/recharts；modulepreload 垫片已关；audit 持续 PASS。
+- 预览方式沉淀：dist-mini 下 `python -m http.server 8080` 即可用浏览器完整预览（用户已验证 OK）；file:// 双击也能跑但布局在部分环境有渲染怪象，建议一律走 http。
+
