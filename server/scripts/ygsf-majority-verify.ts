@@ -87,7 +87,7 @@ async function main() {
   const list = limit ? decks.slice(0, limit) : decks;
   console.log(`[majority4] 待核验 ${list.length} 帖 mode=${apply ? 'APPLY' : 'DRY-RUN'}`);
 
-  const idRe = /areas\/[a-f0-9]+\/\d+\/([a-f0-9]{32})_\.png/;
+  const idRe = /areas\/[a-f0-9]+\/\d+\/([a-f0-9]{32})_?\.png/;
   const report: any[] = [];
   const remaining: string[] = [];
   let ok = 0, bad = 0, unresolved = 0, done = 0;
@@ -111,7 +111,6 @@ async function main() {
             if (!vm) { vm = new Map(); votes.set(f, vm); }
             vm.set(label, (vm.get(label) || 0) + 1);
           }
-          if (listG.length < 100) break;
           await new Promise((res) => setTimeout(res, 300));
         } catch { break; }
       }

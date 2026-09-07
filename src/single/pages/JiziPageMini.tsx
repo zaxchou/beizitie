@@ -87,14 +87,21 @@ async function composeCanvas(hits: Hit[], missing: string[], text: string): Prom
   }
   ctx.fillStyle = '#a99f8a';
   ctx.font = '16px "BeizitieKai", KaiTi, serif';
-  ctx.fillText('背字帖 · 离线集字', W / 2, H - 46);
-  ctx.font = '12px "BeizitieKai", KaiTi, serif';
-  ctx.fillText('拓片：上海图书馆藏本（CC BY-NC-ND 3.0）', W / 2, H - 24);
+  ctx.fillText('背字帖 · 离线集字', W / 2, H - 40);
   if (missing.length) {
     ctx.fillText(`缺字 ${missing.length} 个`, W / 2, H - 50);
   }
   return canvas.toDataURL('image/png');
 }
+
+const bundledNames = (() => {
+  try {
+    const decks = (JSON.parse(catalogJson) as { zuopins: CatalogZuopin[] }).zuopins;
+    return decks.map((z) => `《${z.n}》`).join('、');
+  } catch {
+    return '包内字帖';
+  }
+})();
 
 export const JiziPageMini: React.FC = () => {
   const [text, setText] = useState('');
@@ -148,7 +155,7 @@ export const JiziPageMini: React.FC = () => {
     <Box className="space-y-3">
       <Typography className="font-kai" sx={{ fontSize: 20, fontWeight: 700 }}>集字</Typography>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-        取字范围：包内《九成宫醴泉铭》《集王圣教序》两帖 · 纯离线
+        取字范围：包内{bundledNames} · 纯离线
       </Typography>
 
       <Card variant="outlined" sx={{ borderRadius: 2 }}>
