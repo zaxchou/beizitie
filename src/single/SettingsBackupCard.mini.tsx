@@ -10,6 +10,8 @@ export const SettingsBackupCard: React.FC<{ onChanged?: () => void }> = () => (
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.8 }}>
           进度自动保存在本机（IndexedDB），无需登录。
           <br />
+          本工具不联网，不收集、不上传任何个人数据。
+          <br />
           注意：删除本工具或清理小红书缓存会清空进度，记得常回来复习。
         </Typography>
       </CardContent>
