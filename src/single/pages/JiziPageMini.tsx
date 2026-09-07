@@ -87,7 +87,9 @@ async function composeCanvas(hits: Hit[], missing: string[], text: string): Prom
   }
   ctx.fillStyle = '#a99f8a';
   ctx.font = '16px "BeizitieKai", KaiTi, serif';
-  ctx.fillText('背字帖 · 离线集字', W / 2, H - 26);
+  ctx.fillText('背字帖 · 离线集字', W / 2, H - 46);
+  ctx.font = '12px "BeizitieKai", KaiTi, serif';
+  ctx.fillText('拓片：上海图书馆藏本（CC BY-NC-ND 3.0）', W / 2, H - 24);
   if (missing.length) {
     ctx.fillText(`缺字 ${missing.length} 个`, W / 2, H - 50);
   }

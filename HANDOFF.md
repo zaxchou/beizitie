@@ -417,3 +417,9 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 打包门禁累计四条：体积 ≤10MiB、类型白名单、html 仅根目录 index.html、文件数 ≤200（build-mini.sh）。
 - 教训：共享组件（FlashCard）加 __MINI__ 分支时 JSX 括号嵌套写错一次；改 vite.config.* 后必须两版都重建冒烟。
 
+### 补记 11（同日）：mini 版权说明规范化（双上图定稿）
+- 用户决策：两帖均用上图藏本（九成宫曾短暂切 YGSF 李祺本验证可行——同 620 独字，管线现支持 IIIF/YGSF 双 URL 形态——后按版权考虑回退）。
+- 版权三件套：①设置页「内容来源与授权」完整块（来源帖名/CC BY-NC-ND 3.0 全称/裁剪缩放仅限工具内展示/字体 OFL/不收集数据声明）②包内 licenses/cc-by-nc-nd-3.0.json 附 CC 官方法律文本全文（txt 不在平台白名单，一律 json）③集字作品 Canvas 落款加「拓片：上海图书馆藏本（CC BY-NC-ND 3.0）」。
+- 提审表单建议：类目避教育选工具/文化；简介用中性描述（书法碑帖单字记忆卡）；备注附授权链说明。
+- 包最终态：92 文件 / 8.83MiB / audit PASS。YGSF 缓存目录已清理。
+

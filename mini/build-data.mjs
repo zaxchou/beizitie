@@ -59,7 +59,10 @@ async function main() {
       if (!seen.has(h)) seen.set(h, g);
     }
     deck.cards = [...seen.entries()].map(([h, g]) => {
-      const url = `${deck.data.iiif}${deck.data.pages[g.c[0]]}/${g.c[1]},${g.c[2]},${g.c[3]},${g.c[3]}/512,512/0/default.jpg`;
+      // shlib：IIIF 坐标切图；ygsf：CDN 相对路径 + 512 缩放参数
+      const url = deck.data.iiif
+        ? `${deck.data.iiif}${deck.data.pages[g.c[0]]}/${g.c[1]},${g.c[2]},${g.c[3]},${g.c[3]}/512,512/0/default.jpg`
+        : `${deck.data.base}${g.rel}${deck.data.thumb}`;
       return { h, g, url, key: cacheKey(url) };
     });
     console.log(`${deck.n}: ${deck.data.g.length} 字 → 去重 ${deck.cards.length} 独字`);

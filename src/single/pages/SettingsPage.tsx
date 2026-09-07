@@ -104,7 +104,8 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
             <br />
             {__MINI__
               ? <>【内容来源与授权】
-                  <br />碑帖拓片：上海图书馆藏本《九成宫醴泉铭》《集王圣教序》，依 CC BY-NC-ND 3.0 署名使用，非商业学习用途，裁剪缩放仅用于本工具内展示。
+                  <br />碑帖拓片：上海图书馆藏本《九成宫醴泉铭》《集王圣教序》。
+                  <br />授权协议：CC BY-NC-ND 3.0（署名-非商业性使用-禁止演绎），非商业学习用途，裁剪缩放仅用于本工具内展示，完整法律文本见包内 licenses/ 目录。
                   <br />界面字体：霞鹜文楷（SIL OFL 1.1），许可见包内 fonts/OFL.json。
                   <br />本工具不联网，不收集、不上传任何个人数据。</>
               : <>碑帖单字图来自公开字库 CDN，仅供学习</>}
