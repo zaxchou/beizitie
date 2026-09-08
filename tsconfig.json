@@ -25,6 +25,9 @@
       "@/*": [
         "src/*"
       ],
+      "@app/root": [
+        "src/single/App.tsx"
+      ],
       "@catalog/source": [
         "src/single/catalog-source.ts"
       ],

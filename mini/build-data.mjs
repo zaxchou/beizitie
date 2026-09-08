@@ -89,10 +89,21 @@ async function main() {
   const cardDeck = new Map();
   for (const d of decks) for (const c of d.cards) cardDeck.set(c, d);
   const deckOf = (c) => cardDeck.get(c);
-  async function encodeTile(card, size, q) {
+  // 原图多为非正方形（如 332×512），cover 会把笔画裁掉：contain 完整放入，
+  // 补边色取原图角部采样（纸色），图块拼进图集后看不出接缝
+  async function squareTile(card, size, q) {
     const raw = fs.readFileSync(path.join(CACHE, deckOf(card).z, `${card.key}.jpg`));
-    const buf = await sharp(raw).resize(size, size, { fit: 'cover' }).webp({ quality: q, effort: 5, smartSubsample: true }).toBuffer();
-    return buf.length;
+    const meta = await sharp(raw).metadata();
+    const s = Math.min(8, meta.width, meta.height);
+    const { channels } = await sharp(raw).extract({ left: 0, top: 0, width: s, height: s }).stats();
+    const [r, g, b] = channels.map((c) => Math.round(c.mean));
+    return sharp(raw)
+      .resize(size, size, { fit: 'contain', background: { r, g, b, alpha: 1 } })
+      .webp({ quality: q, effort: 5, smartSubsample: true })
+      .toBuffer();
+  }
+  async function encodeTile(card, size, q) {
+    return (await squareTile(card, size, q)).length;
   }
   const sample = (deck) => {
     const step = Math.max(1, Math.floor(deck.cards.length / 16));
@@ -132,8 +143,7 @@ async function main() {
       const tiles = [];
       for (let j = 0; j < groups[k].length; j++) {
         const card = groups[k][j];
-        const raw = fs.readFileSync(path.join(CACHE, deck.z, `${card.key}.jpg`));
-        const buf = await sharp(raw).resize(chosen.size, chosen.size, { fit: 'cover' }).toBuffer();
+        const buf = await squareTile(card, chosen.size, chosen.q);
         card.rel = `img/atlas/${deck.z}-${String(k).padStart(2, '0')}.webp#${j % GRID},${Math.floor(j / GRID)}`;
         tiles.push({ input: buf, left: (j % GRID) * chosen.size, top: Math.floor(j / GRID) * chosen.size });
       }
@@ -181,7 +191,7 @@ async function main() {
     zuopins.push({
       id: deck.meta.id || deck.z, z: deck.z, n: deck.n, a: deck.a, d: deck.d,
       s: deck.meta.s || ['楷'], c: deck.coverPath || '', g: deck.cards.length,
-      src: 'shlib', f: 1,
+      src: deck.data.iiif ? 'shlib' : 'ygsf', f: 1,
     });
   }
   fs.writeFileSync(path.join(DATA_DIR, 'catalog.json'), JSON.stringify({

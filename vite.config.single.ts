@@ -21,6 +21,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      '@app/root': path.resolve(__dirname, 'src/single/App.tsx'),
       '@catalog/source': path.resolve(__dirname, 'src/single/catalog-source.ts'),
       '@data-page': path.resolve(__dirname, 'src/single/pages/DataPage.tsx'),
       '@settings/backup-card': path.resolve(__dirname, 'src/single/SettingsBackupCard.tsx'),

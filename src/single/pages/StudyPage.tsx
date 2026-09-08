@@ -20,6 +20,8 @@ import type { LocalCard, LocalProgress } from '../../core/types';
 interface Props {
   studyingDeck: { id: string; name: string };
   onExitStudy: () => void;
+  /** 退出按钮文案（默认「书库」；mini 版回主页） */
+  exitLabel?: string;
 }
 
 interface QueueItem {
@@ -48,7 +50,7 @@ function toCard(c: LocalCard, p: LocalProgress | null): Card {
   };
 }
 
-export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy }) => {
+export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabel = '书库' }) => {
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [index, setIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
@@ -148,7 +150,7 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy }) => {
           onClick={() => (rated > 0 && !sessionDone ? setConfirmExit(true) : onExitStudy())}
           sx={{ borderRadius: 2 }}
         >
-          书库
+          {exitLabel}
         </Button>
         <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
           <Typography sx={{ fontWeight: 600, fontSize: 15 }} noWrap>{studyingDeck.name}</Typography>
@@ -174,7 +176,7 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy }) => {
               {queue.length === 0 ? '这张帖今天没有到期的卡片' : `共完成 ${rated} 张`}
             </Typography>
             <Button variant="contained" onClick={onExitStudy} sx={{ borderRadius: 2 }}>
-              返回书库
+              返回{exitLabel}
             </Button>
           </CardContent>
         </MuiCard>

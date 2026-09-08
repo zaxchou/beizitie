@@ -47,7 +47,7 @@ const index = (() => {
   return m;
 })();
 
-const TEMPLATES = ['九成宫醴泉铭', '集王圣教序', '日课一字'];
+const TEMPLATES = ['永和九年', '天朗气清', '惠风和畅', '茂林修竹'];
 
 async function composeCanvas(hits: Hit[], missing: string[], text: string): Promise<string> {
   const COLS = 5;

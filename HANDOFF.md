@@ -430,3 +430,10 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 旧数据迁移再验证：图集化后老 IDB 的旧地址 404，resync 按汉字刷成图集引用，实测老进度+新包零 404。浏览器 IDB 清理用 CDP Storage.clearDataForOrigin（页面自身 deleteDatabase 会被自有连接 block）。
 - 上图九成宫/圣教序的 mini 打包能力保留（config 换回即可），随时可出"上图系列包"。
 
+
+### 补记 13（2026-09-08）：二次拒审 → 裁字根因修复 + 审核极简版
+- 用户自研预览发现**所有字都被裁边**。根因不在前端切图（CSS 400% 定位数学没错），在打包管线：YGSF 单字原图**不是正方形**（蘭 332×512、亭 340×512、八 388×185），`sharp.resize(fit:'cover')` 按短边居中裁 → 笔画上下左右被切。修复 = `fit:'contain'` 按原比例完整放入，补边色取原图角部 8×8 均值（实测四角完全一致，补边与原图边缘无缝；"看着偏深"其实是拓片照片自身的边影）。encodeTile 与图集拼接共用 squareTile()，网格搜索的体积预估与实物一致。
+- 用户决策：审核期只保留背字一个功能。新建 `src/single/App.mini.tsx`（mini 专用壳）：无 tab / 市场 / 集字 / 数据 / 设置，启动自动导入包内帖 → 主屏（《兰亭序》+ 开始背字 + 「字帖图版仅供个人学习研究」脚注）→ StudyPage。入口经 **@app/root 别名**分派（mini→App.mini，single→App.tsx；tsconfig 同步），彻底避免 mini 图谱拖入全功能页面。StudyPage 加可选 exitLabel（mini 传「主页」）。
+- 顺手纠偏：build-data 清单 `src` 硬编码 'shlib' → 按 data.iiif 判定（兰亭是 YGSF 数据，不能冒充上图藏本——审核"虚假宣传"风险点）。
+- 包最终态：22 文件 / 6.73MiB（比上版小 0.5MiB：补边平坦区压缩率高）/ audit PASS。浏览器实测：新用户首启导入→主屏→翻卡（蘭/亭完整）→评分→中途退出确认弹窗→回主屏，控制台仅 favicon 404（浏览器自动请求，无害）。
+- 集字/数据页代码未删（JiziPageMini/DataPageMini 保留，mini 图谱已不再引用），过审后想做回来改 App.mini 一行即可。
