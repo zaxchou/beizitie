@@ -14,6 +14,16 @@ node mini/build-data.mjs
 
 echo "== 2/3 构建 =="
 npm run build:mini 2>&1 | tail -1
+# 诊断版字体名收敛：包内引用只保留系统黑体/宋体（零字体文件，仅改产物里的字体名）
+node -e "
+const fs = require('fs');
+const p = 'dist-mini/mini.html';
+const MAP = [['Noto Serif SC','SimSun'],['Noto Sans SC','SimHei'],['Ma Shan Zheng','SimSun'],['KaiTi','SimSun'],['Kaiti','SimSun'],['楷体','宋体'],['Roboto','SimHei']];
+let html = fs.readFileSync(p, 'utf-8');
+for (const [a, b] of MAP) html = html.split(a).join(b);
+fs.writeFileSync(p, html);
+console.log('字体名已收敛为系统黑体/宋体');
+"
 cp dist-mini/mini.html dist-mini/index.html
 rm -f dist-mini/mini.html
 

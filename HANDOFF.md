@@ -468,3 +468,8 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 同类隐患清零：queueMicrotask（React 内有 typeof 守卫）、randomUUID（已有回退）、CSS @layer（MUI 未实际启用，运行时验证 0 条）、inset 属性（产物中 0 条，此前命中均为 --tw-ring-inset 变量名误报）；新增 Array.flat/flatMap polyfill（Chrome 69+，MUI 样式引擎内部分支）。
 - 教训沉淀：**语法转译≠运行时安全**。目标基线 chrome61 的包，交付前必须对产物做 post-ES2017 API 扫描（AbortController/ResizeObserver/queueMicrotask/allSettled/replaceAll/flat…），此清单应进 build-mini.sh 门禁（待办）。
 - 字体问题排除：纯文字版无字体文件；CSS font-family 引用系统字体无分发。霞鹜文楷 OFL 本身也安全。
+
+### 补记 20（同日）：字体名收敛——全包只引用系统黑体/宋体
+- 五连拒后用户坚持测字体变量。此前纯文字版已零字体文件（@font-face=0），但仍引用楷体/Noto 等**名字**；本次把产物里所有字体名替换为 SimHei(黑体)/SimSun(宋体)：build-mini.sh 构建后对 mini.html 做字符串替换（vite 插件钩子与 singlefile 内联时机不配合，弃用插件方案），mini-compat 的 .font-kai 覆盖同步改宋体、全局 `* !important` 黑体。
+- 渲染验证：正文/按钮=黑体栈，标题/大字=宋体栈（Windows 桌面截图确认）。包内旧字体名 0 残留，仍 1 文件 / 0.10MiB。
+- 备注：Microsoft YaHei/Helvetica/Arial 为拉丁系统字体名保留；法律上字体"引用名"本就不构成分发，此改动属用户要求的极限变量控制。

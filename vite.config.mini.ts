@@ -14,6 +14,7 @@ const json = JSON.parse(readFileSync('./package.json', 'utf-8'));
  * - 数据来源：node mini/build-data.mjs（先跑）
  */
 export default defineConfig({
+  // 字体名收敛在 build-mini.sh 构建后对最终产物做（singlefile 内联时机不配合插件钩子）
   plugins: [react(), viteSingleFile()],
   resolve: {
     alias: {

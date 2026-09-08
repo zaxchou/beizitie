@@ -62,14 +62,14 @@ function installArrayPolyfills(): void {
 }
 
 /**
- * mini 专用运行时样式：楷体字族覆盖。
- * 纯文字诊断版不打包任何字体文件（霞鹜文楷 woff2 移至 mini/fonts-bundle/，过审后可恢复），
- * 只引用系统自带字体——iOS: Kaiti SC，Windows: 楷体/雅黑，Android 无楷体回退衬线/黑体。
+ * mini 专用运行时样式：字体收敛为系统黑体/宋体（诊断版）。
+ * 不打包任何字体文件；全局强制黑体，.font-kai 装饰位用宋体。
  */
 function injectMiniStyles(): void {
   const style = document.createElement('style');
   style.textContent = [
-    ".font-kai{font-family:'Kaiti SC','STKaiti','KaiTi','楷体','Microsoft YaHei',serif !important}",
+    "*{font-family:'SimHei','黑体','Microsoft YaHei',sans-serif !important}",
+    ".font-kai{font-family:'SimSun','宋体','Songti SC',serif !important}",
   ].join('\n');
   document.head.appendChild(style);
 }
