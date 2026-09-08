@@ -73,8 +73,9 @@ export async function resyncBundledImages(): Promise<number> {
     const relByHanzi = new Map(manifest.g.map((g) => [g.h, g.rel as string]));
     const cards = await getCardsByDeck(deck.id);
     const updates = cards.filter((c) => {
+      // rel 可能是空串（纯文字诊断版无图）：此时要把旧图地址清掉，而不是跳过
       const rel = relByHanzi.get(c.hanzi);
-      return rel && c.imageUrl !== rel;
+      return rel !== undefined && c.imageUrl !== rel;
     }).map((c) => ({ ...c, imageUrl: relByHanzi.get(c.hanzi) as string }));
     if (updates.length) {
       await putCards(updates);

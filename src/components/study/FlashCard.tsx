@@ -103,6 +103,9 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
               ) : (
                 <img src={getImageUrl(card.image_url)} alt={`书法：${card.front_text}`} className="object-contain max-h-full max-w-full p-4" draggable={false} />
               )
+            ) : __MINI__ && card.front_text ? (
+              // 纯文字诊断版：无字图，正面汉字用系统楷体大字展示
+              <span aria-label={`汉字：${card.front_text}`} className="font-kai" style={{ fontSize: 120, lineHeight: 1.2 }}>{card.front_text}</span>
             ) : card.back_text ? (
               backHasHtml ? (
                 <span className="card-front-text text-center px-4 break-all" dangerouslySetInnerHTML={{ __html: backSanitized }} />

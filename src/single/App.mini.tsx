@@ -111,7 +111,7 @@ export default function MiniApp() {
             </Box>
 
             <Typography variant="caption" color="text.disabled" sx={{ fontSize: 10, textAlign: 'center' }}>
-              字帖图版仅供个人学习研究
+              内容仅供个人学习研究
             </Typography>
           </Box>
         ) : null}

@@ -43,12 +43,15 @@ function installFlexGapPolyfill(): void {
   schedule();
 }
 
-/** mini 专用运行时样式：楷体子集字体注册 + 覆盖 .font-kai 字族 */
+/**
+ * mini 专用运行时样式：楷体字族覆盖。
+ * 纯文字诊断版不打包任何字体文件（霞鹜文楷 woff2 移至 mini/fonts-bundle/，过审后可恢复），
+ * 只引用系统自带字体——iOS: Kaiti SC，Windows: 楷体/雅黑，Android 无楷体回退衬线/黑体。
+ */
 function injectMiniStyles(): void {
   const style = document.createElement('style');
   style.textContent = [
-    "@font-face{font-family:'BeizitieKai';src:url('fonts/kai.woff2') format('woff2');font-display:swap}",
-    ".font-kai{font-family:'BeizitieKai','KaiTi','STKaiti','SimSun',serif !important}",
+    ".font-kai{font-family:'Kaiti SC','STKaiti','KaiTi','楷体','Microsoft YaHei',serif !important}",
   ].join('\n');
   document.head.appendChild(style);
 }

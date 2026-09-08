@@ -450,3 +450,10 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 对 dist-mini/index.html 终扫：无 fetch/XHR/Worker/eval/open/iframe/表单跳转/下载/剪贴板/定位；无二维码/微信/关注/外链文案；postMessage 命中 1 处为 React 调度器 MessageChannel 内部（非 bridge）；w3.org/reactjs.org 为框架常量字符串。包内可判干净。
 - 残留清除：FlashCard 无条件引「字在帖中」组件，其报错文案「上海图书馆 IIIF」留在包内（功能在 mini 不出现）。新增 OriginalPageView.mini.tsx 空实现 + vite alias 替换（注意 alias 顺序：'@' 必须排在具体 '@/...' 别名之后，否则先匹配吃掉替换）。tsc paths 同步映射真实现。
 - 结论：三轮被拒（上图署名版→YGSF兰亭版→极简版）数据源与内容都不同，拒因大概率在包外：①提审类目/资质（"背字帖"+背词描述易归教育类，个人主体教育类目基本不可过）②图片授权无法自证（上图 CC 是非商业授权、YGSF 为商业站数据）③名称撞车。待用户提供拒审原文与提报表单信息后对症。
+
+### 补记 17（同日）：纯文字诊断版——零图片零字体的试金石
+- 平台三连拒且不给任何原因/分类。用户拍板做极限二分：把素材变量归零，字卡用系统楷体渲染大字（`Kaiti SC/STKaiti/KaiTi/楷体/雅黑`栈，不打包任何字体文件），config 加 `images:false`——build-data 跳过下载/编码/拼图/封面，清单 rel 置空。包 = 单个 index.html，0.10MiB / 1 文件。
+- 配套三处改动：①resyncBundledImages 对 rel='' 改为**清空**旧图地址（原 `rel &&` 写法会跳过，旧图地址残留）②mini-compat 去掉 @font-face，.font-kai 改系统栈（霞鹜文楷 woff2 移至 mini/fonts-bundle/ 备用）③FlashCard 加 __MINI__ 无图分支渲染正面汉字大字。
+- 字体安全结论：霞鹜文楷是 OFL，法律上极安全；微软雅黑才是不能打包分发的（微软版权）。系统字体只引用不分发，零风险。
+- 包内终扫仅剩框架常量（w3.org SVG 命名空间、reactjs.org 报错链接、React 调度器 MessageChannel）与运行时不可达的 IIIF 模板串。判包内干净。
+- 判读逻辑：纯文字版过审 → 问题在素材（图片授权最可疑）→ 依次恢复"公有领域整卷自切字图 / OFL 字体"；仍拒 → 问题在包外（表单/名称/账号主体/平台策略），改包无意义，走沟通或换提审策略。

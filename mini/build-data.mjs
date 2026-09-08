@@ -22,6 +22,9 @@ const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'mini', 'config.json'), '
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/126.0 Safari/537.36';
 const IMG_BUDGET = cfg.imageBudgetMB * 1024 * 1024;
 const GRID = 4; // 每图集 4×4 = 16 字；1536² 解码内存约 9MB，移动端安全
+// images=false：纯文字诊断版——零图片、零字体文件，字卡用系统字体渲染。
+// 用于二分定位平台拒审原因（过→问题在素材；仍拒→问题在包外）
+const IMAGES = cfg.images !== false;
 
 /** 缓存键 = 内容 URL 哈希：catalog 数据更新导致字符顺序变化时不会字图错位 */
 const cacheKey = (url) => crypto.createHash('sha1').update(url).digest('hex').slice(0, 16);
@@ -68,9 +71,13 @@ async function main() {
     console.log(`${deck.n}: ${deck.data.g.length} 字 → 去重 ${deck.cards.length} 独字`);
   }
   const totalCards = decks.reduce((s, d) => s + d.cards.length, 0);
+  if (!IMAGES) {
+    for (const d of decks) for (const c of d.cards) c.rel = '';
+  }
 
   // ---- 下载 512 原图（哈希键缓存，续跑只补缺失）----
   for (const deck of decks) {
+    if (!IMAGES) break;
     const dir = path.join(CACHE, deck.z);
     fs.mkdirSync(dir, { recursive: true });
     let done = 0;
@@ -85,6 +92,11 @@ async function main() {
     console.log(`${deck.n}: 原图就绪 ${done} 张`);
   }
 
+  // ---- 图片管线（下载/编码/拼图/封面）：images=false 的纯文字诊断版整体跳过 ----
+  if (!IMAGES) {
+    fs.rmSync(PUB_IMG, { recursive: true, force: true });
+    console.log('⚪ 纯文字诊断版：跳过图片管线，包内将只有 index.html');
+  } else {
   // ---- 网格搜索：每帖采样 16 字，预算内取（尺寸×质量）最高画质 ----
   const cardDeck = new Map();
   for (const d of decks) for (const c of d.cards) cardDeck.set(c, d);
@@ -177,8 +189,9 @@ async function main() {
       console.log(`封面: ${deck.n} ${fs.statSync(out).size}B`);
     } catch (e) { console.log(`封面跳过: ${deck.n} ${e.message}`); }
   }
+  } // end IMAGES
 
-  // ---- 清单产出（rel 带 #列,行 图集定位）----
+  // ---- 清单产出（rel 带 #列,行 图集定位；纯文字版 rel=''）----
   for (const f of fs.readdirSync(DATA_DIR)) if (f.startsWith('zitie-') && f.endsWith('.json')) fs.rmSync(path.join(DATA_DIR, f));
   const zuopins = [];
   for (const deck of decks) {
@@ -188,8 +201,8 @@ async function main() {
         z: deck.z,
         base: '',
         thumb: '',
-        desc: `${deck.data.desc || ''}\n去重独字卡 ${deck.cards.length} 字 · 离线版`,
-        g: deck.cards.map((c) => ({ h: c.h, rel: c.rel })),
+        desc: `${deck.data.desc || ''}\n去重独字卡 ${deck.cards.length} 字 · 离线版${IMAGES ? '' : ' · 纯文字'}`,
+        g: deck.cards.map((c) => ({ h: c.h, rel: c.rel || '' })),
       }),
     );
     zuopins.push({
@@ -201,7 +214,7 @@ async function main() {
   fs.writeFileSync(path.join(DATA_DIR, 'catalog.json'), JSON.stringify({
     v: 1, updatedAt: new Date().toISOString(), total: zuopins.length, zuopins,
   }));
-  const fileCount = 1 + 1 + 1 + atlasCount + 2; // index.html + 字体 + OFL + 图集 + 封面
+  const fileCount = IMAGES ? 1 + 1 + 1 + atlasCount + 2 : 1; // index.html + 字体 + OFL + 图集 + 封面；纯文字版仅 index.html
   console.log(`✅ 就绪。预计包内文件数 ≈ ${fileCount}（上限 200）`);
 }
 
