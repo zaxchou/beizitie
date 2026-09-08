@@ -201,7 +201,7 @@ async function main() {
         z: deck.z,
         base: '',
         thumb: '',
-        desc: `${deck.data.desc || ''}\n去重独字卡 ${deck.cards.length} 字 · 离线版${IMAGES ? '' : ' · 纯文字'}`,
+        desc: `${deck.data.desc || ''}\n去重独字卡 ${deck.cards.length} 字`,
         g: deck.cards.map((c) => ({ h: c.h, rel: c.rel || '' })),
       }),
     );

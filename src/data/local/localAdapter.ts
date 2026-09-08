@@ -89,7 +89,7 @@ export async function fetchZitie(zitieId: string): Promise<ZitieGlyphList> {
   // mini：离线清单内联（构建期下方 fetch 分支随 if(false) 消除）
   if (__MINI__) {
     const m = bundledZitie?.[zitieId];
-    if (!m) throw new Error('该帖不在离线包内');
+    if (!m) throw new Error('该帖不在包内');
     return m;
   }
   if (!__MINI__) {

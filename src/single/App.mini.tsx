@@ -77,7 +77,7 @@ export default function MiniApp() {
           <Box sx={{ maxWidth: 480, mx: 'auto', display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, gap: 3 }}>
             <Box sx={{ textAlign: 'center' }}>
               <Typography className="font-kai" sx={{ fontSize: 34, fontWeight: 700 }}>背字帖</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>离线版 · 进度保存在本机</Typography>
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>像背单词一样背字帖</Typography>
             </Box>
 
             <Box
