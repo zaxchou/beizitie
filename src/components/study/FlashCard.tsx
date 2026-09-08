@@ -3,7 +3,7 @@ import { useTheme } from '@mui/material';
 import type { Card } from '@/types';
 import { getImageUrl } from '@/lib/imageUrl';
 import { parseAtlasUrl, atlasBgPosition } from '@/core/types';
-import OriginalPageView from './OriginalPageView';
+import OriginalPageView from '@/components/study/OriginalPageView';
 
 export interface FlashCardProps {
   card: Card;

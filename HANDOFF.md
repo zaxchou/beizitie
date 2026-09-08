@@ -445,3 +445,8 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 
 ### 补记 15（同日）：主屏加今日概览
 - 用户反馈极简过头：开背前需要知道今天背多少 / 复习多少 / 一共多少字。主屏牌组卡加四格统计：今日新学（受每日 20 上限）/ 今日复习 / 已学 / 全帖 282，数据来自 library.list()（与实际出卡队列同口径）；退出学习回主屏即刷新（loadDeck 重跑）。
+
+### 补记 16（同日）：三审仍未过——包内终扫 + 无关机构文案清除
+- 对 dist-mini/index.html 终扫：无 fetch/XHR/Worker/eval/open/iframe/表单跳转/下载/剪贴板/定位；无二维码/微信/关注/外链文案；postMessage 命中 1 处为 React 调度器 MessageChannel 内部（非 bridge）；w3.org/reactjs.org 为框架常量字符串。包内可判干净。
+- 残留清除：FlashCard 无条件引「字在帖中」组件，其报错文案「上海图书馆 IIIF」留在包内（功能在 mini 不出现）。新增 OriginalPageView.mini.tsx 空实现 + vite alias 替换（注意 alias 顺序：'@' 必须排在具体 '@/...' 别名之后，否则先匹配吃掉替换）。tsc paths 同步映射真实现。
+- 结论：三轮被拒（上图署名版→YGSF兰亭版→极简版）数据源与内容都不同，拒因大概率在包外：①提审类目/资质（"背字帖"+背词描述易归教育类，个人主体教育类目基本不可过）②图片授权无法自证（上图 CC 是非商业授权、YGSF 为商业站数据）③名称撞车。待用户提供拒审原文与提报表单信息后对症。

@@ -28,6 +28,9 @@
       "@app/root": [
         "src/single/App.tsx"
       ],
+      "@/components/study/OriginalPageView": [
+        "src/components/study/OriginalPageView.tsx"
+      ],
       "@catalog/source": [
         "src/single/catalog-source.ts"
       ],

@@ -17,6 +17,9 @@ export default defineConfig({
   plugins: [react(), viteSingleFile()],
   resolve: {
     alias: {
+      // 字在帖中不进小工具包（其文案含「上海图书馆 IIIF」，且包内帖无此功能）
+      // 注意必须排在 '@' 之前：vite alias 按声明顺序匹配，'@' 会先吃掉 '@/...' 开头的导入
+      '@/components/study/OriginalPageView': path.resolve(__dirname, 'src/components/study/OriginalPageView.mini.tsx'),
       '@': path.resolve(__dirname, 'src'),
       // mini 专用壳：只有背字一个功能（无 tab / 市场 / 集字 / 数据 / 设置）
       '@app/root': path.resolve(__dirname, 'src/single/App.mini.tsx'),
