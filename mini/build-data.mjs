@@ -144,16 +144,20 @@ async function main() {
       for (let j = 0; j < groups[k].length; j++) {
         const card = groups[k][j];
         const buf = await squareTile(card, chosen.size, chosen.q);
-        card.rel = `img/atlas/${deck.z}-${String(k).padStart(2, '0')}.webp#${j % GRID},${Math.floor(j / GRID)}`;
         tiles.push({ input: buf, left: (j % GRID) * chosen.size, top: Math.floor(j / GRID) * chosen.size });
       }
       const side = chosen.size * GRID;
-      const out = path.join(outDir, `${deck.z}-${String(k).padStart(2, '0')}.webp`);
-      await sharp({ create: { width: side, height: side, channels: 3, background: '#1c1c1c' } })
+      const webp = await sharp({ create: { width: side, height: side, channels: 3, background: '#1c1c1c' } })
         .composite(tiles)
         .webp({ quality: chosen.q, effort: 5 })
-        .toFile(out);
-      deckBytes += fs.statSync(out).size;
+        .toBuffer();
+      // 文件名带内容哈希：重打包若同路径，浏览器/容器缓存会吞掉新图（曾致"换包后字仍被裁"）
+      const name = `${deck.z}-${String(k).padStart(2, '0')}.${crypto.createHash('sha1').update(webp).digest('hex').slice(0, 8)}.webp`;
+      fs.writeFileSync(path.join(outDir, name), webp);
+      for (let j = 0; j < groups[k].length; j++) {
+        groups[k][j].rel = `img/atlas/${name}#${j % GRID},${Math.floor(j / GRID)}`;
+      }
+      deckBytes += webp.length;
     }
     atlasCount += groups.length;
     total += deckBytes;
