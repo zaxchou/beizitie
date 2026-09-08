@@ -43,6 +43,24 @@ function installFlexGapPolyfill(): void {
   schedule();
 }
 
+/** Chrome 69+ 才有 Array.flat/flatMap；MUI 样式引擎内部分支用到，Chrome 61 上缺了会崩。能力检测后补最小实现 */
+function installArrayPolyfills(): void {
+  const AP = Array.prototype as unknown as Record<string, unknown>;
+  if (typeof AP.flat !== 'function') {
+    AP.flat = function (this: unknown[], depth?: number) {
+      let arr = this as unknown[];
+      const d = depth === undefined ? 1 : Math.floor(depth);
+      for (let i = 0; i < d; i++) arr = ([] as unknown[]).concat(...arr);
+      return arr;
+    };
+  }
+  if (typeof AP.flatMap !== 'function') {
+    AP.flatMap = function (this: unknown[], cb: (...a: unknown[]) => unknown, thisArg?: unknown) {
+      return ([] as unknown[]).concat(...this.map(cb, thisArg));
+    };
+  }
+}
+
 /**
  * mini 专用运行时样式：楷体字族覆盖。
  * 纯文字诊断版不打包任何字体文件（霞鹜文楷 woff2 移至 mini/fonts-bundle/，过审后可恢复），
@@ -57,6 +75,7 @@ function injectMiniStyles(): void {
 }
 
 export function installMiniCompat(): void {
+  installArrayPolyfills();
   injectMiniStyles();
   installFlexGapPolyfill();
 }

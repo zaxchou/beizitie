@@ -114,6 +114,7 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
 
   // 学习开始后低并发预热整帖字图（断网也能继续学），退出学习即中止
   useEffect(() => {
+    if (__MINI__) return; // 纯离线包无网络可预热；且 Chrome 61（审核基线）无 AbortController，new 即崩
     if (queue.length === 0) return;
     const ctrl = new AbortController();
     void warmDeckImages(queue.map((q) => q.card.image_url), () => ctrl.signal.aborted);

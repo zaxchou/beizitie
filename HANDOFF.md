@@ -461,3 +461,10 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 ### 补记 18（同日）：mini 闪卡换卡泄题修复
 - 用户报告：评分进下一张时会短暂闪现背面（=泄露下一张答案）。根因：single/mini 共用 StudyPage 换卡只改 state，FlashCard 实例被复用，0.5s 翻回 CSS 动画的前半段背面仍在视野且内容已换成本张答案；在线版 StudyPage 有 `key={currentCard.id}` 重挂载所以无此问题。
 - 修复对齐在线版：FlashCard 加 key=卡id（换卡重挂载、无翻回动画）；顺带修 resolvedSrc 串图隐患（blob 解析异步，旧值会在新卡第一帧顶替，换卡先 setResolvedSrc(null)）。此修复同样惠及单文件版（下次发版带上）。
+
+### 补记 19（同日）：Chrome 61 运行时白屏根因——AbortController，四连拒的头号嫌疑
+- 纯文字版仍被拒后，把诊断方向从"内容"转向"审核真机运行时"。产物扫描发现 StudyPage 字图预热 effect 里 `new AbortController()`（Chrome 66+ API，无检测）：Chrome 61 真机上一进学习页即 ReferenceError → React 整树卸载 → 核心页白屏。审核员看到：首页正常 → 点开始背字 → 白屏 → 拒审（不给原因）。桌面现代 Chrome 永远复现不了，完美解释四连拒与内容无关。
+- 修复：effect 加 `if (__MINI__) return;`（mini 无网络可预热；esbuild 折叠后 new AbortController 从包内彻底消除，已 grep 验证）。
+- 同类隐患清零：queueMicrotask（React 内有 typeof 守卫）、randomUUID（已有回退）、CSS @layer（MUI 未实际启用，运行时验证 0 条）、inset 属性（产物中 0 条，此前命中均为 --tw-ring-inset 变量名误报）；新增 Array.flat/flatMap polyfill（Chrome 69+，MUI 样式引擎内部分支）。
+- 教训沉淀：**语法转译≠运行时安全**。目标基线 chrome61 的包，交付前必须对产物做 post-ES2017 API 扫描（AbortController/ResizeObserver/queueMicrotask/allSettled/replaceAll/flat…），此清单应进 build-mini.sh 门禁（待办）。
+- 字体问题排除：纯文字版无字体文件；CSS font-family 引用系统字体无分发。霞鹜文楷 OFL 本身也安全。
