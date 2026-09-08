@@ -457,3 +457,7 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 字体安全结论：霞鹜文楷是 OFL，法律上极安全；微软雅黑才是不能打包分发的（微软版权）。系统字体只引用不分发，零风险。
 - 包内终扫仅剩框架常量（w3.org SVG 命名空间、reactjs.org 报错链接、React 调度器 MessageChannel）与运行时不可达的 IIIF 模板串。判包内干净。
 - 判读逻辑：纯文字版过审 → 问题在素材（图片授权最可疑）→ 依次恢复"公有领域整卷自切字图 / OFL 字体"；仍拒 → 问题在包外（表单/名称/账号主体/平台策略），改包无意义，走沟通或换提审策略。
+
+### 补记 18（同日）：mini 闪卡换卡泄题修复
+- 用户报告：评分进下一张时会短暂闪现背面（=泄露下一张答案）。根因：single/mini 共用 StudyPage 换卡只改 state，FlashCard 实例被复用，0.5s 翻回 CSS 动画的前半段背面仍在视野且内容已换成本张答案；在线版 StudyPage 有 `key={currentCard.id}` 重挂载所以无此问题。
+- 修复对齐在线版：FlashCard 加 key=卡id（换卡重挂载、无翻回动画）；顺带修 resolvedSrc 串图隐患（blob 解析异步，旧值会在新卡第一帧顶替，换卡先 setResolvedSrc(null)）。此修复同样惠及单文件版（下次发版带上）。

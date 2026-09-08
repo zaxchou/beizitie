@@ -73,10 +73,9 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
   const [resolvedSrc, setResolvedSrc] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
-    if (!currentSrc) {
-      setResolvedSrc(null);
-      return;
-    }
+    // 换卡先清掉上一张的解析结果：blob 解析是异步的，旧值会串到新卡第一帧
+    setResolvedSrc(null);
+    if (!currentSrc) return;
     resolveImageSrc(currentSrc).then((s) => {
       if (alive) setResolvedSrc(s);
     });
@@ -192,7 +191,8 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
             />
           </Box>
 
-          <FlashCard card={progress!} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+          {/* key=卡id：换卡重挂载，不做翻回动画（动画前半段背面会泄露下一张答案），与在线版一致 */}
+          <FlashCard key={current.card.id} card={progress!} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
 
           {flipped ? (
             <RatingButtons onRate={handleRate} card={{ ease: current.card.ease, interval: current.card.interval, repetitions: current.card.repetitions }} />
