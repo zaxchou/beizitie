@@ -8,8 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "build:single": "vite build --config vite.config.single.ts",
-    "preview:single": "npx serve dist-single",
-    "build:mini": "vite build --config vite.config.mini.ts"
+    "preview:single": "npx serve dist-single"
   },
   "dependencies": {
     "@emotion/react": "^11.13.0",
