@@ -106,6 +106,9 @@ const TopBar: React.FC<TopBarProps> = ({ compact = false }) => {
                 }}
               >
                 {item.label}
+                <Box component="span" sx={{ ml: 0.75, opacity: 0.62, letterSpacing: '0.02em' }}>
+                  {item.cn}
+                </Box>
               </Box>
             );
           })}
