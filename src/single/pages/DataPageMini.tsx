@@ -148,7 +148,7 @@ export const DataPageMini: React.FC<{ refreshKey: number }> = ({ refreshKey }) =
       </Card>
 
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
-        进度保存在本机 · 清理应用数据可能丢失
+        学习进度自动保存 · 清理应用数据可能丢失
       </Typography>
     </Box>
   );

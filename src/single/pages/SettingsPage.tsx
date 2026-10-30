@@ -100,17 +100,17 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 0.5 }}>关于</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.8 }}>
-            背字帖 · {__MINI__ ? '离线版' : '单文件开源版'}（MIT）{APP_VERSION !== 'dev' && <> · v{APP_VERSION}{BUILD_DATE ? `（${BUILD_DATE} 构建）` : ''}</>}
+            背字帖{__MINI__ ? '' : ' · 单文件开源版'}（MIT）{APP_VERSION !== 'dev' && <> · v{APP_VERSION}{BUILD_DATE ? `（${BUILD_DATE} 构建）` : ''}</>}
             <br />
             {__MINI__
               ? <>【内容与授权】
                   <br />书法内容：古代碑帖临本（兰亭序），原作已属公有领域。
-                  <br />界面字体：霞鹜文楷（SIL OFL 1.1），许可见包内 fonts/OFL.json。
+                  <br />界面字体：系统黑体 / 宋体。
                   <br />本工具不联网，不收集、不上传任何个人数据。</>
               : <>碑帖单字图来自公开字库 CDN，仅供学习</>}
             <br />
             {__MINI__
-              ? '进度仅存本机'
+              ? '学习进度自动保存'
               : <>学习记录仅存本机 · <a href="https://github.com/zaxchou/beizitie/releases" target="_blank" rel="noreferrer">GitHub · 更新日志</a></>}
           </Typography>
         </CardContent>

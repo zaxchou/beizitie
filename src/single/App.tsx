@@ -104,7 +104,7 @@ export default function SingleApp() {
             >
               <Typography className="font-kai" sx={{ fontSize: 20, fontWeight: 700 }}>背字帖</Typography>
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
-                {__MINI__ ? '离线版 · 进度保存在本机' : '单文件版 · 数据仅存本机'}
+                {__MINI__ ? '像背单词一样背字帖' : '单文件版 · 数据仅存本机'}
               </Typography>
             </Box>
 

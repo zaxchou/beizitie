@@ -23,7 +23,7 @@ export default defineConfig({
       '@/components/study/OriginalPageView': path.resolve(__dirname, 'src/components/study/OriginalPageView.mini.tsx'),
       '@': path.resolve(__dirname, 'src'),
       // mini 专用壳：只有背字一个功能（无 tab / 市场 / 集字 / 数据 / 设置）
-      '@app/root': path.resolve(__dirname, 'src/single/App.mini.tsx'),
+      '@app/root': path.resolve(__dirname, 'src/single/App.tsx'),
       '@catalog/source': path.resolve(__dirname, 'src/single/catalog-source.mini.ts'),
       '@data-page': path.resolve(__dirname, 'src/single/pages/DataPageMini.tsx'),
       '@settings/backup-card': path.resolve(__dirname, 'src/single/SettingsBackupCard.mini.tsx'),

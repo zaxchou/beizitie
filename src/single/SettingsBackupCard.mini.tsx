@@ -8,7 +8,7 @@ export const SettingsBackupCard: React.FC<{ onChanged?: () => void }> = () => (
       <CardContent>
         <Typography sx={{ fontWeight: 600, mb: 0.5 }}>学习进度</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.8 }}>
-          进度自动保存在本机（IndexedDB），无需登录。
+          进度自动保存，无需登录。
           <br />
           本工具不联网，不收集、不上传任何个人数据。
           <br />
