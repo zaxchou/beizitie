@@ -24,7 +24,8 @@ export default defineConfig({
       // 注意必须排在 '@' 之前：vite alias 按声明顺序匹配，'@' 会先吃掉 '@/...' 开头的导入
       '@/components/study/OriginalPageView': path.resolve(__dirname, 'src/components/study/OriginalPageView.mini.tsx'),
       '@': path.resolve(__dirname, 'src'),
-      '@app/root': path.resolve(__dirname, 'src/single/App.tsx'),
+      // 帖页壳（古籍编排）接管小工具；旧 MUI 壳 App.tsx 保留给单文件版过渡
+      '@app/root': path.resolve(__dirname, 'src/single/tieye/TieyeApp.tsx'),
       '@catalog/source': path.resolve(__dirname, 'src/single/catalog-source.mini.ts'),
       '@data-page': path.resolve(__dirname, 'src/single/pages/DataPageMini.tsx'),
       '@settings/backup-card': path.resolve(__dirname, 'src/single/SettingsBackupCard.mini.tsx'),

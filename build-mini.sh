@@ -10,7 +10,11 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 echo "== 1/3 数据管线 =="
-node mini/build-data.mjs
+if [ "${SKIP_DATA:-0}" = "1" ]; then
+  echo "  跳过（SKIP_DATA=1）：沿用 mini/public/img 与 mini/data 现有产物"
+else
+  node mini/build-data.mjs
+fi
 
 echo "== 2/3 构建 =="
 npm run build:mini 2>&1 | tail -1
@@ -19,8 +23,9 @@ npm run build:mini 2>&1 | tail -1
 # 违规症状 = 容器内 JS 完全不执行（七连拒的真正根因，见 HANDOFF 补记 26）
 node -e "
 const fs = require('fs');
-const files = ['dist-mini/mini.html', 'dist-mini/app.js', 'dist-mini/index.css'].filter(f => fs.existsSync(f));
-const MAP = [['Noto Serif SC','SimSun'],['Noto Sans SC','SimHei'],['Ma Shan Zheng','SimSun'],['KaiTi','SimSun'],['Kaiti','SimSun'],['楷体','宋体'],['Roboto','SimHei']];
+// 注意：vite 5 产出的是 style.css，不是 index.css——旧列表漏了样式表，字体名没被收敛过
+const files = ['dist-mini/mini.html', 'dist-mini/app.js', 'dist-mini/index.css', 'dist-mini/style.css'].filter(f => fs.existsSync(f));
+const MAP = [['Noto Serif SC','SimSun'],['Noto Sans SC','SimHei'],['Ma Shan Zheng','SimSun'],['KaiTi','SimSun'],['Kaiti','SimSun'],['楷体','宋体'],['Roboto','SimHei'],['Songti SC','SimSun'],['STSong','SimSun'],['Microsoft YaHei','SimHei'],['PingFang SC','SimHei']];
 for (const p of files) {
   let s = fs.readFileSync(p, 'utf-8');
   for (const [a, b] of MAP) s = s.split(a).join(b);
