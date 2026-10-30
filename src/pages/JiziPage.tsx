@@ -389,9 +389,16 @@ const JiziPage: React.FC = () => {
           <Box sx={{
             position: 'absolute', inset: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'text.secondary', pointerEvents: 'none',
+            flexDirection: 'column', gap: 1.5,
+            color: 'text.secondary', pointerEvents: 'none', pb: 10,
           }}>
-            <Typography variant="body2">点击底部「文字」开始集字</Typography>
+            <Typography className="font-kai" sx={{ fontSize: 26, letterSpacing: 6, color: 'text.primary' }}>
+              集字
+            </Typography>
+            <Typography sx={{ fontSize: 13 }}>输入文字后这里会显示集字预览</Typography>
+            <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>
+              从已核验碑帖里取原字 · 点「文字」开始
+            </Typography>
           </Box>
         )}
       </Box>

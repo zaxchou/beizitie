@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Box, Typography, useTheme } from '@mui/material';
+import { Box, useTheme } from '@mui/material';
 import JiziCell from './JiziCell';
 import type { JiziMatchResult, JiziLayout } from '@/types/jizi';
 
@@ -157,33 +157,8 @@ const JiziPreview: React.FC<JiziPreviewProps> = ({
   }, [onOpenPicker]);
 
   if (results.length === 0) {
-    return (
-      <Box
-        sx={{
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          color: 'text.secondary',
-          pb: 10,
-          gap: 1.5,
-        }}
-      >
-        <Typography
-          component="div"
-          sx={{ fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif', fontSize: 26, letterSpacing: 6, color: 'text.primary' }}
-        >
-          集字
-        </Typography>
-        <Typography component="div" sx={{ fontSize: 13 }}>
-          输入文字后这里会显示集字预览
-        </Typography>
-        <Typography component="div" sx={{ fontSize: 12, color: 'text.disabled' }}>
-          从已核验碑帖里取原字，可导出高清图片
-        </Typography>
-      </Box>
-    );
+    // 空态由页面层统一呈现（JiziPage 的覆盖层），这里只占位，避免两套文案重叠
+    return <Box sx={{ height: '100%' }} />;
   }
 
   const cg = compact ? 0 : Math.round(fontSize * charGap);
