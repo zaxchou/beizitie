@@ -46,6 +46,12 @@ export interface Deck {
   study_mode?: 'default' | 'sequential' | 'random';
   /** 暂停学习时间（null = 未暂停） */
   paused_at?: string | null;
+  /** 今日可学新卡数（服务端按每日上限与今日已学计算） */
+  new_available_today?: number;
+  /** 当前到期卡数（服务端按 user_card_progress 计算） */
+  due_count?: number;
+  /** 今日已学新字数（服务端 daily_stats 按帖聚合） */
+  learned_today?: number;
 }
 
 /** 单次学习会话 */

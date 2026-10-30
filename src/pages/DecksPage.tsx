@@ -151,9 +151,16 @@ const DecksPage: React.FC = () => {
 
   return (
     <Box className="space-y-4 py-4">
-      <Typography variant="h5" className="font-kai">
-        牌组管理
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', pb: { xs: 1.5, md: 2 } }}>
+        <Box>
+          <Typography component="h1" sx={{ fontSize: { xs: 30, md: 40 }, fontWeight: 900, letterSpacing: '0.1em', lineHeight: 1 }}>
+            牌组管理
+          </Typography>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.04em', opacity: 0.7, mt: 1 }}>
+            新建 · 重命名 · 删除 · 发布
+          </Typography>
+        </Box>
+      </Box>
 
       {/* 错误提示 */}
       {error && (
@@ -276,7 +283,7 @@ const DecksPage: React.FC = () => {
                 >
                   <ListItemText
                     primary={
-                      <Typography variant="subtitle1" className="font-kai">
+                      <Typography sx={{ fontSize: 17, fontWeight: 900 }}>
                         {deck.name}
                       </Typography>
                     }

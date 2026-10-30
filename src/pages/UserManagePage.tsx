@@ -174,7 +174,14 @@ const UserManagePage: React.FC = () => {
         <IconButton onClick={() => navigate('/settings')} size="small">
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h5" className="font-kai">用户管理</Typography>
+        <Box>
+          <Typography component="h1" sx={{ fontSize: { xs: 24, md: 32 }, fontWeight: 900, letterSpacing: '0.08em', lineHeight: 1 }}>
+            用户管理
+          </Typography>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.04em', opacity: 0.65, mt: 0.75 }}>
+            账号 · 权限 · 学习量
+          </Typography>
+        </Box>
       </Box>
 
       {error && <Alert severity="error">{error}</Alert>}

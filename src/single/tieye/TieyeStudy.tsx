@@ -270,11 +270,11 @@ export default function TieyeStudy({ deck, onExit }: TieyeStudyProps) {
                   )}
                 </div>
               </div>
-              <h2 className="te-study-prompt" ref={promptRef} tabIndex={-1}>这个字，记住了吗？</h2>
+              <h2 className="te-study-prompt" ref={promptRef} tabIndex={-1}>这个字，原帖怎么写？</h2>
               {saveError && (
                 <p className="te-study-error" role="alert">评分保存未完成，请重新选择下方任一评分重试。</p>
               )}
-              <div className="te-study-ratings" role="group" aria-label="这个字，记住了吗？">
+              <div className="te-study-ratings" role="group" aria-label="这个字，原帖怎么写？">
                 {ratings.map(({ value, label }, index) => (
                   <button
                     key={value}

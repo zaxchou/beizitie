@@ -13,8 +13,9 @@ import {
   Typography,
   Slider,
   Chip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import PauseCircleIcon from '@mui/icons-material/PauseCircle';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import SortIcon from '@mui/icons-material/Sort';
@@ -23,7 +24,6 @@ import { useStudyStore } from '@/stores/useStudyStore';
 import { useDeckStore } from '@/stores/useDeckStore';
 import { fetchDecks, endStudySession as endStudySessionApi, getImageUrl, hasStudiedDeck, updateStudyMode, updateDeckLimits } from '@/lib/api';
 import FlashCard from '@/components/study/FlashCard';
-import ProgressBar from '@/components/study/ProgressBar';
 import RatingButtons from '@/components/study/RatingButtons';
 import StudyComplete from '@/components/study/StudyComplete';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -53,6 +53,9 @@ const StudyPage: React.FC = () => {
     reset,
   } = useStudyStore();
 
+  const theme = useTheme();
+  const isPc = useMediaQuery(theme.breakpoints.up('md'));
+  const [deckName, setDeckName] = useState('学习');
   const [flipped, setFlipped] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
   const [elapsed, setElapsed] = useState(0);
@@ -73,6 +76,7 @@ const StudyPage: React.FC = () => {
         hasStudiedDeck(deckId!),
       ]);
       const deck = decks.find((d) => d.id === deckId);
+      setDeckName(deck?.name ?? '学习');
       setHasArticle(!!deck?.article_text);
 
       // 如果牌组已暂停，直接显示暂停占位 UI
@@ -213,6 +217,27 @@ const StudyPage: React.FC = () => {
     }
   }, [phase, session?.cards_studied]);
 
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent): void => {
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName ?? '';
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || t?.isContentEditable) return;
+      if (confirmExit || setupOpen) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        handleRequestExit();
+        return;
+      }
+      // 只有焦点不在任何控件上时才接管空格，卡片按钮自己处理 Enter/Space
+      if (e.code === 'Space' && (t === document.body || t === document.documentElement)) {
+        e.preventDefault();
+        setFlipped((f) => !f);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [confirmExit, setupOpen, handleRequestExit]);
+
   const handleConfirmExit = useCallback(async () => {
     setConfirmExit(false);
     if (phase === 'studying' && session) {
@@ -296,29 +321,141 @@ const StudyPage: React.FC = () => {
   // 学习阶段
   if (phase === 'studying' && queue.length > 0 && currentIndex < queue.length) {
     const currentCard = queue[currentIndex];
+    const progress = Math.round(((currentIndex + 1) / Math.max(1, queue.length)) * 100);
+    const mono = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
+    const sm2 = currentCard
+      ? { ease: currentCard.ease, interval: currentCard.interval, repetitions: currentCard.repetitions }
+      : undefined;
+
     return (
-      <Box className="flex flex-col items-center gap-6 py-4 relative" sx={{ height: '100%', overflow: 'hidden', width: '100%', maxWidth: 640, mx: 'auto', px: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ flexShrink: 0, width: '100%', maxWidth: 'lg', mx: 'auto' }}>
-          <Button onClick={handleRequestExit} size="small" startIcon={<ArrowBackIcon />}
-            sx={{ color: 'text.secondary', textTransform: 'none', fontWeight: 500 }}>返回</Button>
-          <Typography variant="caption" color="text.secondary" sx={{ px: 1, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
-            {fmtTime(elapsed)}
+      <Box sx={{ height: '100dvh', display: 'flex', flexDirection: 'column', backgroundColor: 'background.default' }}>
+        {/* 顶栏：返回 / 帖名 / 进度 / 计时 */}
+        <Box
+          sx={{
+            flexShrink: 0,
+            height: { xs: 56, md: 64 },
+            display: 'flex',
+            alignItems: 'center',
+            gap: { xs: 1.5, md: 2.5 },
+            px: { xs: 2, md: 5 },
+            borderBottom: '2px solid',
+            borderColor: 'text.primary',
+          }}
+        >
+          <Box
+            component="button"
+            onClick={handleRequestExit}
+            sx={{
+              border: 0,
+              background: 'none',
+              p: 0,
+              cursor: 'pointer',
+              color: 'text.primary',
+              ...mono,
+              fontSize: 11,
+              opacity: 0.75,
+              '&:hover': { opacity: 1 },
+            }}
+          >
+            ← 返回
+          </Box>
+          <Typography
+            noWrap
+            sx={{ fontSize: { xs: 15, md: 19 }, fontWeight: 900, letterSpacing: '0.06em', minWidth: 0, flex: '0 1 auto' }}
+          >
+            {deckName}
           </Typography>
-        </Stack>
-        <Box sx={{ width: '100%', flexShrink: 0 }}>
-          <ProgressBar current={currentIndex + 1} total={queue.length} />
+          <Box sx={{ ml: 'auto', display: 'flex', gap: { xs: 1.5, md: 2.5 }, ...mono, fontSize: 11, opacity: 0.8, fontVariantNumeric: 'tabular-nums' }}>
+            <span>{currentIndex + 1} / {queue.length}</span>
+            <span>{fmtTime(elapsed)}</span>
+          </Box>
         </Box>
-        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', width: '100%', overflow: 'hidden' }}>
-          <FlashCard key={currentCard.id} card={currentCard} flipped={flipped} onFlip={handleFlip} fill />
+        <Box sx={{ flexShrink: 0, height: 3, backgroundColor: 'divider' }}>
+          <Box sx={{ width: `${progress}%`, height: '100%', backgroundColor: 'text.primary' }} />
         </Box>
-        <Box className="w-full max-w-lg" sx={{ flexShrink: 0 }}>
-          <RatingButtons onRate={handleRate} disabled={!flipped}
-            card={currentCard ? { ease: currentCard.ease, interval: currentCard.interval, repetitions: currentCard.repetitions } : undefined} />
-        </Box>
+
+        {isPc ? (
+          <Box sx={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1fr 380px' }}>
+            <Box sx={{ minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', p: 5 }}>
+              <Box sx={{ width: '100%', height: '100%', maxWidth: 560, maxHeight: 560, display: 'flex' }}>
+                <FlashCard key={currentCard.id} card={currentCard} flipped={flipped} onFlip={handleFlip} fill bare />
+              </Box>
+            </Box>
+
+            <Box
+              sx={{
+                borderLeft: '2px solid',
+                borderColor: 'text.primary',
+                px: '30px',
+                py: '26px',
+                display: 'flex',
+                flexDirection: 'column',
+                minHeight: 0,
+              }}
+            >
+              <Typography sx={{ ...mono, fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65 }}>
+                Copying · 正在背写
+              </Typography>
+              <Typography
+                sx={{
+                  fontSize: 26,
+                  fontWeight: 900,
+                  letterSpacing: '0.08em',
+                  mt: 0.5,
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                }}
+              >
+                {deckName}
+              </Typography>
+              <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.7, mt: 0.75 }}>
+                第 {currentIndex + 1} 字 / 共 {queue.length} · 已保存 {session?.cards_studied ?? 0} 字
+              </Typography>
+              <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary', my: 2.5 }} />
+              <Typography sx={{ fontSize: 22, fontWeight: 900, lineHeight: 1.5, letterSpacing: '0.02em' }}>
+                这个字，<br />原帖怎么写？
+              </Typography>
+              <Box sx={{ flex: 1 }} />
+              <RatingButtons layout="list" onRate={handleRate} disabled={!flipped || confirmExit} card={sm2} />
+              <Typography sx={{ ...mono, fontSize: 10, lineHeight: 1.9, opacity: 0.68, mt: 1.5 }}>
+                评分后进入下一字<br />SM-2 自动排下次复习
+              </Typography>
+            </Box>
+          </Box>
+        ) : (
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', px: 2.5, pt: 1.75, pb: 'calc(6px + env(safe-area-inset-bottom, 0px))', gap: 1.25 }}>
+            <Box
+              sx={{
+                flex: 1,
+                minHeight: 0,
+                border: '2px solid',
+                borderColor: 'text.primary',
+                backgroundColor: 'background.paper',
+                p: 2,
+                display: 'flex',
+              }}
+            >
+              <FlashCard key={currentCard.id} card={currentCard} flipped={flipped} onFlip={handleFlip} fill bare />
+            </Box>
+            <Typography sx={{ fontSize: 19, fontWeight: 900, letterSpacing: '0.02em', flexShrink: 0 }}>
+              这个字，原帖怎么写？
+            </Typography>
+            <Typography sx={{ ...mono, fontSize: 10, opacity: 0.7, flexShrink: 0 }}>
+              先看今字，回想原帖的起收笔与结构，再翻面对照。
+            </Typography>
+            <RatingButtons onRate={handleRate} disabled={!flipped || confirmExit} card={sm2} />
+            <Typography sx={{ ...mono, fontSize: 10, opacity: 0.65, flexShrink: 0 }}>
+              1–4 评分 · 空格翻面 · 已保存 {session?.cards_studied ?? 0} 字
+            </Typography>
+          </Box>
+        )}
+
         <Dialog open={confirmExit} onClose={() => setConfirmExit(false)}>
           <DialogTitle>中断当前学习？</DialogTitle>
           <DialogContent>
-            <DialogContentText>已完成 {session?.cards_studied ?? 0} 张卡片，进度会保留。确认要离开吗？</DialogContentText>
+            <DialogContentText>已背写 {session?.cards_studied ?? 0} 字，进度会保留。确认要离开吗？</DialogContentText>
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setConfirmExit(false)}>继续学习</Button>
@@ -340,7 +477,7 @@ const StudyPage: React.FC = () => {
             已暂停学习
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-            该牌组已暂停，前往牌组管理页面恢复
+            该帖已暂停，到「帖详情」里恢复学习
           </Typography>
           <Button variant="contained" size="large" onClick={handleConfirmExit}
             sx={{ px: 6, py: 1.5, borderRadius: '2px', fontSize: 16 }}>

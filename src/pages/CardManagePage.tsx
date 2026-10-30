@@ -731,7 +731,10 @@ const CardManagePage: React.FC = () => {
         >
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h5" className="font-kai">
+        <Typography
+          noWrap
+          sx={{ fontSize: { xs: 18, md: 22 }, fontWeight: 900, letterSpacing: '0.06em', minWidth: 0 }}
+        >
           {deck?.name ?? '牌组'}
         </Typography>
         {deck && isAdmin && (
@@ -1129,7 +1132,7 @@ const CardManagePage: React.FC = () => {
                   背面
                 </Typography>
                 <Typography variant="body1" sx={{ mt: 0.5, whiteSpace: 'pre-wrap' }}>
-                  {previewCard.back_text || '（无释义）'}
+                  {previewCard.back_text || '（无背面内容）'}
                 </Typography>
               </Box>
 

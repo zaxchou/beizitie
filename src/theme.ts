@@ -1,23 +1,33 @@
 import type { ThemeOptions } from '@mui/material';
 
 /**
- * 设计令牌（纸墨朱红）
- * 与小红书小工具的帖页语言同源：纸白/墨/朱红 + 1px 细线 + 2px 直角。
- * 组件里不要再写 #fff / #e5e7eb 这类中性色字面量，一律走 palette 或这里的变量。
+ * 设计令牌：A1 米纸
+ * 纸 #f2ecdd / 墨 #17130c / 朱砂 #c1432b。
+ * 语言：2px 与 1px 硬线、直角、无阴影、等宽数字；颜色只做点色，不铺大面积。
+ * 组件里不要再写 #fff / #e5e7eb 这类中性色字面量，一律走 palette 或 CSS 变量。
  */
-export const ink = { light: '#302c25', dark: '#e9e3d6' } as const;
-export const muted = { light: '#6e6458', dark: '#a89e8e' } as const;
-export const paper = { light: '#fcfaf5', dark: '#232019' } as const;
-export const pageBg = { light: '#f5f1e9', dark: '#1b1916' } as const;
-export const line = { light: '#d7cec0', dark: '#3a342b' } as const;
-export const lineStrong = { light: '#b9ad99', dark: '#4a4236' } as const;
-export const vermilion = { light: '#8b3a30', dark: '#b85744' } as const;
-export const vermilionDeep = { light: '#6f2e26', dark: '#9b4635' } as const;
-export const onVermilion = { light: '#fff8ef', dark: '#fff3ea' } as const;
+export const ink = { light: '#17130c', dark: '#f2ecdd' } as const;
+export const muted = { light: 'rgba(23, 19, 12, 0.70)', dark: 'rgba(242, 236, 221, 0.72)' } as const;
+export const paper = { light: '#fbf6ea', dark: '#1d1911' } as const;
+export const pageBg = { light: '#f2ecdd', dark: '#141109' } as const;
+export const line = { light: 'rgba(23, 19, 12, 0.22)', dark: 'rgba(242, 236, 221, 0.24)' } as const;
+export const lineStrong = { light: '#17130c', dark: '#f2ecdd' } as const;
+export const vermilion = { light: '#c1432b', dark: '#e0593c' } as const;
+export const vermilionDeep = { light: '#a83a25', dark: '#c14b31' } as const;
+export const onVermilion = { light: '#fdf8ee', dark: '#1a120c' } as const;
+/** 朱砂的小字版：在米纸上始终 ≥ 4.5:1 */
+export const hotInk = { light: '#a83a25', dark: '#e8846b' } as const;
+
+/** 标题与数字：黑体（Windows 下是 SimHei，其它平台落到 Noto Sans SC） */
+export const fontDisplay = '"SimHei", "Noto Sans SC", "Microsoft YaHei", sans-serif';
+/** 编号、单位、注释：等宽 */
+export const fontMono = '"Consolas", "SFMono-Regular", Menlo, monospace';
+/** 引文与空态：宋体 */
+export const fontSerif = '"Noto Serif SC", "KaiTi", serif';
 
 /** 弹层/浮起元素只用一层很浅的投影，不叠加层级 */
-export const shadowOverlay = '0 12px 40px rgba(58,47,36,0.14)';
-export const shadowOverlayDark = '0 12px 40px rgba(0,0,0,0.35)';
+export const shadowOverlay = '0 12px 40px rgba(58, 47, 36, 0.14)';
+export const shadowOverlayDark = '0 12px 40px rgba(0, 0, 0, 0.4)';
 
 export function getShadowBorder(mode: 'light' | 'dark'): string {
   return `0 0 0 1px ${line[mode]}`;
@@ -33,7 +43,8 @@ export function getShadowElevated(mode: 'light' | 'dark'): string {
 
 export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions {
   const dark = resolvedMode === 'dark';
-  const border = line[resolvedMode];
+  const strong = lineStrong[resolvedMode];
+  const hair = line[resolvedMode];
 
   return {
     palette: {
@@ -44,8 +55,8 @@ export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions 
         contrastText: onVermilion[resolvedMode],
       },
       secondary: {
-        main: dark ? '#b9ad99' : '#6e6458',
-        contrastText: dark ? '#1b1916' : '#fcfaf5',
+        main: ink[resolvedMode],
+        contrastText: pageBg[resolvedMode],
       },
       background: {
         default: pageBg[resolvedMode],
@@ -54,59 +65,61 @@ export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions 
       text: {
         primary: ink[resolvedMode],
         secondary: muted[resolvedMode],
-        disabled: dark ? '#7a7364' : '#948a7c',
+        disabled: dark ? 'rgba(242,236,221,0.4)' : 'rgba(23,19,12,0.4)',
       },
-      divider: border,
-      // 危险操作沿用朱红家族，避免页面里出现第二种红
-      error: { main: dark ? '#d4725f' : '#a1352a' },
+      divider: hair,
+      error: { main: hotInk[resolvedMode], contrastText: dark ? '#1a120c' : '#fdf8ee' },
     },
     typography: {
-      fontFamily: [
-        '"Noto Sans SC"',
-        '"Microsoft YaHei"',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
-      // 帖名、标题、关键数字一律宋体；正文保持黑体
-      h1: { fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif' },
-      h2: { fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif', fontWeight: 400 },
-      h3: { fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif', fontWeight: 400 },
-      h4: { fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif', fontWeight: 400 },
-      h5: { fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif', fontWeight: 400 },
-      h6: { fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif', fontWeight: 400 },
+      fontFamily: fontDisplay,
+      // 标题与关键数字用黑体 900；宋体只留给引文（.font-kai）
+      h1: { fontFamily: fontDisplay, fontWeight: 900, letterSpacing: '0.04em' },
+      h2: { fontFamily: fontDisplay, fontWeight: 900, letterSpacing: '0.04em' },
+      h3: { fontFamily: fontDisplay, fontWeight: 900 },
+      h4: { fontFamily: fontDisplay, fontWeight: 900 },
+      h5: { fontFamily: fontDisplay, fontWeight: 900 },
+      h6: { fontFamily: fontDisplay, fontWeight: 900 },
+      button: { fontFamily: fontDisplay, fontWeight: 900, letterSpacing: '0.06em' },
+      overline: { fontFamily: fontMono, letterSpacing: '0.16em', lineHeight: 1.6 },
+      caption: { fontFamily: fontMono, letterSpacing: '0.02em' },
     },
-    shape: { borderRadius: 2 },
+    shape: { borderRadius: 0 },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
+            backgroundColor: pageBg[resolvedMode],
+            WebkitFontSmoothing: 'antialiased',
             // 组件内联样式可以直接用 var(--paper) 这类令牌，深浅色自动跟随
+            '--ground': pageBg[resolvedMode],
             '--paper': paper[resolvedMode],
-            '--surface': dark ? '#2a2620' : '#f2ece1',
+            '--surface': dark ? '#231e15' : '#fbf6ea',
             '--ink': ink[resolvedMode],
             '--muted': muted[resolvedMode],
-            '--line': border,
-            '--line-strong': lineStrong[resolvedMode],
+            '--line': hair,
+            '--line-strong': strong,
             '--vermilion': vermilion[resolvedMode],
-            '--border-color': border,
+            '--hot-ink': hotInk[resolvedMode],
+            '--border-color': hair,
+            '--font-mono': fontMono,
+          },
+          '::selection': {
+            backgroundColor: vermilion[resolvedMode],
+            color: onVermilion[resolvedMode],
           },
         },
       },
       MuiPaper: {
         defaultProps: { elevation: 0 },
         styleOverrides: {
-          root: {
-            backgroundImage: 'none',
-            borderRadius: 2,
-          },
+          root: { backgroundImage: 'none', borderRadius: 0 },
         },
       },
       MuiCard: {
         styleOverrides: {
           root: {
-            borderRadius: 2,
-            border: `1px solid ${border}`,
+            borderRadius: 0,
+            border: `1px solid ${hair}`,
             boxShadow: 'none',
             overflow: 'visible',
           },
@@ -116,52 +129,81 @@ export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions 
         defaultProps: { disableElevation: true },
         styleOverrides: {
           root: {
-            borderRadius: 2,
+            borderRadius: 0,
             textTransform: 'none',
-            transition: 'background-color 0.15s ease, border-color 0.15s ease',
-            fontWeight: 500,
+            fontFamily: fontDisplay,
+            fontWeight: 900,
+            letterSpacing: '0.06em',
             minHeight: 40,
+            paddingLeft: 18,
+            paddingRight: 18,
+            transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease',
           },
-          sizeSmall: { fontSize: 12, padding: '4px 12px', minHeight: 30 },
+          sizeSmall: { fontSize: 12, minHeight: 30, paddingLeft: 12, paddingRight: 12 },
           containedPrimary: {
             '&:hover': { backgroundColor: vermilionDeep[resolvedMode] },
           },
-          // 禁用态不铺灰块：纸色底 + 细线 + 淡墨字，和小工具的按钮规范一致
+          outlined: {
+            borderWidth: 2,
+            borderColor: strong,
+            color: ink[resolvedMode],
+            '&:hover': { borderWidth: 2, borderColor: strong, backgroundColor: ink[resolvedMode], color: pageBg[resolvedMode] },
+          },
+          // 禁用态不铺灰块：纸色底 + 细线 + 淡墨字
           contained: {
             '&.Mui-disabled': {
-              backgroundColor: dark ? '#2a261f' : '#efe7db',
-              color: dark ? '#8d8474' : '#7b7263',
-              border: `1px solid ${border}`,
+              backgroundColor: 'transparent',
+              color: dark ? 'rgba(242,236,221,0.4)' : 'rgba(23,19,12,0.4)',
+              border: `1px solid ${hair}`,
             },
           },
+          text: {
+            '&:hover': { backgroundColor: dark ? 'rgba(242,236,221,0.08)' : 'rgba(23,19,12,0.05)' },
+          },
+        },
+      },
+      MuiIconButton: {
+        styleOverrides: {
+          root: { borderRadius: 0 },
+        },
+      },
+      MuiListItemText: {
+        styleOverrides: {
+          secondary: { fontFamily: fontMono, fontSize: 11, letterSpacing: '0.02em' },
         },
       },
       MuiChip: {
         styleOverrides: {
           root: {
-            borderRadius: 2,
-            fontSize: 12,
-            height: 28,
+            borderRadius: 0,
+            height: 22,
+            fontFamily: fontMono,
+            fontSize: 10.5,
+            letterSpacing: '0.04em',
           },
-          sizeSmall: {
-            fontSize: 11,
-            height: 24,
-          },
+          sizeSmall: { height: 20, fontSize: 10 },
+          outlined: { borderColor: strong, color: ink[resolvedMode] },
         },
       },
       MuiDrawer: {
         styleOverrides: {
-          paper: {
-            borderTopLeftRadius: 2,
-            borderTopRightRadius: 2,
-          },
+          paper: { borderRadius: 0, borderRight: `2px solid ${strong}` },
         },
       },
       MuiDialog: {
         styleOverrides: {
           paper: {
-            borderRadius: 2,
-            border: `1px solid ${border}`,
+            borderRadius: 0,
+            border: `2px solid ${strong}`,
+            boxShadow: dark ? shadowOverlayDark : shadowOverlay,
+          },
+        },
+      },
+      MuiMenu: {
+        styleOverrides: {
+          paper: {
+            borderRadius: 0,
+            border: `1px solid ${strong}`,
             boxShadow: dark ? shadowOverlayDark : shadowOverlay,
           },
         },
@@ -170,7 +212,9 @@ export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions 
         styleOverrides: {
           root: {
             boxShadow: 'none',
-            borderBottom: `1px solid ${border}`,
+            backgroundColor: pageBg[resolvedMode],
+            color: ink[resolvedMode],
+            borderBottom: `2px solid ${strong}`,
           },
         },
       },
@@ -178,30 +222,53 @@ export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions 
         styleOverrides: {
           root: {
             boxShadow: 'none',
-            borderTop: `1px solid ${border}`,
-            backgroundColor: paper[resolvedMode],
+            borderTop: `2px solid ${strong}`,
+            backgroundColor: pageBg[resolvedMode],
+            height: 58,
           },
+        },
+      },
+      MuiBottomNavigationAction: {
+        styleOverrides: {
+          root: {
+            minWidth: 0,
+            padding: '6px 0 8px',
+            color: muted[resolvedMode],
+            fontFamily: fontMono,
+            fontSize: 10,
+            letterSpacing: '0.06em',
+            '&.Mui-selected': { color: ink[resolvedMode] },
+          },
+          label: { fontFamily: fontMono, fontSize: 10, letterSpacing: '0.06em' },
         },
       },
       MuiToggleButton: {
         styleOverrides: {
           root: {
             textTransform: 'none',
-            padding: '4px 12px',
-            fontSize: 12,
-            borderRadius: 2,
+            padding: '2px 10px',
+            fontSize: 10.5,
+            fontFamily: fontMono,
+            borderRadius: 0,
+            borderColor: strong,
+            color: muted[resolvedMode],
+            '&.Mui-selected': {
+              backgroundColor: ink[resolvedMode],
+              color: pageBg[resolvedMode],
+              '&:hover': { backgroundColor: ink[resolvedMode] },
+            },
           },
         },
       },
       MuiListItemButton: {
         styleOverrides: {
           root: {
-            borderRadius: 2,
+            borderRadius: 0,
             '&.Mui-selected': {
-              backgroundColor: 'primary.main',
-              color: 'primary.contrastText',
-              '&:hover': { backgroundColor: 'primary.dark' },
-              '& .MuiListItemIcon-root': { color: 'primary.contrastText' },
+              backgroundColor: ink[resolvedMode],
+              color: pageBg[resolvedMode],
+              '&:hover': { backgroundColor: ink[resolvedMode] },
+              '& .MuiListItemIcon-root': { color: pageBg[resolvedMode] },
             },
           },
         },
@@ -209,21 +276,48 @@ export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions 
       MuiOutlinedInput: {
         styleOverrides: {
           root: {
-            borderRadius: 2,
-            '& .MuiOutlinedInput-notchedOutline': { borderColor: border },
-            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderWidth: 1, borderColor: vermilion[resolvedMode] },
+            borderRadius: 0,
+            '& .MuiOutlinedInput-notchedOutline': { borderColor: hair },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderWidth: 1, borderColor: strong },
           },
+        },
+      },
+      MuiInputLabel: {
+        styleOverrides: {
+          root: { fontFamily: fontDisplay, fontSize: 13 },
         },
       },
       MuiLinearProgress: {
         styleOverrides: {
-          root: { borderRadius: 1, height: 4 },
-          bar: { borderRadius: 1 },
+          root: { borderRadius: 0, height: 4, backgroundColor: hair },
+          bar: { borderRadius: 0, backgroundColor: ink[resolvedMode] },
+        },
+      },
+      MuiDivider: {
+        styleOverrides: {
+          root: { borderColor: hair },
         },
       },
       MuiAlert: {
         styleOverrides: {
-          root: { borderRadius: 2 },
+          root: { borderRadius: 0 },
+        },
+      },
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            borderRadius: 0,
+            fontFamily: fontMono,
+            fontSize: 10.5,
+            letterSpacing: '0.04em',
+            backgroundColor: ink[resolvedMode],
+            color: pageBg[resolvedMode],
+          },
+        },
+      },
+      MuiSkeleton: {
+        styleOverrides: {
+          root: { borderRadius: 0, backgroundColor: hair },
         },
       },
       MuiToolbar: {
@@ -231,9 +325,9 @@ export function buildThemeOptions(resolvedMode: 'light' | 'dark'): ThemeOptions 
           root: {
             paddingLeft: '16px !important',
             paddingRight: '16px !important',
-            minHeight: '48px !important',
+            minHeight: '56px !important',
             '@media (min-width: 600px)': {
-              minHeight: '48px !important',
+              minHeight: '64px !important',
             },
           },
         },

@@ -2,18 +2,11 @@ import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Typography,
-  Chip,
-  TextField,
-  InputAdornment,
   IconButton,
-  MenuItem,
   CircularProgress,
-  Alert,
   Button,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
-import CloseIcon from '@mui/icons-material/Close';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import {
   fetchMarketplaceDecksPaged,
@@ -26,30 +19,10 @@ import ConfirmDialog from '@/components/common/ConfirmDialog';
 import EditDeckDialog from '@/components/market/EditDeckDialog';
 import { sourceMeta } from '@/lib/sourceMeta';
 import DeckDetailDialog from '@/components/market/DeckDetailDialog';
-import { LoadingState, EmptyState } from '@/components/common/LoadingState';
 import { useAuthStore } from '@/stores/useAuthStore';
 
 /** 书体筛选选项 */
 const STYLE_OPTIONS = ['全部', '楷', '行', '草', '隶', '篆'] as const;
-
-/** 封面占位组件 */
-const CoverPlaceholder: React.FC<{ name: string }> = ({ name }) => (
-  <Box
-    sx={{
-      width: '100%',
-      height: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      bgcolor: 'var(--surface)',
-      color: 'grey.400',
-      fontSize: 28,
-      fontWeight: 600,
-    }}
-  >
-    {name?.charAt(0) || '?'}
-  </Box>
-);
 
 /**
  * 市场页面。
@@ -198,98 +171,70 @@ const MarketPage: React.FC = () => {
     [],
   );
 
-  /** 渲染单张牌组卡片 */
-  const renderDeckCard = useCallback((deck: MarketplaceDeck) => (
+  const mono = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
+
+  /** 精选在前，其余按服务端顺序 */
+  const orderedDecks = useMemo(() => [...featuredDecks, ...regularDecks], [featuredDecks, regularDecks]);
+
+  const chipSx = (active: boolean) => ({
+    border: '1px solid',
+    borderColor: 'text.primary',
+    borderLeftWidth: 0,
+    px: 1.1,
+    py: '4px',
+    fontSize: 12,
+    letterSpacing: '0.02em',
+    backgroundColor: active ? 'text.primary' : 'transparent',
+    color: active ? 'background.default' : 'text.primary',
+    cursor: 'pointer',
+    userSelect: 'none',
+    whiteSpace: 'nowrap',
+    '&:first-of-type': { borderLeftWidth: 1 },
+  });
+
+  const selectSx = {
+    border: 0,
+    borderBottom: '1px solid',
+    borderColor: 'text.primary',
+    background: 'transparent',
+    color: 'text.primary',
+    fontFamily: 'var(--font-mono)',
+    fontSize: 11,
+    letterSpacing: '0.04em',
+    py: '4px',
+    pr: '18px',
+    cursor: 'pointer',
+    outline: 'none',
+    appearance: 'none',
+    backgroundImage:
+      'linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%)',
+    backgroundPosition: 'calc(100% - 9px) 55%, calc(100% - 4px) 55%',
+    backgroundSize: '5px 5px, 5px 5px',
+    backgroundRepeat: 'no-repeat',
+  };
+
+  const renderStatus = (deck: MarketplaceDeck) => (
     <Box
-      key={deck.deck_id}
-      onClick={() => setDetailDeck(deck)}
-      sx={{ display: 'flex', flexDirection: 'column', cursor: 'pointer', minWidth: 0 }}
+      component="button"
+      type="button"
+      onClick={(e) => { e.stopPropagation(); if (pendingId !== deck.deck_id) handleToggleSubscribe(deck); }}
+      sx={{
+        border: 0,
+        background: 'none',
+        p: 0,
+        cursor: 'pointer',
+        fontFamily: 'var(--font-mono)',
+        fontSize: 10.5,
+        letterSpacing: '0.04em',
+        color: deck.is_subscribed ? 'text.primary' : 'var(--hot-ink)',
+        opacity: deck.is_subscribed ? 0.65 : 1,
+        whiteSpace: 'nowrap',
+        '&:hover': { textDecoration: 'underline' },
+      }}
     >
-      <Box
-        sx={{
-          position: 'relative',
-          width: '100%',
-          aspectRatio: '1/1',
-          borderRadius: '2px',
-          overflow: 'hidden',
-          bgcolor: 'var(--surface)',
-          border: '1px solid', borderColor: 'divider',
-        }}
-      >
-        {deck.cover_image ? (
-          <Box component="img" src={getImageUrl(deck.cover_image)} alt={deck.name}
-            sx={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
-        ) : (
-          <CoverPlaceholder name={deck.name} />
-        )}
-        {(() => {
-          const sm = sourceMeta(deck.source_key);
-          return sm ? (
-            <Box
-              sx={{
-                position: 'absolute', top: 4, left: 4,
-                px: 0.5, py: '1px', borderRadius: '2px',
-                bgcolor: 'var(--paper)',
-                color: sm.tone === 'museum' ? 'primary.main' : 'var(--muted)',
-                border: '1px solid',
-                borderColor: sm.tone === 'museum' ? 'primary.main' : 'var(--line-strong)',
-                boxShadow: '0 1px 3px rgba(48,44,37,0.28)',
-                fontSize: { xs: 8, sm: 9 }, fontWeight: 600, lineHeight: 1.2,
-              }}
-            >
-              {sm.short}
-            </Box>
-          ) : null;
-        })()}
-        {deck.style && (
-          <Box
-            sx={{
-              position: 'absolute', top: 4, right: 4,
-              px: 0.5, py: '1px', borderRadius: '2px',
-              bgcolor: 'var(--paper)', color: 'var(--muted)',
-              border: '1px solid var(--line-strong)',
-              boxShadow: '0 1px 3px rgba(48,44,37,0.28)',
-              fontSize: { xs: 9, sm: 10 }, fontWeight: 600, lineHeight: 1.2,
-            }}
-          >
-            {deck.style.split(',')[0].trim()}
-          </Box>
-        )}
-      </Box>
-      <Typography noWrap className="font-kai"
-        sx={{ mt: 0.6, fontSize: { xs: 12, sm: 13 }, lineHeight: 1.3 }}>
-        {deck.name}
-      </Typography>
-      {(deck.calligrapher || deck.dynasty) && (
-        <Typography variant="caption" noWrap
-          sx={{ fontSize: { xs: 10, sm: 11 }, color: 'text.secondary', lineHeight: 1.4 }}>
-          {[deck.dynasty, deck.calligrapher].filter(Boolean).join('·')}
-        </Typography>
-      )}
-      <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.25 }}>
-        {pendingId === deck.deck_id ? (
-          <CircularProgress size={12} />
-        ) : (
-          <Typography component="span"
-            onClick={(e) => { e.stopPropagation(); handleToggleSubscribe(deck); }}
-            sx={{
-              fontSize: 10, fontWeight: 600,
-              color: deck.is_subscribed ? 'text.secondary' : 'primary.main',
-              cursor: 'pointer', '&:hover': { textDecoration: 'underline' }, userSelect: 'none',
-            }}
-          >
-            {deck.is_subscribed ? '已订阅' : '+ 订阅'}
-          </Typography>
-        )}
-        {isAdmin && (
-          <IconButton size="small" aria-label={`编辑 ${deck.name}`} onClick={(e) => { e.stopPropagation(); setEditDeck(deck); }}
-            sx={{ width: 16, height: 16, ml: 0.25, opacity: 0.35, '&:hover': { opacity: 1 } }}>
-            <EditIcon sx={{ fontSize: 10 }} />
-          </IconButton>
-        )}
-      </Box>
+      {pendingId === deck.deck_id ? '处理中…' : deck.is_subscribed ? '已订阅' : '＋ 订阅'}
     </Box>
-  ), [pendingId, isAdmin, setDetailDeck, handleToggleSubscribe, setEditDeck]);
+  );
 
   /** 确认退订 */
   const handleConfirmUnsubscribe = useCallback(async () => {
@@ -299,11 +244,7 @@ const MarketPage: React.FC = () => {
     try {
       await unsubscribeDeck(unsubConfirmDeck.deck_id);
       setDecks((prev) =>
-        prev.map((d) =>
-          d.deck_id === unsubConfirmDeck.deck_id
-            ? { ...d, is_subscribed: false }
-            : d,
-        ),
+        prev.map((d) => (d.deck_id === unsubConfirmDeck.deck_id ? { ...d, is_subscribed: false } : d)),
       );
     } catch (err) {
       setActionError(err instanceof Error ? err.message : '退订失败');
@@ -314,231 +255,281 @@ const MarketPage: React.FC = () => {
   }, [unsubConfirmDeck]);
 
   return (
-    <Box className="space-y-3 py-4">
-      {/* 顶部 */}
-      <Box sx={{ mb: 0.5 }}>
-        <Typography className="font-kai" sx={{ fontSize: 26, letterSpacing: 2, lineHeight: 1.3 }}>
-          碑帖市场
-        </Typography>
-        <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
-          共 {total} 部 · 按书体与朝代筛选，订阅后进入书库
-        </Typography>
+    <Box>
+      {/* 页头 */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', pt: 0.5, pb: { xs: 1.5, md: 1.75 } }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            component="h1"
+            sx={{ fontSize: { xs: 30, md: 40 }, fontWeight: 900, letterSpacing: '0.1em', lineHeight: 1 }}
+          >
+            碑帖市场
+          </Typography>
+          <Typography sx={{ ...mono, opacity: 0.7, mt: 1 }}>
+            共 {total} 部 · 按书体、朝代、书家筛
+          </Typography>
+        </Box>
+        <Box sx={{ display: { xs: 'none', md: 'block' }, textAlign: 'right', ...mono, opacity: 0.8, whiteSpace: 'nowrap' }}>
+          已显示 {decks.length} / {total}
+        </Box>
       </Box>
 
-      {/* 搜索 + 筛选栏（紧凑单行） */}
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-        <TextField
-          size="small" variant="outlined"
-          placeholder="搜索牌组 / 书家 / 朝代..."
-          value={searchKeyword}
-          onChange={(e) => setSearchKeyword(e.target.value)}
-          sx={{ minWidth: 220, flex: { xs: '1 1 100%', sm: '0 1 260px' }, '& .MuiOutlinedInput-root': { borderRadius: '2px' } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>
-            ),
-            endAdornment: searchKeyword ? (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearchKeyword('')} edge="end" aria-label="清空">
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ) : null,
-          }}
-        />
+      {/* 工具条 */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1.25, md: 2 },
+          flexWrap: 'wrap',
+          borderTop: '1px solid',
+          borderBottom: '1px solid',
+          borderColor: 'text.primary',
+          py: 1.25,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '1 1 280px', minWidth: 0 }}>
+          <SearchIcon sx={{ fontSize: 16, opacity: 0.55 }} />
+          <Box
+            component="input"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            placeholder="搜帖名、书家、朝代"
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              border: 0,
+              borderBottom: '2px solid',
+              borderColor: 'text.primary',
+              background: 'transparent',
+              fontFamily: 'inherit',
+              fontSize: 14,
+              color: 'text.primary',
+              py: '3px',
+              outline: 'none',
+              '&::placeholder': { color: 'text.disabled' },
+            }}
+          />
+        </Box>
 
-        {[
-          ...STYLE_OPTIONS,
-          ...Object.keys(styleCounts).filter((s) => !STYLE_OPTIONS.includes(s as any)),
-        ].map((s) => {
-          const selected = styleFilter === s;
-          const n = s === '全部' ? total : styleCounts[s];
-          return (
-            <Chip
-              key={s} size="small"
-              label={
-                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5 }}>
-                  <Box component="span" sx={{ fontWeight: selected ? 700 : 500 }}>{s}</Box>
-                  {n !== undefined && (
-                    <Box component="span" sx={{ fontSize: 10, opacity: 0.75 }}>{n}</Box>
-                  )}
-                </Box>
-              }
-              onClick={() => setStyleFilter(s)}
-              sx={{
-                cursor: 'pointer',
-                ...(selected && s !== '全部'
-                  ? { bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }
-                  : {}),
-              }}
-            />
-          );
-        })}
-        {/* 朝代筛选（按纪年顺序展示） */}
-        {[
-          ...['先秦', '汉', '三国', '晋', '南北朝', '隋', '唐', '五代', '宋', '元', '明', '清', '近代', '日本'].filter((d) => dynastyCounts[d]),
-          ...Object.keys(dynastyCounts).filter((d) => !['先秦', '汉', '三国', '晋', '南北朝', '隋', '唐', '五代', '宋', '元', '明', '清', '近代', '日本'].includes(d)),
-        ].map((d) => {
-          const selected = dynastyFilter === d;
-          const n = dynastyCounts[d];
-          return (
-            <Chip
-              key={`dy-${d}`} size="small"
-              label={
-                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5 }}>
-                  <Box component="span" sx={{ fontWeight: selected ? 700 : 500 }}>{d}</Box>
-                  {n !== undefined && (
-                    <Box component="span" sx={{ fontSize: 10, opacity: 0.75 }}>{n}</Box>
-                  )}
-                </Box>
-              }
-              onClick={() => setDynastyFilter(selected ? '全部' : d)}
-              color={selected ? 'primary' : 'default'}
-              variant={selected ? 'filled' : 'outlined'}
-              sx={{ cursor: 'pointer' }}
-            />
-          );
-        })}
-        <Chip
-          label="已订阅"
-          size="small"
-          icon={showSubscribedOnly ? <CheckCircleIcon fontSize="small" /> : undefined}
-          color={showSubscribedOnly ? 'primary' : 'default'}
-          variant={showSubscribedOnly ? 'filled' : 'outlined'}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.6 }}>书体</Box>
+          <Box sx={{ display: 'flex' }}>
+            {STYLE_OPTIONS.map((opt) => (
+              <Box key={opt} component="button" type="button" onClick={() => setStyleFilter(opt)} sx={chipSx(styleFilter === opt)}>
+                {opt}
+                {opt !== '全部' && styleCounts[opt] ? ` ${styleCounts[opt]}` : ''}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.6 }}>朝代</Box>
+          <Box
+            component="select"
+            value={dynastyFilter}
+            onChange={(e) => setDynastyFilter(e.target.value)}
+            sx={selectSx}
+            aria-label="按朝代筛选"
+          >
+            <option value="全部">全部</option>
+            {Object.entries(dynastyCounts).map(([name, n]) => (
+              <option key={name} value={name}>{name} {n}</option>
+            ))}
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.6 }}>书家</Box>
+          <Box
+            component="select"
+            value={calligrapherFilter}
+            onChange={(e) => setCalligrapherFilter(e.target.value)}
+            sx={selectSx}
+            aria-label="按书家筛选"
+          >
+            {calligrapherOptions.map((name) => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </Box>
+        </Box>
+
+        <Box
+          component="button"
+          type="button"
           onClick={() => setShowSubscribedOnly((v) => !v)}
-          sx={{ cursor: 'pointer' }}
-        />
-
-        <TextField
-          select size="small"
-          value={calligrapherFilter}
-          onChange={(e) => setCalligrapherFilter(e.target.value)}
-          sx={{ minWidth: 120, '& .MuiInputBase-input': { fontSize: 13, py: 0.5 } }}
+          sx={chipSx(showSubscribedOnly)}
+          aria-pressed={showSubscribedOnly}
         >
-          {calligrapherOptions.map((c) => (
-            <MenuItem key={c} value={c} sx={{ fontSize: 13 }}>{c}</MenuItem>
-          ))}
-        </TextField>
+          已订阅
+        </Box>
       </Box>
 
-      {/* 错误提示 */}
-      {error && <Alert severity="error" sx={{ mb: 1 }}>{error}</Alert>}
-      {actionError && <Alert severity="error" onClose={() => setActionError(null)} sx={{ mb: 1 }}>{actionError}</Alert>}
+      {actionError && (
+        <Box sx={{ borderBottom: '1px solid', borderColor: 'divider', py: 1 }}>
+          <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)' }}>{actionError}</Typography>
+        </Box>
+      )}
 
-      {/* 内容区 */}
       {loading ? (
-        <LoadingState message="正在加载市场..." />
-      ) : (featuredDecks.length === 0 && regularDecks.length === 0) ? (
-        <EmptyState
-          icon={<SearchIcon />}
-          title="没有找到匹配的牌组"
-          description={
-            searchKeyword.trim() || styleFilter !== '全部' || calligrapherFilter !== '全部'
-              ? '换个筛选条件或关键词试试'
-              : '市场暂无牌组'
-          }
-        />
+        <Box sx={{ py: 8, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <CircularProgress size={16} />
+          <Typography sx={{ ...mono, fontSize: 11, opacity: 0.7 }}>正在加载碑帖…</Typography>
+        </Box>
+      ) : error ? (
+        <Box sx={{ py: 6 }}>
+          <Typography sx={{ ...mono, fontSize: 12 }}>加载失败：{error}</Typography>
+          <Button variant="outlined" sx={{ mt: 2 }} onClick={() => loadDecks(0)}>重试</Button>
+        </Box>
+      ) : orderedDecks.length === 0 ? (
+        <Box sx={{ py: 10, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 34, fontWeight: 900, letterSpacing: 4 }}>无</Typography>
+          <Typography sx={{ ...mono, fontSize: 11, opacity: 0.7, mt: 1 }}>没有匹配的碑帖 · 换个筛选条件</Typography>
+        </Box>
       ) : (
         <>
-          {/* 推荐专区：渐变背景 + 大标题 + 装饰边框 */}
-          {featuredDecks.length > 0 && (
+          {/* 桌面：书目表 */}
+          <Box sx={{ display: { xs: 'none', md: 'block' } }}>
             <Box
+              aria-hidden
               sx={{
-                p: { xs: 1.5, sm: 2 },
-                borderRadius: '2px',
-                bgcolor: 'background.paper',
-                border: '1px solid', borderColor: 'divider',
+                display: 'grid',
+                gridTemplateColumns: '40px 44px 1fr 140px 90px 80px 90px 120px',
+                gap: 2,
+                py: 0.75,
+                ...mono,
+                fontSize: 9.5,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                opacity: 0.6,
               }}
             >
-              <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1.5 }}>
-                <Typography
-                  className="font-kai"
+              <span>NO</span>
+              <span />
+              <span>帖 / 说明</span>
+              <span>书家</span>
+              <span>朝代</span>
+              <span>书体</span>
+              <span style={{ textAlign: 'right' }}>字数</span>
+              <span style={{ textAlign: 'right' }}>状态</span>
+            </Box>
+            {orderedDecks.map((deck, index) => {
+              const sm = sourceMeta(deck.source_key);
+              return (
+                <Box
+                  key={deck.deck_id}
+                  role="link"
+                  tabIndex={0}
+                  aria-label={`${deck.name}，${deck.is_subscribed ? '已订阅' : '未订阅'}`}
+                  onClick={() => setDetailDeck(deck)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailDeck(deck); } }}
                   sx={{
-                    fontSize: { xs: 18, sm: 20 },
-                    fontWeight: 700,
+                    display: 'grid',
+                    gridTemplateColumns: '40px 44px 1fr 140px 90px 80px 90px 120px',
+                    gap: 2,
+                    alignItems: 'center',
+                    minHeight: 64,
+                    borderTop: '1px solid',
+                    borderColor: 'divider',
+                    cursor: 'pointer',
+                    '&:hover': { backgroundColor: 'text.primary', color: 'background.default' },
+                    '&:hover .m-sub': { opacity: 0.72 },
+                    '&:hover .m-status': { color: 'background.default', opacity: 0.85 },
+                    '&:focus-visible': { outline: '2px solid', outlineColor: 'primary.main', outlineOffset: -2 },
                   }}
                 >
-                  编辑精选
-                </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
-                  最值得收藏的书法字帖
-                </Typography>
-              </Box>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: 'repeat(4, 1fr)',
-                    sm: 'repeat(4, 1fr)',
-                    md: 'repeat(5, 1fr)',
-                    lg: 'repeat(6, 1fr)',
-                    xl: 'repeat(7, 1fr)',
-                  },
-                  gap: { xs: 1, sm: 1.25 },
-                }}
-              >
-                {featuredDecks.map((deck) => renderDeckCard(deck))}
-              </Box>
-            </Box>
-          )}
-
-          {/* 全部牌组：朴素分隔线 + 小标题 */}
-          <Box sx={{ mt: featuredDecks.length > 0 ? 3 : 0 }}>
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                mb: 1.5,
-                '&::before, &::after': {
-                  content: '""',
-                  flex: 1,
-                  height: '1px',
-                  bgcolor: 'divider',
-                },
-              }}
-            >
-              <Typography
-                className="font-kai"
-                sx={{ fontSize: 14, fontWeight: 600, color: 'text.secondary', whiteSpace: 'nowrap' }}
-              >
-                全部字帖
-              </Typography>
-            </Box>
-            <Box
-              sx={{
-                p: { xs: 1.5, sm: 2 },
-                borderRadius: '2px',
-              }}
-            >
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: {
-                    xs: 'repeat(4, 1fr)',
-                    sm: 'repeat(4, 1fr)',
-                    md: 'repeat(5, 1fr)',
-                    lg: 'repeat(6, 1fr)',
-                    xl: 'repeat(7, 1fr)',
-                  },
-                  gap: { xs: 1, sm: 1.25 },
-                }}
-              >
-                {regularDecks.map((deck) => renderDeckCard(deck))}
-              </Box>
-            </Box>
+                  <Typography sx={{ ...mono, fontSize: 10, opacity: 0.6 }}>{String(index + 1).padStart(2, '0')}</Typography>
+                  {deck.cover_image ? (
+                    <Box component="img" src={getImageUrl(deck.cover_image)} alt="" loading="lazy"
+                      sx={{ width: 44, height: 44, objectFit: 'cover', border: '1px solid', borderColor: 'inherit' }} />
+                  ) : (
+                    <Box sx={{ width: 44, height: 44, border: '1px solid', borderColor: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 900 }}>
+                      {deck.name.charAt(0) || '?'}
+                    </Box>
+                  )}
+                  <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                      <Typography noWrap sx={{ fontSize: 17, fontWeight: 900, letterSpacing: '0.03em' }}>{deck.name}</Typography>
+                      {deck.featured === 1 && (
+                        <Box sx={{ border: '1px solid', borderColor: 'inherit', px: 0.6, ...mono, fontSize: 9, opacity: 0.8, whiteSpace: 'nowrap' }}>精选</Box>
+                      )}
+                      {sm && (
+                        <Box sx={{ border: '1px solid', borderColor: 'inherit', px: 0.6, ...mono, fontSize: 9, opacity: 0.6, whiteSpace: 'nowrap' }}>{sm.short}</Box>
+                      )}
+                    </Box>
+                    <Typography noWrap className="m-sub" sx={{ ...mono, fontSize: 10, opacity: 0.6, maxWidth: { md: 420 } }}>{deck.description || '—'}</Typography>
+                  </Box>
+                  <Typography noWrap sx={{ fontSize: 12.5 }}>{deck.calligrapher || '佚名'}</Typography>
+                  <Typography noWrap sx={{ ...mono, fontSize: 11, opacity: 0.75 }}>{deck.dynasty || '—'}</Typography>
+                  <Typography noWrap sx={{ ...mono, fontSize: 11, opacity: 0.75 }}>{deck.style || '—'}</Typography>
+                  <Typography sx={{ textAlign: 'right', ...mono, fontSize: 11.5, fontVariantNumeric: 'tabular-nums' }}>{deck.card_count}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 1 }}>
+                    {isAdmin && (
+                      <IconButton size="small" aria-label={`编辑 ${deck.name}`}
+                        onClick={(e) => { e.stopPropagation(); setEditDeck(deck); }}
+                        sx={{ p: 0.25, opacity: 0.6, color: 'inherit' }}>
+                        <EditIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    )}
+                    <Box className="m-status" sx={{ display: 'inline-flex' }}>{renderStatus(deck)}</Box>
+                  </Box>
+                </Box>
+              );
+            })}
           </Box>
 
+          {/* 手机：列表 */}
+          <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            {orderedDecks.map((deck) => (
+              <Box
+                key={deck.deck_id}
+                role="link"
+                tabIndex={0}
+                aria-label={`${deck.name}，${deck.is_subscribed ? '已订阅' : '未订阅'}`}
+                onClick={() => setDetailDeck(deck)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setDetailDeck(deck); } }}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1.25,
+                  py: 1.25,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  cursor: 'pointer',
+                }}
+              >
+                {deck.cover_image ? (
+                  <Box component="img" src={getImageUrl(deck.cover_image)} alt="" loading="lazy"
+                    sx={{ width: 34, height: 34, objectFit: 'cover', border: '1px solid', borderColor: 'divider' }} />
+                ) : (
+                  <Box sx={{ width: 34, height: 34, border: '1px solid', borderColor: 'text.primary', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 900 }}>
+                    {deck.name.charAt(0) || '?'}
+                  </Box>
+                )}
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography noWrap sx={{ fontSize: 13.5, letterSpacing: '0.02em' }}>{deck.name}</Typography>
+                  <Typography noWrap sx={{ ...mono, fontSize: 9, opacity: 0.65 }}>
+                    {[deck.dynasty, deck.calligrapher, deck.style].filter(Boolean).join(' · ')}
+                  </Typography>
+                </Box>
+                <Box sx={{ textAlign: 'right', flexShrink: 0 }}>
+                  <Typography sx={{ ...mono, fontSize: 9.5, opacity: 0.7 }}>{deck.card_count} 字</Typography>
+                  <Box sx={{ display: 'inline-flex', mt: 0.25 }}>{renderStatus(deck)}</Box>
+                </Box>
+              </Box>
+            ))}
+          </Box>
+
+          {/* 分页 */}
           {decks.length < total && (
-            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
               <Button
                 variant="outlined"
                 onClick={() => loadDecks(decks.length)}
                 disabled={loadingMore}
-                sx={{ borderRadius: '2px' }}
+                sx={{ minWidth: 220, height: 44 }}
               >
-                {loadingMore ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
-                {loadingMore ? '加载中…' : `加载更多（已显示 ${decks.length}/${total}）`}
+                {loadingMore ? '加载中…' : `加载更多（已显示 ${decks.length} / ${total}）`}
               </Button>
             </Box>
           )}

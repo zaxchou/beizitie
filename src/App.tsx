@@ -7,6 +7,7 @@ import AppShell from '@/components/layout/AppShell';
 import DashboardPage from '@/pages/DashboardPage';
 import StudyPage from '@/pages/StudyPage';
 import DecksPage from '@/pages/DecksPage';
+import DeckPage from '@/pages/DeckPage';
 import CardManagePage from '@/pages/CardManagePage';
 import SettingsPage from '@/pages/SettingsPage';
 import UserManagePage from '@/pages/UserManagePage';
@@ -52,6 +53,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/study/:deckId" element={<StudyPage />} />
               <Route path="/decks" element={<DecksPage />} />
+              <Route path="/decks/:deckId" element={<DeckPage />} />
               <Route path="/decks/:deckId/cards" element={<CardManagePage />} />
               <Route path="/market" element={<MarketPage />} />
               <Route path="/settings" element={<SettingsPage />} />

@@ -29,7 +29,6 @@ function calculateStreak(stats: DailyStatRow[]): number {
   const activeDays = new Set(stats.filter((s) => s.cards_studied > 0).map((s) => s.date));
   let streak = 0;
   const checkDate = new Date();
-  checkDate.setDate(checkDate.getDate() - 1);
 
   while (true) {
     const dateStr = `${checkDate.getFullYear()}-${String(checkDate.getMonth() + 1).padStart(2, '0')}-${String(checkDate.getDate()).padStart(2, '0')}`;
@@ -58,14 +57,20 @@ function useDashboardData() {
         fetchStudyTotal(),
       ]);
 
+      const normalized = allStats.map((d) => ({
+        ...d,
+        cards_studied: Number(d.cards_studied) || 0,
+        new_cards_learned: Number(d.new_cards_learned) || 0,
+      }));
+
       return {
         dueCount: dueCounts.reduce((sum, d) => sum + Number(d.due_count), 0),
         newCardRemaining: Math.max(0, DEFAULT_DAILY_NEW_CARD_LIMIT - (todayStats?.new_cards_learned ?? 0)),
-        streakDays: calculateStreak(allStats),
-        totalStudied: allStats.reduce((s, d) => s + d.cards_studied, 0),
-        activeDays: allStats.filter((d) => d.cards_studied > 0).length,
+        streakDays: calculateStreak(normalized),
+        totalStudied: normalized.reduce((s, d) => s + d.cards_studied, 0),
+        activeDays: normalized.filter((d) => d.cards_studied > 0).length,
         totalMinutes: Math.round(studyTotal.total_minutes),
-        activityData: allStats,
+        activityData: normalized,
       };
     },
     { ttl: 30_000 }
@@ -82,7 +87,7 @@ export const useDashboardStats = (): DashboardStats => {
   const { data, loading } = useDashboardData();
 
   const newCount = useMemo(
-    () => decks.reduce((sum, d) => sum + Number((d as any).new_available_today ?? d.new_count ?? 0), 0),
+    () => decks.reduce((sum, d) => sum + Number(d.new_available_today ?? d.new_count ?? 0), 0),
     [decks]
   );
 

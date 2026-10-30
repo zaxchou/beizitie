@@ -1,5 +1,5 @@
 import React, { useEffect, useCallback, useMemo } from 'react';
-import { Button, Grid } from '@mui/material';
+import { Box } from '@mui/material';
 import type { Rating, SM2Input } from '@/types';
 import { calculateNextReview } from '@/lib/sm2';
 
@@ -17,6 +17,8 @@ export interface RatingButtonsProps {
   disabled?: boolean;
   /** 当前卡片 SM-2 状态，用于显示各评分间隔预览 */
   card?: SM2State | null;
+  /** grid = 2×2 按钮（手机）；list = 竖排细线清单（桌面右栏） */
+  layout?: 'grid' | 'list';
 }
 
 /** 按钮配置：标签、评分值、快捷键 */
@@ -50,7 +52,7 @@ const buttonConfigs: ButtonConfig[] = [
  * 四档**同等视觉权重**：不再用红/橙/绿/青四色暗示「良好」，
  * 也不预高亮任何一档；间隔预览放右侧，键盘 1–4 仍然可用（web 端优势）。
  */
-const RatingButtons: React.FC<RatingButtonsProps> = ({ onRate, disabled = false, card = null }) => {
+const RatingButtons: React.FC<RatingButtonsProps> = ({ onRate, disabled = false, card = null, layout = 'grid' }) => {
   // 计算各评分对应的预览间隔
   const input: SM2Input = card ?? { ease: 2.5, interval: 0, repetitions: 0 };
   const intervalPreviews = useMemo(
@@ -99,36 +101,102 @@ const RatingButtons: React.FC<RatingButtonsProps> = ({ onRate, disabled = false,
     };
   }, [handleKeyDown]);
 
-  return (
-    <Grid container spacing={1}>
-      {extendedConfigs.map((config) => (
-        <Grid item xs={6} sm={3} key={config.rating}>
-          <Button
-            variant="outlined"
-            color="inherit"
-            fullWidth
-            disabled={disabled}
+  if (layout === 'list') {
+    return (
+      <Box sx={{ borderTop: '2px solid', borderColor: 'text.primary' }}>
+        {extendedConfigs.map((config) => (
+          <Box
+            key={config.rating}
+            component="button"
+            type="button"
             aria-keyshortcuts={config.shortcut}
+            disabled={disabled}
             onClick={() => onRate(config.rating)}
             sx={{
-              minHeight: 58,
-              height: 58,
-              px: 2,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'baseline',
               justifyContent: 'space-between',
-              borderColor: 'divider',
-              bgcolor: 'background.paper',
+              gap: 2,
+              px: 0.25,
+              py: 2,
+              border: 0,
+              borderBottom: '1px solid',
+              borderColor: 'text.primary',
+              bgcolor: 'transparent',
               color: 'text.primary',
-              '&:hover': { bgcolor: 'var(--surface)', borderColor: 'var(--line-strong)' },
+              textAlign: 'left',
+              cursor: disabled ? 'not-allowed' : 'pointer',
+              opacity: disabled ? 0.4 : 1,
+              transition: 'background-color 0.15s ease, color 0.15s ease',
+              '&:hover': disabled ? undefined : { backgroundColor: 'text.primary', color: 'background.default' },
+              '&:hover .rate-interval': disabled ? undefined : { color: 'background.default', opacity: 0.8 },
             }}
           >
-            <span className="font-kai" style={{ fontSize: 17, letterSpacing: 1 }}>{config.label}</span>
-            {config.intervalPreview && (
-              <span style={{ fontSize: 12, color: 'var(--muted)' }}>{config.intervalPreview}</span>
-            )}
-          </Button>
-        </Grid>
+            <Box component="span" sx={{ fontSize: 18, fontWeight: 900, letterSpacing: '0.06em' }}>
+              {config.label}
+            </Box>
+            <Box
+              component="span"
+              className="rate-interval"
+              sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.7, letterSpacing: '0.04em' }}
+            >
+              {config.intervalPreview}
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    );
+  }
+
+  return (
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        border: '2px solid',
+        borderColor: 'text.primary',
+      }}
+    >
+      {extendedConfigs.map((config, index) => (
+        <Box
+          key={config.rating}
+          component="button"
+          type="button"
+          disabled={disabled}
+          aria-keyshortcuts={config.shortcut}
+          onClick={() => onRate(config.rating)}
+          sx={{
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            gap: 1,
+            px: 1.75,
+            height: 54,
+            border: 0,
+            borderRight: index % 2 === 0 ? '1px solid' : 0,
+            borderBottom: index < 2 ? '1px solid' : 0,
+            borderColor: 'text.primary',
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            textAlign: 'left',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.38 : 1,
+            '&:active': disabled ? undefined : { bgcolor: 'primary.main', color: 'primary.contrastText' },
+          }}
+        >
+          <Box component="span" sx={{ fontSize: 16.5, fontWeight: 900, letterSpacing: '0.06em' }}>
+            {config.label}
+          </Box>
+          <Box
+            component="span"
+            sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.7, letterSpacing: '0.02em' }}
+          >
+            {config.intervalPreview}
+          </Box>
+        </Box>
       ))}
-    </Grid>
+    </Box>
   );
 };
 

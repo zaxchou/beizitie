@@ -1,98 +1,81 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import SettingsIcon from '@mui/icons-material/Settings';
-import StoreIcon from '@mui/icons-material/Store';
-import BrushIcon from '@mui/icons-material/Brush';
+import { Box } from '@mui/material';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@/stores/useAuthStore';
-
-/** 导航项定义 */
-interface NavItem {
-  /** 图标组件 */
-  icon: React.ReactNode;
-  /** 显示标签 */
-  label: string;
-  /** 对应的路由路径 */
-  value: string;
-}
-
-const navItems: NavItem[] = [
-  {
-    icon: <DashboardIcon />,
-    label: '背字帖',
-    value: '/dashboard',
-  },
-  {
-    icon: <StoreIcon />,
-    label: '市场',
-    value: '/market',
-  },
-  {
-    icon: <BrushIcon />,
-    label: '集字',
-    value: '/jizi',
-  },
-  {
-    icon: <BarChartIcon />,
-    label: '数据',
-    value: '/analytics',
-  },
-  {
-    icon: <SettingsIcon />,
-    label: '设置',
-    value: '/settings',
-  },
-];
+import { NAV_ITEMS } from './TopBar';
 
 /**
- * 底部导航栏。
- * 使用 react-router 的 useNavigate + useLocation 同步当前路由。
- * 固定在底部（sticky），顶部有分隔线。
+ * 手机底部标签栏：等宽大写 + 中文，当前项顶部 3px 朱砂线。
+ * 不用图标——保持和桌面同一套排印语言。
  */
 const BottomNav: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
 
-  // 游客只显示仪表盘和市场
-  const visibleNav = user?.role === 'guest'
-    ? navItems.filter(item => item.value === '/dashboard' || item.value === '/market')
-    : navItems;
+  const items = user?.role === 'guest'
+    ? NAV_ITEMS.filter((item) => item.to === '/dashboard' || item.to === '/market')
+    : NAV_ITEMS;
 
-  const handleChange = (_event: React.SyntheticEvent, newValue: string): void => {
-    navigate(newValue);
-  };
-
-  /** 根据当前路径匹配高亮项 */
-  const currentValue = visibleNav.find((item) => {
-    if (item.value === '/dashboard') {
-      return location.pathname === '/' || location.pathname.startsWith('/dashboard');
-    }
-    return location.pathname.startsWith(item.value);
-  })?.value ?? '/dashboard';
+  const isActive = (to: string): boolean =>
+    to === '/dashboard'
+      ? location.pathname === '/' || location.pathname.startsWith('/dashboard')
+      : location.pathname.startsWith(to);
 
   return (
-    <Paper
+    <Box
+      component="nav"
       sx={{
         position: 'fixed',
-        bottom: 0, left: 0, right: 0,
-        borderTop: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: (t) => t.zIndex.appBar,
+        display: 'grid',
+        gridTemplateColumns: `repeat(${items.length}, 1fr)`,
+        height: 'calc(58px + env(safe-area-inset-bottom, 0px))',
+        pb: 'env(safe-area-inset-bottom, 0px)',
+        borderTop: '2px solid',
+        borderColor: 'text.primary',
+        backgroundColor: 'background.default',
       }}
-      elevation={0}
     >
-      <BottomNavigation value={currentValue} onChange={handleChange}>
-        {visibleNav.map((item) => (
-          <BottomNavigationAction
-            key={item.value}
-            label={item.label}
-            value={item.value}
-            icon={item.icon}
-          />
-        ))}
-      </BottomNavigation>
-    </Paper>
+      {items.map((item) => {
+        const active = isActive(item.to);
+        return (
+          <Box
+            key={item.to}
+            component={NavLink}
+            to={item.to}
+            aria-current={active ? 'page' : undefined}
+            aria-label={item.cn}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '3px',
+              mt: '-2px',
+              pt: '2px',
+              textDecoration: 'none',
+              color: 'text.primary',
+              opacity: active ? 1 : 0.6,
+              borderTop: '3px solid',
+              borderColor: active ? 'primary.main' : 'transparent',
+            }}
+          >
+            <Box
+              component="span"
+              sx={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.1em', lineHeight: 1 }}
+            >
+              {item.short ?? item.label}
+            </Box>
+            <Box component="span" sx={{ fontSize: 11.5, letterSpacing: '0.04em', lineHeight: 1 }}>
+              {item.cn}
+            </Box>
+          </Box>
+        );
+      })}
+    </Box>
   );
 };
 

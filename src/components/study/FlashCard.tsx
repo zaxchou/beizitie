@@ -11,6 +11,8 @@ export interface FlashCardProps {
   onFlip: () => void;
   /** 填满父容器高度（学习页的字幅区用）；默认按内容高度 */
   fill?: boolean;
+  /** 无卡片外框（学习页桌面：字幅直接落在纸面上） */
+  bare?: boolean;
 }
 
 /** 安全渲染 HTML（仅允许 img/br/b/i/u/p/div/span，过滤 script/onerror/onclick 等） */
@@ -27,7 +29,7 @@ function sanitizeHtml(text: string): string {
     .replace(/expression\s*\(/gi, '');
 }
 
-const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip, fill = false }) => {
+const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip, fill = false, bare = false }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const [viewingOriginal, setViewingOriginal] = useState(false);
@@ -68,17 +70,25 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip, fill = fal
           /* 正面：只渲染印刷字，不挂任何答案图（不做 3D 翻转，避免翻面中途露答案） */
           <div
             className="flex items-center justify-center cursor-pointer select-none"
-            style={{ ...faceStyle, border: '1px solid', borderRadius: '2px', minHeight: 280, padding: 16, flex: fill ? 1 : undefined }}
+            style={{
+              ...faceStyle,
+              border: bare ? 'none' : '1px solid',
+              backgroundColor: bare ? 'transparent' : faceStyle.backgroundColor,
+              borderRadius: 0,
+              minHeight: bare ? 0 : 280,
+              padding: bare ? 0 : 16,
+              flex: fill ? 1 : undefined,
+            }}
             onClick={onFlip}
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onFlip(); } }}
-            aria-label="点击查看这个字的原帖"
+            aria-label={`${card.front_text}，查看原帖`}
           >
             {frontHasHtml ? (
               <span className="card-front-text text-center px-4 break-all" dangerouslySetInnerHTML={{ __html: frontSanitized }} />
             ) : (
-              <span className="card-front-text text-center px-4 break-all" style={{ fontSize: card.front_text.length <= 2 ? 'clamp(72px, 22vh, 176px)' : undefined }}>{card.front_text}</span>
+              <span className="card-front-text text-center px-4 break-all" style={{ fontSize: card.front_text.length <= 2 ? (bare ? 'clamp(104px, 34vh, 340px)' : 'clamp(72px, 22vh, 176px)') : undefined }}>{card.front_text}</span>
             )}
           </div>
         ) : (
@@ -87,11 +97,11 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip, fill = fal
             ref={atlasBoxRef}
             className="relative flex items-center justify-center overflow-hidden"
             style={{
-              backgroundColor: isDark ? theme.palette.background.default : theme.palette.background.paper,
-              border: '1px solid',
+              backgroundColor: bare ? 'transparent' : (isDark ? theme.palette.background.default : theme.palette.background.paper),
+              border: bare ? 'none' : '1px solid',
               borderColor: theme.palette.divider,
-              borderRadius: '2px',
-              minHeight: 280,
+              borderRadius: 0,
+              minHeight: bare ? 0 : 280,
               flex: fill ? 1 : undefined,
             }}
           >
@@ -111,7 +121,8 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip, fill = fal
                 <img
                   src={getImageUrl(card.image_url)}
                   alt={`书法：${card.front_text}`}
-                  className="object-contain max-h-full max-w-full p-4"
+                  className={bare ? 'object-contain max-h-full max-w-full' : 'object-contain max-h-full max-w-full p-4'}
+                  style={bare ? { width: '100%', height: '100%', objectFit: 'contain' } : undefined}
                   draggable={false}
                 />
               )

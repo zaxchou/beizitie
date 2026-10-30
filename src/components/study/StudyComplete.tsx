@@ -9,10 +9,10 @@ export interface StudyCompleteProps {
 }
 
 const ratingConfig = [
-  { key: 'again' as const, label: '重来', color: '#8b3a30', bg: 'var(--surface)' },
-  { key: 'hard' as const, label: '困难', color: '#6e6458', bg: 'var(--surface)' },
-  { key: 'good' as const, label: '良好', color: '#302c25', bg: 'var(--surface)' },
-  { key: 'easy' as const, label: '简单', color: '#302c25', bg: 'var(--surface)' },
+  { key: 'again' as const, label: '重来', color: 'var(--hot-ink)' },
+  { key: 'hard' as const, label: '困难', color: 'var(--muted)' },
+  { key: 'good' as const, label: '良好', color: 'var(--ink)' },
+  { key: 'easy' as const, label: '简单', color: 'var(--ink)' },
 ];
 
 const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboard }) => {
@@ -23,11 +23,11 @@ const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboar
       <CheckCircleIcon sx={{ fontSize: 48, mb: 2, color: 'primary.main' }} />
 
       <Typography variant="h4" className="font-kai mb-1">
-        学习完成！
+        本轮完成
       </Typography>
 
       <Typography variant="body2" color="text.secondary" className="mb-4">
-        你太棒了，继续保持！
+        已背写的字按 SM-2 排下次，明天照常来。
       </Typography>
 
       {/* 总卡片数 */}
@@ -35,7 +35,7 @@ const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboar
         {session.cards_studied}
       </Typography>
       <Typography variant="caption" color="text.secondary" className="mb-4">
-        本次学习卡片
+        本次背写字数
       </Typography>
 
       {/* 评分分布 */}
@@ -48,7 +48,7 @@ const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboar
               key={item.key}
               elevation={0}
               className="flex items-center gap-3 px-3 py-2"
-              sx={{ bgcolor: item.bg, border: '1px solid', borderColor: 'divider', borderRadius: '2px' }}
+              sx={{ bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider', borderRadius: 0 }}
             >
               <Typography variant="body2" fontWeight={600} sx={{ color: item.color, minWidth: 36 }}>
                 {item.label}
@@ -78,7 +78,7 @@ const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboar
         onClick={onBackToDashboard}
         sx={{ px: 6, py: 1.5, borderRadius: '2px', fontSize: 16 }}
       >
-        返回 背字帖
+        返回今日
       </Button>
     </Box>
   );

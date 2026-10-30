@@ -38,6 +38,7 @@ import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { fetchDecks, exportDeck, exportAllDecks, exportContentPackage, importApkgFile, importLocalBackup, changePassword, publishDeck } from '@/lib/api';
 import { useAuthStore } from '@/stores/useAuthStore';
 import type { Deck } from '@/types';
+import { APP_VERSION } from '@/core/version';
 
 const SettingsPage: React.FC = () => {
   const { darkMode, setDarkMode, resetToDefaults } = useSettingsStore();
@@ -228,9 +229,19 @@ const SettingsPage: React.FC = () => {
 
   return (
     <Box className="space-y-4 py-4">
-      <Typography variant="h5" className="font-kai">设置</Typography>
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', pb: { xs: 1.5, md: 2 } }}>
+        <Box>
+          <Typography component="h1" sx={{ fontSize: { xs: 30, md: 40 }, fontWeight: 900, letterSpacing: '0.1em', lineHeight: 1 }}>
+            设置
+          </Typography>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.04em', opacity: 0.7, mt: 1 }}>
+            {user?.username ? `账号 ${user.username}` : '未登录'} · v{APP_VERSION}
+          </Typography>
+        </Box>
+      </Box>
 
       {/* 账号管理 */}
+      <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, mb: 0.75 }}>Account · 账号</Typography>
       <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <List disablePadding>
           <ListItem className="py-4">
@@ -307,6 +318,7 @@ const SettingsPage: React.FC = () => {
       </Card>
 
       {/* 外观设置 */}
+      <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, mb: 0.75 }}>Appearance · 外观</Typography>
       <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <List disablePadding>
           <ListItem className="py-4">
@@ -352,6 +364,7 @@ const SettingsPage: React.FC = () => {
       </Card>
 
       {/* 单文件版备份导入（所有登录用户可见） */}
+      <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.16em', textTransform: 'uppercase', opacity: 0.65, mb: 0.75 }}>Backup · 备份</Typography>
       <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <List disablePadding>
           <ListItem className="py-4 flex-col items-start gap-2">

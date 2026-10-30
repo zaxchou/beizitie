@@ -295,13 +295,14 @@ const JiziPage: React.FC = () => {
         }}>
           {hasResults && (
             <Box sx={{
-              bgcolor: alpha(theme.palette.background.paper, 0.85),
-              backdropFilter: 'blur(4px)',
-              px: 1.25, py: 0.25,
-              borderRadius: '2px',
-              fontSize: 12,
-              color: 'text.secondary',
-              boxShadow: 1,
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'text.primary',
+              px: 1.25, py: '2px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10.5,
+              letterSpacing: '0.04em',
+              color: 'text.primary',
               pointerEvents: 'none',
             }}>
               {matchedCount} / {results.length} 字
@@ -313,10 +314,12 @@ const JiziPage: React.FC = () => {
               onClick={() => setToolsExpanded(false)}
               sx={{
                 width: 36, height: 36, minHeight: 0,
-                bgcolor: alpha(theme.palette.background.paper, 0.7),
-                backdropFilter: 'blur(8px)',
-                color: 'text.secondary',
-                '&:hover': { bgcolor: alpha(theme.palette.background.paper, 0.85) },
+                borderRadius: 0,
+                border: '1px solid',
+                borderColor: 'text.primary',
+                bgcolor: 'background.paper',
+                color: 'text.primary',
+                boxShadow: 'none',
               }}
             >
               <CloseIcon sx={{ fontSize: 18 }} />
@@ -329,7 +332,7 @@ const JiziPage: React.FC = () => {
             ] as const).map((btn) => (
               <Paper
                 key={btn.value}
-                elevation={4}
+                elevation={0}
                 onClick={() => setActiveTab(activeTab === btn.value ? null : btn.value)}
                 sx={{
                   pointerEvents: 'auto',
@@ -340,13 +343,12 @@ const JiziPage: React.FC = () => {
                   justifyContent: 'center',
                   gap: 0.25,
                   width: 48,
-                  height: 40,
-                  borderRadius: '2px',
-                  bgcolor: activeTab === btn.value ? 'primary.main' : alpha(theme.palette.background.paper, 0.7),
-                  color: activeTab === btn.value ? '#fff' : 'text.secondary',
-                  backdropFilter: 'blur(8px)',
-                  transition: 'all 0.15s',
-                  '&:hover': { bgcolor: activeTab === btn.value ? 'primary.dark' : alpha(theme.palette.background.paper, 0.85) },
+                  height: 42,
+                  border: '1px solid',
+                  borderColor: 'text.primary',
+                  bgcolor: activeTab === btn.value ? 'text.primary' : 'background.paper',
+                  color: activeTab === btn.value ? 'background.default' : 'text.primary',
+                  transition: 'background-color 0.15s ease, color 0.15s ease',
                 }}
               >
                 {btn.icon}
@@ -365,10 +367,12 @@ const JiziPage: React.FC = () => {
             bottom: 44,
             zIndex: 10,
             width: 36, height: 36, minHeight: 0,
-            bgcolor: alpha(theme.palette.background.paper, 0.7),
-            backdropFilter: 'blur(8px)',
-            color: 'text.secondary',
-            '&:hover': { bgcolor: alpha(theme.palette.background.paper, 0.85) },
+            borderRadius: 0,
+            border: '1px solid',
+            borderColor: 'text.primary',
+            bgcolor: 'background.paper',
+            color: 'text.primary',
+            boxShadow: 'none',
           }}
         >
           <ChevronRightIcon sx={{ fontSize: 20 }} />
@@ -392,11 +396,13 @@ const JiziPage: React.FC = () => {
             flexDirection: 'column', gap: 1.5,
             color: 'text.secondary', pointerEvents: 'none', pb: 10,
           }}>
-            <Typography className="font-kai" sx={{ fontSize: 26, letterSpacing: 6, color: 'text.primary' }}>
+            <Typography sx={{ fontSize: 40, fontWeight: 900, letterSpacing: '0.16em', color: 'text.primary', lineHeight: 1 }}>
               集字
             </Typography>
-            <Typography sx={{ fontSize: 13 }}>输入文字后这里会显示集字预览</Typography>
-            <Typography sx={{ fontSize: 12, color: 'text.disabled' }}>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '0.04em' }}>
+              输入文字后这里会显示集字预览
+            </Typography>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.04em', opacity: 0.6 }}>
               从已核验碑帖里取原字 · 点「文字」开始
             </Typography>
           </Box>
@@ -408,7 +414,7 @@ const JiziPage: React.FC = () => {
         anchor="bottom"
         open={activeTab === 'text'}
         onClose={closeSheet}
-        PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '70vh' } }}
+        PaperProps={{ sx: { borderTopLeftRadius: 0, borderTopRightRadius: 0, borderTop: '2px solid', borderColor: 'text.primary', maxHeight: '70vh' } }}
       >
         <Box sx={{ p: 2 }}>
           <SheetHeader title="编辑文字" onClose={closeSheet} />

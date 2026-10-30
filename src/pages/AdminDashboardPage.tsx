@@ -161,7 +161,7 @@ const AdminDashboardPage: React.FC = () => {
                   <ArrowBackIcon fontSize="small" />
                 </IconButton>
                 <Box sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography variant="h6" className="font-kai" sx={{ fontWeight: 750, lineHeight: 1.2 }}>后台数据</Typography>
+                  <Typography component="h1" sx={{ fontSize: 24, fontWeight: 900, letterSpacing: "0.06em", lineHeight: 1.2 }}>后台数据</Typography>
                 </Box>
               </Stack>
               <Button
