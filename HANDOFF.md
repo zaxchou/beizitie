@@ -482,3 +482,9 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 清理：README 摘除快速开始行、小工具章节、项目结构 mini/build-mini 行、霞鹜文楷致谢；CHANGELOG v1.2.0（未发布）摘除小红书节，补记两条单文件版真实修复（闪卡换卡泄题、缓存图串帧）；删除 mini/ 全套、build-mini.sh、vite.config.mini.ts、mini.html、App.mini.tsx、*.mini.tsx 空实现、package.json build:mini、main.tsx 的 mini-compat 调用；本地产物 dist-mini/beizitie-mini.zip/.cache 已清。
 - 保留：git 历史全量（图集管线、字体收敛、审核排查方法论在补记 9-21）；共享代码中的 __MINI__ 守卫为惰性代码（single 构建期折叠为 false），保留以减小 diff。审核契约沉淀：≤10MiB/≤200 文件/单入口 html/Chrome 61 基线/JSBridge 白名单，若重启移动分发直接翻补记。
 - 若重启移动分发的出口：微信小程序个人主体（工具类目可发，纯离线包几乎零适配）或 PWA。
+
+### 补记 23（2026-10-30）：第七次提审——拒审理由到手，根因定位与存储降级修复
+- 平台终于给了理由：「小工具功能缺陷，可能是页面按钮无法点击，重点排查页面功能完整性」。恢复 91802d2 提交包做系统性诊断：①穷举 API 扫描（含 .finally/trimEnd 等新嫌疑）→ 干净；②模拟 Chrome 61 残缺内核全流程点击 → 全通过；③**IDB 故障注入 → 实锤**：indexedDB.open 抛错/挂起（容器存储禁用、旧连接 onblocked、升级挂起）时启动流程无 try/catch、openDb 无 onblocked/超时、失败连接被 dbPromise 永久记忆 → **永久卡「正在准备字帖…」零按钮**。审核设备跑过全部 6 个版本，存储状态污染完全可能触发。现代浏览器 + 全新 IDB 永不复现，故前六轮漏网。
+- 修复（共用 db.ts + App.mini）：①db.ts 全面重写为 withFallback 双轨——IDB 任何环节失败即降级内存同构实现，功能完整可点、进度不跨会话；②openDb 补同步抛错守卫 / onblocked 拒绝 / 5s 超时兜底；③App.mini 启动包 try/catch → 可重试错误态 + resetStorageFallback（重试时给 IDB 再探测机会）。
+- 实验矩阵全绿：正常路径 ✓ / IDB 抛错 ✓（主屏完整+全流程可点）/ IDB 挂起+残缺内核组合 ✓（5.45s 降级后全流程）。单文件版同样受益（共用 db.ts）。
+- 附带发现：mini.html 标题修复曾因 git add 路径（mini/ 未含根目录 mini.html）漏提交，本次显式纳入。诊断实验现场 C:/temp/xhs-postmortem（worktree @91802d2）。
