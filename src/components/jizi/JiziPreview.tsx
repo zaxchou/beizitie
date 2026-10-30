@@ -164,6 +164,7 @@ const JiziPreview: React.FC<JiziPreviewProps> = ({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          flexDirection: 'column',
           color: 'text.secondary',
           pb: 10,
           gap: 1.5,

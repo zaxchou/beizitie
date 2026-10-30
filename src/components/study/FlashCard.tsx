@@ -63,7 +63,7 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip, fill = fal
 
   return (
     <div className="w-full flex justify-center" style={fill ? { flex: 1, minHeight: 0, flexDirection: 'column' } : undefined}>
-      <div className="relative w-full max-w-lg" style={fill ? { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, margin: '0 auto' } : undefined}>
+      <div className="relative w-full max-w-2xl" style={fill ? { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, margin: '0 auto' } : undefined}>
         {!flipped ? (
           /* 正面：只渲染印刷字，不挂任何答案图（不做 3D 翻转，避免翻面中途露答案） */
           <div

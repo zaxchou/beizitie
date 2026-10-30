@@ -182,7 +182,7 @@ const DashboardPage: React.FC = () => {
                 <CardContent className="flex items-center gap-4 !pb-2">
                   <Box
                     className="flex items-center justify-center w-12 h-12 shrink-0 overflow-hidden"
-                    sx={{ bgcolor: deck.cover_image ? 'transparent' : 'primary.main', color: '#fff' }}
+                    sx={{ bgcolor: deck.cover_image ? 'transparent' : 'primary.main', color: '#fff', borderRadius: '2px' }}
                   >
                     {deck.cover_image ? (
                       <Box component="img" src={getImageUrl(deck.cover_image)} alt={deck.name}
