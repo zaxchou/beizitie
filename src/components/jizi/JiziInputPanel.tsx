@@ -82,7 +82,7 @@ const JiziInputPanel: React.FC<JiziInputPanelProps> = ({
           onChange={(e) => onTextChange(e.target.value)}
           placeholder="输入诗句，如：春江潮水连海平"
           variant="outlined"
-          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+          sx={{ '& .MuiOutlinedInput-root': { borderRadius: '2px' } }}
         />
         <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
           支持中文汉字，标点自动忽略，最多 200 字

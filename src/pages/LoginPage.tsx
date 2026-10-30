@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { FormControlLabel, Checkbox } from '@mui/material';
+import BrandMark from '@/components/common/BrandMark';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { loadProductionFeatures } from '@/lib/productionFeatures';
 import { guestLogin } from '@/lib/api';
@@ -86,12 +87,12 @@ export default function LoginPage() {
         p: 2,
       }}
     >
-      <Card sx={{ maxWidth: 400, width: '100%', boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)' }}>
+      <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Typography variant="h4" sx={{ fontFamily: '"Noto Serif SC", serif', mb: 0.5 }}>
-              {'\u{1F58B}'} 背字帖
-            </Typography>
+            <Box sx={{ mb: 0.5 }}>
+              <BrandMark />
+            </Box>
             <Typography variant="body2" color="text.secondary">
               书法记忆卡
             </Typography>

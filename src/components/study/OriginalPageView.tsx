@@ -25,7 +25,7 @@ const OriginalPageView: React.FC<OriginalPageViewProps> = ({ char, context, onCl
   const [failed, setFailed] = useState(false);
   // 整页图走馆方 IIIF（有并发限流 403/429）：失败给明确提示，避免整块黑图无解释
   return (
-    <Dialog open onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: 2 } }}>
+    <Dialog open onClose={onClose} maxWidth="lg" fullWidth PaperProps={{ sx: { borderRadius: '2px' } }}>
       <DialogTitle sx={{ pb: 1, display: 'flex', alignItems: 'baseline', gap: 1.5 }}>
         <Typography component="span" className="font-kai" sx={{ fontSize: 30, fontWeight: 700, lineHeight: 1 }}>
           {char}
@@ -41,14 +41,14 @@ const OriginalPageView: React.FC<OriginalPageViewProps> = ({ char, context, onCl
       </DialogTitle>
       <DialogContent sx={{ px: 2, pb: 2 }}>
         {failed ? (
-          <Box sx={{ py: 6, textAlign: 'center', bgcolor: '#211d18', borderRadius: 1 }}>
+          <Box sx={{ py: 6, textAlign: 'center', bgcolor: '#211d18', borderRadius: '2px' }}>
             <Typography sx={{ color: '#f4eee0', mb: 0.5 }}>整页原拓加载失败</Typography>
             <Typography variant="caption" sx={{ color: 'rgba(244,238,224,0.6)' }}>
               图片源（上海图书馆 IIIF）可能限流，请稍后重试
             </Typography>
           </Box>
         ) : (
-        <Box sx={{ position: 'relative', borderRadius: 1, overflow: 'hidden', bgcolor: '#211d18' }}>
+        <Box sx={{ position: 'relative', borderRadius: '2px', overflow: 'hidden', bgcolor: '#211d18' }}>
           <Box
             component="img"
             src={context.p}
@@ -69,7 +69,7 @@ const OriginalPageView: React.FC<OriginalPageViewProps> = ({ char, context, onCl
                 width: `${(context.w / natural.w) * 100}%`,
                 height: `${(context.h / natural.h) * 100}%`,
                 border: '2px solid #e0b25f',
-                borderRadius: 0.5,
+                borderRadius: '2px',
                 boxSizing: 'border-box',
                 boxShadow: '0 0 0 9999px rgba(0,0,0,0.42)',
               }}

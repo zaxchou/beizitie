@@ -118,7 +118,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
       onClose={onClose}
       maxWidth="md"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
+      PaperProps={{ sx: { borderRadius: '2px', overflow: 'hidden' } }}
     >
       {/* 标题栏 */}
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 0 }}>
@@ -156,7 +156,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                   aspectRatio: '1/1',
                   maxWidth: isMobile ? 200 : undefined,
                   mx: isMobile ? 'auto' : undefined,
-                  borderRadius: 1.5,
+                  borderRadius: '2px',
                   overflow: 'hidden',
                   bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'grey.50',
                   boxShadow: (t) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',
@@ -281,7 +281,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                         position: 'relative',
                         width: 100,
                         height: 100,
-                        borderRadius: 1,
+                        borderRadius: '2px',
                         overflow: 'hidden',
                         bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'grey.50',
                         boxShadow: (t) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',
@@ -308,7 +308,7 @@ const DeckDetailDialog: React.FC<DeckDetailDialogProps> = ({ open, deck, onClose
                         <Box
                           sx={{
                             position: 'absolute', top: 2, right: 2,
-                            px: 0.4, py: '1px', borderRadius: 0.5,
+                            px: 0.4, py: '1px', borderRadius: '2px',
                             bgcolor: 'rgba(224,178,95,0.92)', color: '#3b2a10',
                             fontSize: 9, fontWeight: 700, lineHeight: 1.3,
                           }}

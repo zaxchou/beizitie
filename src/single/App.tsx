@@ -86,7 +86,7 @@ export default function SingleApp() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ pb: 'calc(64px + env(safe-area-inset-bottom, 0px))', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ pb: studyingDeck ? 0 : 'calc(64px + env(safe-area-inset-bottom, 0px))', minHeight: '100vh', bgcolor: 'background.default' }}>
         {studyingDeck ? (
           <StudyPage
             studyingDeck={studyingDeck}
@@ -140,7 +140,7 @@ export default function SingleApp() {
                   sx={{
                     flex: 1, py: 1, cursor: 'pointer', textAlign: 'center',
                     color: tab === t.key ? 'primary.main' : 'text.secondary',
-                    bgcolor: tab === t.key ? 'action.selected' : 'transparent',
+                    bgcolor: 'transparent',
                   }}
                 >
                   {t.icon}

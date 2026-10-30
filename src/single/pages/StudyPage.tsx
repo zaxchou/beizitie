@@ -142,46 +142,47 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
   const totalToday = queue.length;
 
   return (
-    <Box className="space-y-3">
+    <Box className="space-y-3" sx={{ maxWidth: 560, mx: 'auto', px: 2, pb: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* 顶栏 */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
         <Button
           size="small" startIcon={<ArrowBackIcon />}
           onClick={() => (rated > 0 && !sessionDone ? setConfirmExit(true) : onExitStudy())}
-          sx={{ borderRadius: 2 }}
+          sx={{ borderRadius: '2px' }}
         >
           {exitLabel}
         </Button>
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Typography sx={{ fontWeight: 600, fontSize: 15 }} noWrap>{studyingDeck.name}</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>{mmss}</Typography>
-          {!done && (
-            <LinearProgress
-              variant="determinate"
-              value={totalToday ? (index / totalToday) * 100 : 100}
-              sx={{ height: 4, borderRadius: 2 }}
-            />
-          )}
+        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
+          <Typography className="font-kai" sx={{ fontSize: 17 }} noWrap>{studyingDeck.name}</Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', fontVariantNumeric: 'tabular-nums' }}>{mmss}</Typography>
         </Box>
       </Box>
 
+      {!done && (
+        <LinearProgress
+          variant="determinate"
+          value={totalToday ? (index / totalToday) * 100 : 100}
+          sx={{ height: 4, borderRadius: '2px', width: '100%' }}
+        />
+      )}
+
       {done ? (
-        <MuiCard variant="outlined" sx={{ borderRadius: 2, textAlign: 'center', py: 6 }}>
+        <MuiCard variant="outlined" sx={{ borderRadius: '2px', textAlign: 'center', py: 6 }}>
           <CardContent>
-            <Typography className="font-kai" sx={{ fontSize: 44, mb: 1 }}>🎉</Typography>
+            <Typography className="font-kai" sx={{ fontSize: 40, mb: 1, color: 'text.disabled' }}>畢</Typography>
             <Typography sx={{ fontWeight: 700, fontSize: 18, mb: 0.5 }}>
               {queue.length === 0 ? '今日无需学习' : '本轮完成'}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               {queue.length === 0 ? '这张帖今天没有到期的卡片' : `共完成 ${rated} 张`}
             </Typography>
-            <Button variant="contained" onClick={onExitStudy} sx={{ borderRadius: 2 }}>
+            <Button variant="contained" onClick={onExitStudy} sx={{ borderRadius: '2px' }}>
               返回{exitLabel}
             </Button>
           </CardContent>
         </MuiCard>
       ) : (
-        <>
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <Chip label={`${index + 1} / ${totalToday}`} size="small" variant="outlined" />
             <Chip
@@ -193,16 +194,22 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
           </Box>
 
           {/* key=卡id：换卡重挂载，不做翻回动画（动画前半段背面会泄露下一张答案），与在线版一致 */}
-          <FlashCard key={current.card.id} card={progress!} flipped={flipped} onFlip={() => setFlipped((f) => !f)} />
+          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', my: 1.5 }}>
+            <FlashCard key={current.card.id} card={progress!} flipped={flipped} onFlip={() => setFlipped((f) => !f)} fill />
+          </Box>
 
-          {flipped ? (
-            <RatingButtons onRate={handleRate} card={{ ease: current.card.ease, interval: current.card.interval, repetitions: current.card.repetitions }} />
-          ) : (
-            <Button fullWidth variant="contained" size="large" onClick={() => setFlipped(true)} sx={{ borderRadius: 2 }}>
-              显示字帖原字
-            </Button>
-          )}
-        </>
+          {/* 动作区高度固定：评分是 2×2（124px），揭晓前后卡面高度不再跳 */}
+          <Box sx={{ minHeight: { xs: 124, sm: 58 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+            {flipped ? (
+              <RatingButtons onRate={handleRate} card={{ ease: current.card.ease, interval: current.card.interval, repetitions: current.card.repetitions }} />
+            ) : (
+              <Button fullWidth variant="contained" size="large" onClick={() => setFlipped(true)}
+                sx={{ borderRadius: '2px', height: 58 }}>
+                显示字帖原字
+              </Button>
+            )}
+          </Box>
+        </Box>
       )}
 
       <ConfirmDialog

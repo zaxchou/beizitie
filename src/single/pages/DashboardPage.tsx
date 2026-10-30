@@ -39,14 +39,14 @@ function StatCard({ label, value, unit }: { label: string; value: number | strin
   return (
     <Box
       sx={{
-        p: 1.2, borderRadius: 2, textAlign: 'center',
+        p: 1.4, borderRadius: '2px', textAlign: 'center',
         bgcolor: 'background.paper',
-        boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08), 0px 1px 2px rgba(0,0,0,0.06)',
+        border: '1px solid', borderColor: 'divider',
       }}
     >
-      <Typography sx={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
+      <Typography className="font-kai" sx={{ fontSize: 26, lineHeight: 1.15, fontVariantNumeric: 'tabular-nums' }}>
         {value}
-        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.3 }}>
+        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.4, fontSize: 12 }}>
           {unit}
         </Typography>
       </Typography>
@@ -116,14 +116,14 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
         <Typography color="text.secondary">加载中…</Typography>
       ) : decks.length === 0 ? (
         <Box sx={{ textAlign: 'center', py: 6 }}>
-          <Typography className="font-kai" sx={{ fontSize: 40, mb: 1 }}>🖌</Typography>
+          <Typography className="font-kai" sx={{ fontSize: 40, mb: 1, color: 'text.disabled' }}>帖</Typography>
           <Typography color="text.secondary" sx={{ mb: 2 }}>
             创建你的第一个书法记忆牌组，开始学习之旅吧！
           </Typography>
           {__MINI__ ? (
             <Typography color="text.secondary" sx={{ fontSize: 13 }}>内置字帖准备中…</Typography>
           ) : (
-            <Button variant="contained" onClick={() => onChangeTab('market')} sx={{ borderRadius: 2 }}>
+            <Button variant="contained" onClick={() => onChangeTab('market')} sx={{ borderRadius: '2px' }}>
               去市场订阅碑帖
             </Button>
           )}
@@ -134,10 +134,10 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
             d.totalCards > 0 ? Math.round((d.learnedCount / d.totalCards) * 100) : 0;
           const paused = !!d.settings.paused;
           return (
-            <Card key={d.id} variant="outlined" sx={{ borderRadius: 2 }}>
+            <Card key={d.id} variant="outlined" sx={{ borderRadius: '2px' }}>
               <CardContent sx={{ pb: 0.5, '&:last-child': { pb: 0.5 } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography noWrap sx={{ fontWeight: 600, fontSize: 15, flex: 1 }}>
+                  <Typography noWrap className="font-kai" sx={{ fontSize: 17, flex: 1 }}>
                     {d.name}
                   </Typography>
                   <Typography variant="body2" color="text.secondary" fontWeight={500}>
@@ -148,7 +148,7 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
                     size="small"
                     sx={{
                       fontSize: 11, height: 22,
-                      bgcolor: reviewProgress > 0 ? 'primary.main' : 'action.hover',
+                      bgcolor: reviewProgress > 0 ? 'primary.main' : 'var(--surface)',
                       color: reviewProgress > 0 ? '#fff' : 'text.secondary',
                     }}
                   />
@@ -156,7 +156,7 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
                 <LinearProgress
                   variant="determinate"
                   value={reviewProgress}
-                  sx={{ height: 6, borderRadius: 2, bgcolor: 'action.hover', '& .MuiLinearProgress-bar': { borderRadius: 2 } }}
+                  sx={{ height: 6, borderRadius: '2px', bgcolor: 'action.hover', '& .MuiLinearProgress-bar': { borderRadius: '2px' } }}
                 />
               </CardContent>
               <Box sx={{ px: 2, pt: 0, pb: 0 }}>
@@ -176,12 +176,14 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
                   onClick={() => !paused && d.totalCards > 0 && onStudy(d.id, d.name)}
                   sx={{
                     display: 'inline-flex', alignItems: 'center', gap: 0.5,
-                    px: 1.5, py: 0.4, borderRadius: 99, fontSize: 13, fontWeight: 600,
+                    px: 1.5, py: 0.4, borderRadius: '2px', fontSize: 13, fontWeight: 600,
                     color: paused || d.totalCards === 0 ? 'text.disabled' : 'primary.main',
-                    bgcolor: paused || d.totalCards === 0 ? 'action.disabledBackground' : 'rgba(62,181,168,0.08)',
+                    bgcolor: 'transparent',
+                    border: '1px solid',
+                    borderColor: paused || d.totalCards === 0 ? 'divider' : 'primary.main',
                     cursor: paused || d.totalCards === 0 ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.15s', userSelect: 'none',
-                    '&:hover': paused || d.totalCards === 0 ? {} : { bgcolor: 'primary.main', color: '#fff' },
+                    transition: 'background-color 0.15s ease', userSelect: 'none',
+                    '&:hover': paused || d.totalCards === 0 ? {} : { bgcolor: 'primary.main', color: 'primary.contrastText' },
                   }}
                 >
                   <PlayArrowIcon sx={{ fontSize: 15 }} />

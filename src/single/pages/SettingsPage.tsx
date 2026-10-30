@@ -53,7 +53,7 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
       {msg && <Alert severity={msg.sev} onClose={() => setMsg(null)}>{msg.text}</Alert>}
 
       {/* 外观 */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 1.5 }}>外观</Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -74,7 +74,7 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
 
       {/* 字图离线缓存（mini 全字图已内置，无网络缓存概念） */}
       {!__MINI__ && (
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Box>
@@ -96,7 +96,7 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
       )}
 
       {/* 关于 */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 0.5 }}>关于</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.8 }}>
@@ -111,7 +111,7 @@ export const SettingsPage: React.FC<Props> = ({ darkMode, onDarkModeChange, onCh
             <br />
             {__MINI__
               ? '学习进度自动保存'
-              : <>学习记录仅存本机 · <a href="https://github.com/zaxchou/beizitie/releases" target="_blank" rel="noreferrer">GitHub · 更新日志</a></>}
+              : <>学习记录仅存本机 · <a href="https://github.com/zaxchou/beizitie/releases" target="_blank" rel="noreferrer" style={{ color: 'var(--vermilion)' }}>GitHub · 更新日志</a></>}
           </Typography>
         </CardContent>
       </Card>

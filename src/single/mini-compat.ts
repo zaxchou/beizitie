@@ -62,20 +62,11 @@ function installArrayPolyfills(): void {
 }
 
 /**
- * mini 专用运行时样式：字体收敛为系统黑体/宋体（诊断版）。
- * 不打包任何字体文件；全局强制黑体，.font-kai 装饰位用宋体。
+ * 字体收敛已改为构建期处理（build-mini.sh 在 style.css / app.js 里把 Noto/Roboto/楷体
+ * 等名字替换成系统黑体、宋体），运行期不再用 `*{font-family:...!important}` 强制全局无衬线——
+ * 那条规则会把帖名、数字、问题句的宋体一起压掉，帖页排版就只剩一种字体。
  */
-function injectMiniStyles(): void {
-  const style = document.createElement('style');
-  style.textContent = [
-    "*{font-family:'SimHei','黑体','Microsoft YaHei',sans-serif !important}",
-    ".font-kai{font-family:'SimSun','宋体','Songti SC',serif !important}",
-  ].join('\n');
-  document.head.appendChild(style);
-}
-
 export function installMiniCompat(): void {
   installArrayPolyfills();
-  injectMiniStyles();
   installFlexGapPolyfill();
 }

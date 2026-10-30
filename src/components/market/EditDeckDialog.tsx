@@ -213,7 +213,7 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                 <Box
                   sx={{
-                    width: 100, height: 70, borderRadius: 1, overflow: 'hidden',
+                    width: 100, height: 70, borderRadius: '2px', overflow: 'hidden',
                     bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'grey.100',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     boxShadow: (t) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',

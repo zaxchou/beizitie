@@ -74,7 +74,7 @@ export const DataPageMini: React.FC<{ refreshKey: number }> = ({ refreshKey }) =
           <Box
             key={x.label}
             sx={{
-              p: 1.2, borderRadius: 2, textAlign: 'center', bgcolor: 'background.paper',
+              p: 1.2, borderRadius: '2px', textAlign: 'center', bgcolor: 'background.paper',
               boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08), 0px 1px 2px rgba(0,0,0,0.06)',
             }}
           >
@@ -91,7 +91,7 @@ export const DataPageMini: React.FC<{ refreshKey: number }> = ({ refreshKey }) =
         ))}
       </Box>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>近 14 天学习量</Typography>
           <Box sx={{ display: 'flex', alignItems: 'flex-end', height: 120, mx: 0.5 }}>
@@ -116,7 +116,7 @@ export const DataPageMini: React.FC<{ refreshKey: number }> = ({ refreshKey }) =
         </CardContent>
       </Card>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>按帖进度</Typography>
           {decks.length === 0 ? (

@@ -175,13 +175,13 @@ const DashboardPage: React.FC = () => {
               <Card
                 key={deck.id}
                 variant="outlined"
-                className="cursor-pointer hover:shadow-md transition-shadow rounded-lg"
-                sx={{ borderColor: 'divider' }}
+                className="cursor-pointer"
+                sx={{ borderColor: 'divider', '&:hover': { borderColor: 'text.disabled' } }}
                 onClick={() => navigate(`/study/${deck.id}`)}
               >
                 <CardContent className="flex items-center gap-4 !pb-2">
                   <Box
-                    className="flex items-center justify-center w-12 h-12 rounded-lg shrink-0 overflow-hidden"
+                    className="flex items-center justify-center w-12 h-12 shrink-0 overflow-hidden"
                     sx={{ bgcolor: deck.cover_image ? 'transparent' : 'primary.main', color: '#fff' }}
                   >
                     {deck.cover_image ? (
@@ -219,9 +219,9 @@ const DashboardPage: React.FC = () => {
                         value={reviewProgress}
                         sx={{
                           height: 6,
-                          borderRadius: 2,
+                          borderRadius: '2px',
                           bgcolor: 'action.hover',
-                          '& .MuiLinearProgress-bar': { borderRadius: 2 },
+                          '& .MuiLinearProgress-bar': { borderRadius: '2px' },
                         }}
                       />
                     )}
@@ -229,7 +229,7 @@ const DashboardPage: React.FC = () => {
                 </CardContent>
                 <Box className="px-4 pt-0 pb-1">
                   {deck.paused_at ? (
-                    <Chip label="已暂停" size="small" color="warning" variant="outlined" icon={<PauseCircleIcon />}
+                    <Chip label="已暂停" size="small" variant="outlined" icon={<PauseCircleIcon />}
                       sx={{ fontSize: 11, height: 22 }} />
                   ) : (
                     <Typography variant="caption" color="text.secondary">
@@ -246,17 +246,19 @@ const DashboardPage: React.FC = () => {
                       gap: 0.5,
                       px: 1.5,
                       py: 0.4,
-                      borderRadius: 99,
+                      borderRadius: '2px',
                       fontSize: 13,
                       fontWeight: 600,
                       color: deck.card_count === 0 || deck.paused_at ? 'text.disabled' : 'primary.main',
-                      bgcolor: deck.card_count === 0 || deck.paused_at ? 'action.disabledBackground' : 'rgba(62,181,168,0.08)',
+                      bgcolor: 'transparent',
+                      border: '1px solid',
+                      borderColor: deck.card_count === 0 || deck.paused_at ? 'divider' : 'primary.main',
                       cursor: deck.card_count === 0 || deck.paused_at ? 'not-allowed' : 'pointer',
-                      transition: 'all 0.15s',
+                      transition: 'background-color 0.15s ease',
                       userSelect: 'none',
                       '&:hover': {
-                        bgcolor: deck.card_count === 0 || deck.paused_at ? 'action.disabledBackground' : 'primary.main',
-                        color: deck.card_count === 0 || deck.paused_at ? 'text.disabled' : '#fff',
+                        bgcolor: deck.card_count === 0 || deck.paused_at ? 'transparent' : 'primary.main',
+                        color: deck.card_count === 0 || deck.paused_at ? 'text.disabled' : 'primary.contrastText',
                       },
                       pointerEvents: deck.card_count === 0 || deck.paused_at ? 'none' : 'auto',
                     }}
@@ -275,10 +277,10 @@ const DashboardPage: React.FC = () => {
                   </Button>
                   <Button
                     size="small"
-                    color={deck.paused_at ? 'success' : 'warning'}
+                    color="inherit"
                     startIcon={deck.paused_at ? <PlayCircleIcon /> : <PauseCircleIcon />}
                     onClick={(e) => { e.stopPropagation(); setPauseTarget({ id: deck.id, name: deck.name, paused: !deck.paused_at }); }}
-                    sx={{ textTransform: 'none', minWidth: 0 }}
+                    sx={{ textTransform: 'none', minWidth: 0, color: 'text.secondary' }}
                   >
                     {deck.paused_at ? '恢复' : '暂停'}
                   </Button>

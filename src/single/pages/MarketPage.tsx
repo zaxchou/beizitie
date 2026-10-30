@@ -203,23 +203,24 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
             if (featured.length === 0) return null;
             return (
               <Box>
-                <Typography sx={{ fontWeight: 600, fontSize: 13, mb: 0.75 }}>
-                  ✨ 编辑精选 <Typography component="span" variant="caption" color="text.secondary">最值得收藏的书法字帖</Typography>
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.75 }}>
+                  <Typography className="font-kai" sx={{ fontSize: 16 }}>编辑精选</Typography>
+                  <Typography variant="caption" color="text.secondary">最值得收藏的书法字帖</Typography>
+                </Box>
                 <Box sx={{ display: 'flex', gap: 1, overflowX: 'auto', pb: 1, '&::-webkit-scrollbar': { height: 5 }, '&::-webkit-scrollbar-thumb': { bgcolor: 'divider', borderRadius: 3 } }}>
                   {featured.map((z) => (
                     <Box key={z.id} onClick={() => setDetailZuopin(z)} sx={{ flexShrink: 0, width: 104, cursor: 'pointer' }}>
-                      <Box sx={{ position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: 1.5, overflow: 'hidden', bgcolor: 'grey.100', boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)' }}>
+                      <Box sx={{ position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: '2px', overflow: 'hidden', bgcolor: 'var(--surface)', border: '1px solid', borderColor: 'divider' }}>
                         {z.c.startsWith('http') ? (
                           <Box component="img" src={z.c} alt={z.n} loading="lazy" referrerPolicy="no-referrer"
                             sx={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e: any) => { e.currentTarget.style.display = 'none'; }} />
                         ) : null}
-                        <Box sx={{ position: 'absolute', top: 3, left: 3, px: 0.4, py: '1px', borderRadius: 0.5, bgcolor: 'rgba(156,39,176,0.85)', color: '#fff', fontSize: 8, fontWeight: 700 }}>
+                        <Box sx={{ position: 'absolute', top: 3, left: 3, px: 0.4, py: '1px', borderRadius: '2px', bgcolor: 'primary.main', color: 'primary.contrastText', fontSize: 8, fontWeight: 700 }}>
                           荐
                         </Box>
                       </Box>
-                      <Typography noWrap sx={{ fontSize: 9, textAlign: 'center', mt: 0.25 }}>{z.n}</Typography>
+                      <Typography noWrap className="font-kai" sx={{ fontSize: 12, lineHeight: 1.3, mt: 0.4 }}>{z.n}</Typography>
                     </Box>
                   ))}
                 </Box>
@@ -240,10 +241,10 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                   <Box
                     onClick={() => setDetailZuopin(z)}
                     sx={{
-                      position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: 1.5,
-                      overflow: 'hidden', bgcolor: 'grey.100', cursor: 'pointer',
-                      boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)',
-                      '&:hover': { boxShadow: '0px 0px 0px 2px rgba(25,118,210,0.5)' },
+                      position: 'relative', width: '100%', aspectRatio: '1/1', borderRadius: '2px',
+                      overflow: 'hidden', bgcolor: 'var(--surface)', cursor: 'pointer',
+                      border: '1px solid', borderColor: 'divider',
+                      '&:hover': { borderColor: 'primary.main' },
                     }}
                   >
                     {z.c.startsWith('http') ? (
@@ -262,10 +263,10 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                     <Box
                       sx={{
                         position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        bgcolor: 'rgba(20,20,20,0.06)',
+                        bgcolor: 'transparent',
                       }}
                     >
-                      <Typography className="font-kai" sx={{ fontSize: 42, color: 'rgba(0,0,0,0.14)', fontWeight: 700 }}>
+                      <Typography className="font-kai" sx={{ fontSize: 42, color: 'var(--line-strong)', fontWeight: 400 }}>
                         {z.s[0] || '帖'}
                       </Typography>
                     </Box>
@@ -274,9 +275,11 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                       return sm ? (
                         <Box
                           sx={{
-                            position: 'absolute', top: 4, left: 4, px: 0.5, py: '1px', borderRadius: 1,
-                            bgcolor: sm.tone === 'museum' ? 'rgba(224,178,95,0.92)' : 'rgba(80,96,120,0.66)',
-                            color: sm.tone === 'museum' ? '#3b2a10' : '#fff',
+                            position: 'absolute', top: 4, left: 4, px: 0.5, py: '1px', borderRadius: '2px',
+                            bgcolor: 'var(--paper)',
+                            color: sm.tone === 'museum' ? 'primary.main' : 'var(--muted)',
+                            border: '1px solid',
+                            borderColor: sm.tone === 'museum' ? 'primary.main' : 'var(--line)',
                             fontSize: { xs: 8, sm: 9 }, fontWeight: 700, lineHeight: 1.2,
                           }}
                         >
@@ -286,8 +289,8 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                     })()}
                     <Box
                       sx={{
-                        position: 'absolute', top: 4, right: 4, px: 0.5, py: '1px', borderRadius: 1,
-                        bgcolor: 'rgba(20,20,20,0.55)', color: '#fff', fontSize: 9, fontWeight: 700,
+                        position: 'absolute', top: 4, right: 4, px: 0.5, py: '1px', borderRadius: '2px',
+                        bgcolor: 'var(--paper)', color: 'var(--muted)', border: '1px solid var(--line)', fontSize: 9, fontWeight: 600,
                       }}
                     >
                       {z.s[0]}
@@ -295,16 +298,17 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                   </Box>
                   <Typography
                     noWrap onClick={() => setDetailZuopin(z)}
-                    sx={{ mt: 0.5, textAlign: 'center', fontSize: { xs: 10, sm: 11 }, fontWeight: 500, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+                    className="font-kai"
+                    sx={{ mt: 0.6, fontSize: { xs: 12, sm: 13 }, lineHeight: 1.3, cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
                   >
                     {z.n}
                   </Typography>
-                  <Typography noWrap sx={{ textAlign: 'center', fontSize: 9, color: 'text.secondary' }}>
+                  <Typography noWrap sx={{ fontSize: 10, color: 'text.secondary', lineHeight: 1.4 }}>
                     {[z.d, z.a].filter(Boolean).join('·')}
                   </Typography>
-                  <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.25 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.25 }}>
                     {isSub ? (
-                      <Typography component="span" sx={{ fontSize: 10, fontWeight: 600, color: 'success.main' }}>
+                      <Typography component="span" sx={{ fontSize: 10, fontWeight: 600, color: 'text.secondary' }}>
                         已加入
                       </Typography>
                     ) : pendingId === z.id ? (
@@ -325,7 +329,7 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
           </Box>
           {zuopins.length < total && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-              <Button variant="outlined" disabled={loadingMore} onClick={async () => { offsetRef.current += PAGE_SIZE; await load(offsetRef.current); }} sx={{ borderRadius: 2 }}>
+              <Button variant="outlined" disabled={loadingMore} onClick={async () => { offsetRef.current += PAGE_SIZE; await load(offsetRef.current); }} sx={{ borderRadius: '2px' }}>
                 {loadingMore ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
                 {loadingMore ? '加载中…' : `加载更多（${zuopins.length}/${total}）`}
               </Button>

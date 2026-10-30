@@ -98,7 +98,7 @@ const JiziCell: React.FC<JiziCellProps> = ({
               color: badgeColor,
               bgcolor: badgeBg,
               px: 0.3,
-              borderRadius: 0.5,
+              borderRadius: '2px',
               lineHeight: 1.2,
               pointerEvents: 'none',
             }}

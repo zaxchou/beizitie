@@ -5,7 +5,8 @@ export interface ActivityDay { date: string; cards_studied: number; new_cards_le
 export interface ActivityCalendarProps { data: ActivityDay[]; weeks?: number; /** 紧凑模式：去掉月份/星期/图例文字 */ compact?: boolean; }
 
 function getLevel(c: number) { if (c === 0) return 0; if (c < 5) return 1; if (c < 15) return 2; if (c < 30) return 3; return 4; }
-function getColor(lv: number, d: boolean) { return d ? ['#2d2d2d','#1e3a5f','#2c5dab','#4a7fd6','#7ba9f0'][lv] : ['#ebedf0','#c6dbef','#7ba9f0','#4a7fd6','#2c5dab'][lv]; }
+// 学习量热力图：0 级用纸色，1–4 级走朱红由浅到深（不再是蓝色梯度）
+function getColor(lv: number, d: boolean) { return d ? ['#2a261f','#4a2f27','#6b3b2e','#955143','#c46a58'][lv] : ['#ece4d8','#e2cbc0','#cf9d8d','#b2705d','#8b3a30'][lv]; }
 function fmt(d: Date) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
 const DAY = ['一','','三','','五','','日'];
@@ -101,7 +102,7 @@ const ActivityCalendar: React.FC<ActivityCalendarProps> = ({ data, weeks = 13, c
           sx={{
             position: 'fixed', bottom: 40, left: '50%', transform: 'translateX(-50%)',
             bgcolor: dark ? '#333' : '#fff', color: 'text.primary',
-            px: 2, py: 0.5, borderRadius: 1, fontSize: '12px', whiteSpace: 'pre-line',
+            px: 2, py: 0.5, borderRadius: '2px', fontSize: '12px', whiteSpace: 'pre-line',
             boxShadow: 2, zIndex: 10, pointerEvents: 'none',
           }}
         >{tip}</Typography>

@@ -231,7 +231,7 @@ const SettingsPage: React.FC = () => {
       <Typography variant="h5" className="font-kai">设置</Typography>
 
       {/* 账号管理 */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <List disablePadding>
           <ListItem className="py-4">
             <ListItemText
@@ -307,7 +307,7 @@ const SettingsPage: React.FC = () => {
       </Card>
 
       {/* 外观设置 */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <List disablePadding>
           <ListItem className="py-4">
             <ListItemText
@@ -352,7 +352,7 @@ const SettingsPage: React.FC = () => {
       </Card>
 
       {/* 单文件版备份导入（所有登录用户可见） */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <List disablePadding>
           <ListItem className="py-4 flex-col items-start gap-2">
             <ListItemText
@@ -384,7 +384,7 @@ const SettingsPage: React.FC = () => {
 
       {/* APKG 导入/导出（仅管理员可见） */}
       {user?.role === 'admin' && (
-        <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <Card variant="outlined" sx={{ borderRadius: '2px' }}>
           <List disablePadding>
             <ListItem className="py-4 flex-col items-start gap-2">
               <ListItemText
@@ -453,7 +453,7 @@ const SettingsPage: React.FC = () => {
                 <LinearProgress
                   variant="determinate"
                   value={importProgress}
-                  sx={{ mt: 1, borderRadius: 1, height: 6 }}
+                  sx={{ mt: 1, borderRadius: '2px', height: 6 }}
                 />
               )}
             </ListItem>

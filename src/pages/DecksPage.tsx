@@ -169,7 +169,7 @@ const DecksPage: React.FC = () => {
 
       {/* 创建牌组输入区（仅管理员） */}
       {isAdmin && (
-      <Card variant="outlined" className="p-4" sx={{ borderRadius: 2, bgcolor: 'background.paper' }}>
+      <Card variant="outlined" className="p-4" sx={{ borderRadius: '2px', bgcolor: 'background.paper' }}>
         <Box className="flex gap-2">
           <TextField
             label="新牌组名称"
@@ -203,7 +203,7 @@ const DecksPage: React.FC = () => {
           description="点击上方按钮创建你的第一个书法记忆牌组"
         />
       ) : (
-        <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <Card variant="outlined" sx={{ borderRadius: '2px' }}>
           <List disablePadding>
             {decks.map((deck, index) => {
               const isPublished = !!deck.published_at;

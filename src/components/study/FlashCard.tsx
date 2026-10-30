@@ -9,6 +9,8 @@ export interface FlashCardProps {
   card: Card;
   flipped: boolean;
   onFlip: () => void;
+  /** 填满父容器高度（学习页的字幅区用）；默认按内容高度 */
+  fill?: boolean;
 }
 
 /** 安全渲染 HTML（仅允许 img/br/b/i/u/p/div/span，过滤 script/onerror/onclick 等） */
@@ -25,7 +27,7 @@ function sanitizeHtml(text: string): string {
     .replace(/expression\s*\(/gi, '');
 }
 
-const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
+const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip, fill = false }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
   const [viewingOriginal, setViewingOriginal] = useState(false);
@@ -44,11 +46,12 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
     measure();
     window.addEventListener('resize', measure);
     return () => window.removeEventListener('resize', measure);
-  }, [atlas]);
+  }, [atlas, flipped]);
 
+  // 卡面走主题令牌，深浅色与整站同一套纸墨
   const faceStyle: React.CSSProperties = {
-    backgroundColor: isDark ? '#2d2d2d' : '#fff',
-    borderColor: isDark ? '#444' : '#e5e7eb',
+    backgroundColor: theme.palette.background.paper,
+    borderColor: theme.palette.divider,
   };
 
   // 判断文本是否包含 HTML 标签 → 需要 HTML 渲染
@@ -59,34 +62,38 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
   const backSanitized = useMemo(() => sanitizeHtml(card.back_text), [card.back_text]);
 
   return (
-    <div className="perspective-1000 w-full flex justify-center" style={{ perspective: '800px' }}>
-      <div
-        className="relative w-full max-w-lg cursor-pointer select-none"
-        style={{ minHeight: '280px' }}
-        onClick={onFlip}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onFlip(); } }}
-        aria-label={flipped ? '点击翻回正面' : '点击翻到背面'}
-      >
-        <div
-          className="preserve-3d relative w-full h-64"
-          style={{ minHeight: '280px', transition: 'transform 0.5s', transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-        >
-          {/* 正面 */}
-          <div className="backface-hidden absolute inset-0 flex items-center justify-center rounded-lg border" style={faceStyle}>
+    <div className="w-full flex justify-center" style={fill ? { flex: 1, minHeight: 0, flexDirection: 'column' } : undefined}>
+      <div className="relative w-full max-w-lg" style={fill ? { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, margin: '0 auto' } : undefined}>
+        {!flipped ? (
+          /* 正面：只渲染印刷字，不挂任何答案图（不做 3D 翻转，避免翻面中途露答案） */
+          <div
+            className="flex items-center justify-center cursor-pointer select-none"
+            style={{ ...faceStyle, border: '1px solid', borderRadius: '2px', minHeight: 280, padding: 16, flex: fill ? 1 : undefined }}
+            onClick={onFlip}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onFlip(); } }}
+            aria-label="点击查看这个字的原帖"
+          >
             {frontHasHtml ? (
               <span className="card-front-text text-center px-4 break-all" dangerouslySetInnerHTML={{ __html: frontSanitized }} />
             ) : (
-              <span className="card-front-text text-center px-4 break-all">{card.front_text}</span>
+              <span className="card-front-text text-center px-4 break-all" style={{ fontSize: card.front_text.length <= 2 ? 'clamp(72px, 22vh, 176px)' : undefined }}>{card.front_text}</span>
             )}
           </div>
-
-          {/* 背面：优先显示图片 */}
+        ) : (
+          /* 背面：揭晓后才挂载，图片才开始请求 */
           <div
             ref={atlasBoxRef}
-            className="backface-hidden rotate-y-180 absolute inset-0 flex items-center justify-center rounded-lg border card-image-back overflow-hidden"
-            style={{ backgroundColor: isDark ? '#2d2d2d' : '#fafafa', borderColor: isDark ? '#444' : '#e5e7eb' }}
+            className="relative flex items-center justify-center overflow-hidden"
+            style={{
+              backgroundColor: isDark ? theme.palette.background.default : theme.palette.background.paper,
+              border: '1px solid',
+              borderColor: theme.palette.divider,
+              borderRadius: '2px',
+              minHeight: 280,
+              flex: fill ? 1 : undefined,
+            }}
           >
             {card.image_url ? (
               atlas ? (
@@ -101,7 +108,12 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
                   }}
                 />
               ) : (
-                <img src={getImageUrl(card.image_url)} alt={`书法：${card.front_text}`} className="object-contain max-h-full max-w-full p-4" draggable={false} />
+                <img
+                  src={getImageUrl(card.image_url)}
+                  alt={`书法：${card.front_text}`}
+                  className="object-contain max-h-full max-w-full p-4"
+                  draggable={false}
+                />
               )
             ) : __MINI__ && card.front_text ? (
               // 纯文字诊断版：无字图，正面汉字用系统楷体大字展示
@@ -113,23 +125,23 @@ const FlashCard: React.FC<FlashCardProps> = ({ card, flipped, onFlip }) => {
                 <span className="card-front-text text-center px-4 break-all">{card.back_text}</span>
               )
             ) : (
-              <p className="text-ink-light text-sm">暂无内容</p>
+              <p className="text-sm" style={{ color: 'var(--muted)' }}>暂无内容</p>
             )}
-            {/* 字在帖中（馆方来源帖才有 context）：默认隐藏，点角标看整页原拓 */}
+            {/* 字在帖中（馆方来源帖才有 context）：点角标看整页原拓 */}
             {card.context && (
               <button
                 type="button"
                 aria-label="查看该字在整页原拓中的位置"
                 title="字在帖中 · 查看整页原拓"
                 onClick={(e) => { e.stopPropagation(); setViewingOriginal(true); }}
-                className="absolute bottom-2 right-2 z-10 rounded-md px-1.5 py-0.5 text-[10px] font-bold leading-tight"
-                style={{ backgroundColor: 'rgba(224,178,95,0.92)', color: '#3b2a10' }}
+                className="absolute bottom-2 right-2 z-10 px-1.5 py-0.5 text-[10px] font-bold leading-tight"
+                style={{ backgroundColor: 'var(--surface)', color: 'var(--muted)', border: '1px solid var(--line)', borderRadius: '2px' }}
               >
                 原拓
               </button>
             )}
           </div>
-        </div>
+        )}
       </div>
       {viewingOriginal && card.context && (
         <OriginalPageView char={card.front_text} context={card.context} onClose={() => setViewingOriginal(false)} />

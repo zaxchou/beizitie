@@ -22,18 +22,24 @@ import { fetchDailyExtra, type DailyExtraPoint } from '@/lib/api';
 
 /** 紧凑主题配色（参考图风格） */
 const COLORS = {
-  newLearned: '#2cbaa0',   // 青绿（新学）
-  reviewed: '#f4c542',     // 黄色（复习）
-  hard: '#f25c54',         // 红（困难 = 重来 + 困难）
-  medium: '#f4c542',       // 黄（一般 = 良好）
-  easy: '#3a7bd5',         // 蓝（简单 = 简单）
-  area: '#2cbaa0',
-  grid: '#eaecef',
+  newLearned: '#8b3a30',   // 朱红（新学）
+  reviewed: '#a08d74',     // 墨褐（复习）
+  hard: '#8b3a30',         // 朱红（困难 = 重来 + 困难）
+  medium: '#a08d74',       // 墨褐（一般 = 良好）
+  easy: '#6e6458',         // 墨灰（简单）
+  area: 'rgba(139,58,48,0.14)',
+  grid: '#e3d9c9',
 };
 
 const COLORS_DARK = {
   ...COLORS,
-  grid: '#3a3a3a',
+  newLearned: '#c46a58',
+  reviewed: '#b3a894',
+  hard: '#c46a58',
+  medium: '#b3a894',
+  easy: '#a89e8e',
+  area: 'rgba(196,106,88,0.16)',
+  grid: '#332d25',
 };
 
 type RangeKey = '7d' | '15d' | '30d' | '90d';
@@ -55,7 +61,7 @@ const ChartTooltip = ({ active, payload, label, unit }: any) => {
       bgcolor: dark ? '#333' : '#fff',
       color: dark ? '#e0e0e0' : '#333',
       px: 1.5, py: 0.75,
-      borderRadius: 1.5,
+      borderRadius: '2px',
       border: 1, borderColor: dark ? '#555' : '#ddd',
       fontSize: 12, boxShadow: 2,
     }}>
@@ -183,7 +189,7 @@ const AnalyticsPage: React.FC = () => {
   return (
     <Box className="space-y-4 py-4">
       {/* 顶部：标题 + 日期范围 + 牌组 */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
           <Box className="flex items-center justify-between flex-wrap gap-2">
             <Box className="flex items-baseline gap-2">
@@ -191,7 +197,7 @@ const AnalyticsPage: React.FC = () => {
                 variant="subtitle1"
                 fontWeight={700}
                 className="font-kai"
-                sx={{ color: dark ? '#2cbaa0' : '#1ca085' }}
+                sx={{ color: 'text.primary' }}
               >
                 学习统计
               </Typography>
@@ -238,7 +244,7 @@ const AnalyticsPage: React.FC = () => {
       ) : (
         <>
           {/* 图 1：新学 / 复习 */}
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
+          <Card variant="outlined" sx={{ borderRadius: '2px' }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Legend items={[
                 { color: C.newLearned, label: '新学' },
@@ -254,10 +260,10 @@ const AnalyticsPage: React.FC = () => {
                   />
                   <YAxis fontSize={11} tick={{ fill: textColor }} stroke={C.grid} width={28} />
                   <RTooltip content={<ChartTooltip />} cursor={{ fill: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }} />
-                  <Bar dataKey="new_learned" name="新学" fill={C.newLearned} radius={[3, 3, 0, 0]} maxBarSize={14}>
+                  <Bar dataKey="new_learned" name="新学" fill={C.newLearned} radius={[2, 2, 0, 0]} maxBarSize={14}>
                     <LabelList dataKey="new_learned" content={(p: any) => <BarTopLabel {...p} fill={C.newLearned} />} />
                   </Bar>
-                  <Bar dataKey="reviewed" name="复习" fill={C.reviewed} radius={[3, 3, 0, 0]} maxBarSize={14}>
+                  <Bar dataKey="reviewed" name="复习" fill={C.reviewed} radius={[2, 2, 0, 0]} maxBarSize={14}>
                     <LabelList dataKey="reviewed" content={(p: any) => <BarTopLabel {...p} fill={C.reviewed} />} />
                   </Bar>
                 </BarChart>
@@ -266,7 +272,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
 
           {/* 图 2：困难 / 一般 / 简单 */}
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
+          <Card variant="outlined" sx={{ borderRadius: '2px' }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Legend items={[
                 { color: C.hard, label: '困难' },
@@ -283,13 +289,13 @@ const AnalyticsPage: React.FC = () => {
                   />
                   <YAxis fontSize={11} tick={{ fill: textColor }} stroke={C.grid} width={28} />
                   <RTooltip content={<ChartTooltip />} cursor={{ fill: dark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)' }} />
-                  <Bar dataKey="hard" name="困难" fill={C.hard} radius={[3, 3, 0, 0]} maxBarSize={10}>
+                  <Bar dataKey="hard" name="困难" fill={C.hard} radius={[2, 2, 0, 0]} maxBarSize={10}>
                     <LabelList dataKey="hard" content={(p: any) => <BarTopLabel {...p} fill={C.hard} />} />
                   </Bar>
-                  <Bar dataKey="medium" name="一般" fill={C.medium} radius={[3, 3, 0, 0]} maxBarSize={10}>
+                  <Bar dataKey="medium" name="一般" fill={C.medium} radius={[2, 2, 0, 0]} maxBarSize={10}>
                     <LabelList dataKey="medium" content={(p: any) => <BarTopLabel {...p} fill={C.medium} />} />
                   </Bar>
-                  <Bar dataKey="easy" name="简单" fill={C.easy} radius={[3, 3, 0, 0]} maxBarSize={10}>
+                  <Bar dataKey="easy" name="简单" fill={C.easy} radius={[2, 2, 0, 0]} maxBarSize={10}>
                     <LabelList dataKey="easy" content={(p: any) => <BarTopLabel {...p} fill={C.easy} />} />
                   </Bar>
                 </BarChart>
@@ -298,7 +304,7 @@ const AnalyticsPage: React.FC = () => {
           </Card>
 
           {/* 图 3：学习时长（面积折线） */}
-          <Card variant="outlined" sx={{ borderRadius: 2 }}>
+          <Card variant="outlined" sx={{ borderRadius: '2px' }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box className="flex items-center justify-between mb-1">
                 <Typography variant="body2" fontWeight={600}>学习时长(分钟)</Typography>

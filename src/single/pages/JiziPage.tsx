@@ -215,12 +215,12 @@ export const JiziPage: React.FC = () => {
         placeholder="输入文字，从字库匹配单字…"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        sx={{ bgcolor: 'background.paper', borderRadius: 2 }}
+        sx={{ bgcolor: 'background.paper', borderRadius: '2px' }}
       />
       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
         <Button
           variant="contained" startIcon={<SearchIcon />}
-          onClick={match} disabled={busy || !text.trim()} sx={{ borderRadius: 2 }}
+          onClick={match} disabled={busy || !text.trim()} sx={{ borderRadius: '2px' }}
         >
           {busy ? '匹配中…' : '匹配单字'}
         </Button>
@@ -256,7 +256,7 @@ export const JiziPage: React.FC = () => {
           <Paper
             variant="outlined"
             sx={{
-              p: 2, borderRadius: 2, overflow: 'auto',
+              p: 2, borderRadius: '2px', overflow: 'auto',
               bgcolor: isDarkBg ? (layout.background === 'ink' ? '#1a1a1a' : '#8b0000')
                 : layout.background === 'white' ? '#fff' : '#f5ecd9',
             }}
@@ -366,7 +366,7 @@ export const JiziPage: React.FC = () => {
 
           <Button
             fullWidth variant="contained" startIcon={<DownloadIcon />}
-            onClick={handleExport} disabled={exporting} sx={{ borderRadius: 2 }}
+            onClick={handleExport} disabled={exporting} sx={{ borderRadius: '2px' }}
           >
             {exporting ? '生成中…' : '导出高清 PNG'}
           </Button>

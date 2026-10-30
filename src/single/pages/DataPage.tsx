@@ -82,11 +82,11 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
           <Box
             key={x.label}
             sx={{
-              p: 1.2, borderRadius: 2, textAlign: 'center', bgcolor: 'background.paper',
-              boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08), 0px 1px 2px rgba(0,0,0,0.06)',
+              p: 1.2, borderRadius: '2px', textAlign: 'center', bgcolor: 'background.paper',
+              border: '1px solid', borderColor: 'divider',
             }}
           >
-            <Typography sx={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>
+            <Typography className="font-kai" sx={{ fontSize: 24, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
               {x.value}
               <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.3 }}>
                 {x.unit}
@@ -99,7 +99,7 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
         ))}
       </Box>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>近 14 天学习量（新卡 / 复习）</Typography>
           <Box sx={{ height: 200 }}>
@@ -110,18 +110,18 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
                 <Tooltip
                   formatter={(v: any, k: any) => [`${v} 张`, k]}
                   labelStyle={{ fontSize: 12 }}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  contentStyle={{ fontSize: 12, borderRadius: 2 }}
                 />
                 <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="新卡" stackId="a" fill="#1976d2" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="复习" stackId="a" fill="#9c27b0" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="新卡" stackId="a" fill="#8b3a30" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="复习" stackId="a" fill="#a08d74" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Box>
         </CardContent>
       </Card>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>未来 14 天到期预测</Typography>
           <Box sx={{ height: 160 }}>
@@ -132,9 +132,9 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
                 <Tooltip
                   formatter={(v: any) => [`${v} 张`, '到期']}
                   labelStyle={{ fontSize: 12 }}
-                  contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                  contentStyle={{ fontSize: 12, borderRadius: 2 }}
                 />
-                <Bar dataKey="count" fill="#ed6c02" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="count" fill="#8b3a30" radius={[2, 2, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Box>
@@ -144,7 +144,7 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
         </CardContent>
       </Card>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>按帖进度</Typography>
           {decks.length === 0 ? (
@@ -164,7 +164,7 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
                     <LinearProgress
                       variant="determinate"
                       value={pct}
-                      sx={{ height: 7, borderRadius: 3 }}
+                      sx={{ height: 4, borderRadius: '2px' }}
                       color={pct >= 100 ? 'success' : 'primary'}
                     />
                   </Box>

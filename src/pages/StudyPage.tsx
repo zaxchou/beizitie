@@ -287,7 +287,7 @@ const StudyPage: React.FC = () => {
       <Box className="py-4">
         <Alert severity="error" className="mb-4">{error}</Alert>
         <Alert severity="info" action={
-          <Box component="button" onClick={() => startSession(deckId!)} className="cursor-pointer bg-transparent border-0 underline text-blue-600">重试</Box>
+          <Box component="button" onClick={() => startSession(deckId!)} className="cursor-pointer bg-transparent border-0 underline" style={{ color: 'var(--vermilion)' }}>重试</Box>
         }>加载学习内容失败</Alert>
       </Box>
     );
@@ -297,8 +297,8 @@ const StudyPage: React.FC = () => {
   if (phase === 'studying' && queue.length > 0 && currentIndex < queue.length) {
     const currentCard = queue[currentIndex];
     return (
-      <Box className="flex flex-col items-center gap-6 py-4 relative" sx={{ height: '100%', overflow: 'hidden' }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ flexShrink: 0 }}>
+      <Box className="flex flex-col items-center gap-6 py-4 relative" sx={{ height: '100%', overflow: 'hidden', width: '100%', maxWidth: 640, mx: 'auto', px: 2 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ flexShrink: 0, width: '100%', maxWidth: 'lg', mx: 'auto' }}>
           <Button onClick={handleRequestExit} size="small" startIcon={<ArrowBackIcon />}
             sx={{ color: 'text.secondary', textTransform: 'none', fontWeight: 500 }}>返回</Button>
           <Typography variant="caption" color="text.secondary" sx={{ px: 1, fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>
@@ -308,8 +308,8 @@ const StudyPage: React.FC = () => {
         <Box sx={{ width: '100%', flexShrink: 0 }}>
           <ProgressBar current={currentIndex + 1} total={queue.length} />
         </Box>
-        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', overflow: 'hidden' }}>
-          <FlashCard key={currentCard.id} card={currentCard} flipped={flipped} onFlip={handleFlip} />
+        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', width: '100%', overflow: 'hidden' }}>
+          <FlashCard key={currentCard.id} card={currentCard} flipped={flipped} onFlip={handleFlip} fill />
         </Box>
         <Box className="w-full max-w-lg" sx={{ flexShrink: 0 }}>
           <RatingButtons onRate={handleRate} disabled={!flipped}
@@ -343,7 +343,7 @@ const StudyPage: React.FC = () => {
             该牌组已暂停，前往牌组管理页面恢复
           </Typography>
           <Button variant="contained" size="large" onClick={handleConfirmExit}
-            sx={{ px: 6, py: 1.5, borderRadius: 2, fontSize: 16 }}>
+            sx={{ px: 6, py: 1.5, borderRadius: '2px', fontSize: 16 }}>
             返回
           </Button>
         </Box>

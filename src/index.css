@@ -33,6 +33,13 @@ body {
   font-family: 'Noto Serif SC', '楷体', KaiTi, 'Ma Shan Zheng', serif;
 }
 
+/* MUI 的 body1/h5 等变体会显式声明 font-family（单类名），
+   这里加一层 body 前缀提高优先级，否则 .font-kai 会被主题字体压掉 */
+body .font-kai,
+body .MuiTypography-root.font-kai {
+  font-family: 'Noto Serif SC', '楷体', KaiTi, 'Ma Shan Zheng', serif;
+}
+
 /* ===== 书法卡片正面的楷体大字 ===== */
 .card-front-text {
   font-family: 'Noto Serif SC', '楷体', KaiTi, 'Ma Shan Zheng', serif;

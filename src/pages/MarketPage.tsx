@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
-import StoreIcon from '@mui/icons-material/Store';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import {
@@ -32,16 +31,6 @@ import { useAuthStore } from '@/stores/useAuthStore';
 
 /** 书体筛选选项 */
 const STYLE_OPTIONS = ['全部', '楷', '行', '草', '隶', '篆'] as const;
-/** 各书体的点缀色（筛选 chip 选中态与卡片角标） */
-const STYLE_COLORS: Record<string, string> = {
-  楷: '#8d6e63',
-  行: '#1976d2',
-  草: '#2e7d32',
-  隶: '#6a1b9a',
-  篆: '#ad1457',
-  章草: '#5d4037',
-};
-const styleColor = (s: string) => STYLE_COLORS[s] || '#546e7a';
 
 /** 封面占位组件 */
 const CoverPlaceholder: React.FC<{ name: string }> = ({ name }) => (
@@ -52,7 +41,7 @@ const CoverPlaceholder: React.FC<{ name: string }> = ({ name }) => (
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'grey.100',
+      bgcolor: 'var(--surface)',
       color: 'grey.400',
       fontSize: 28,
       fontWeight: 600,
@@ -221,10 +210,10 @@ const MarketPage: React.FC = () => {
           position: 'relative',
           width: '100%',
           aspectRatio: '1/1',
-          borderRadius: 1.5,
+          borderRadius: '2px',
           overflow: 'hidden',
-          bgcolor: (t: any) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.06)' : 'grey.100',
-          boxShadow: (t: any) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',
+          bgcolor: 'var(--surface)',
+          border: '1px solid', borderColor: 'divider',
         }}
       >
         {deck.cover_image ? (
@@ -239,10 +228,13 @@ const MarketPage: React.FC = () => {
             <Box
               sx={{
                 position: 'absolute', top: 4, left: 4,
-                px: 0.5, py: '1px', borderRadius: 1,
-                bgcolor: sm.tone === 'museum' ? 'rgba(224,178,95,0.92)' : 'rgba(80,96,120,0.66)',
-                color: sm.tone === 'museum' ? '#3b2a10' : '#fff',
-                fontSize: { xs: 8, sm: 9 }, fontWeight: 700, lineHeight: 1.2,
+                px: 0.5, py: '1px', borderRadius: '2px',
+                bgcolor: 'var(--paper)',
+                color: sm.tone === 'museum' ? 'primary.main' : 'var(--muted)',
+                border: '1px solid',
+                borderColor: sm.tone === 'museum' ? 'primary.main' : 'var(--line-strong)',
+                boxShadow: '0 1px 3px rgba(48,44,37,0.28)',
+                fontSize: { xs: 8, sm: 9 }, fontWeight: 600, lineHeight: 1.2,
               }}
             >
               {sm.short}
@@ -253,26 +245,28 @@ const MarketPage: React.FC = () => {
           <Box
             sx={{
               position: 'absolute', top: 4, right: 4,
-              px: 0.5, py: '1px', borderRadius: 1,
-              bgcolor: 'rgba(20,20,20,0.55)', backdropFilter: 'blur(2px)',
-              color: '#fff', fontSize: { xs: 9, sm: 10 }, fontWeight: 700, lineHeight: 1.2,
+              px: 0.5, py: '1px', borderRadius: '2px',
+              bgcolor: 'var(--paper)', color: 'var(--muted)',
+              border: '1px solid var(--line-strong)',
+              boxShadow: '0 1px 3px rgba(48,44,37,0.28)',
+              fontSize: { xs: 9, sm: 10 }, fontWeight: 600, lineHeight: 1.2,
             }}
           >
             {deck.style.split(',')[0].trim()}
           </Box>
         )}
       </Box>
-      <Typography variant="caption" noWrap
-        sx={{ mt: 0.5, textAlign: 'center', fontSize: { xs: 10, sm: 11 }, fontWeight: 500 }}>
+      <Typography noWrap className="font-kai"
+        sx={{ mt: 0.6, fontSize: { xs: 12, sm: 13 }, lineHeight: 1.3 }}>
         {deck.name}
       </Typography>
       {(deck.calligrapher || deck.dynasty) && (
         <Typography variant="caption" noWrap
-          sx={{ textAlign: 'center', fontSize: { xs: 9, sm: 10 }, color: 'text.secondary', lineHeight: 1.3 }}>
+          sx={{ fontSize: { xs: 10, sm: 11 }, color: 'text.secondary', lineHeight: 1.4 }}>
           {[deck.dynasty, deck.calligrapher].filter(Boolean).join('·')}
         </Typography>
       )}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 0.25 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mt: 0.25 }}>
         {pendingId === deck.deck_id ? (
           <CircularProgress size={12} />
         ) : (
@@ -280,7 +274,7 @@ const MarketPage: React.FC = () => {
             onClick={(e) => { e.stopPropagation(); handleToggleSubscribe(deck); }}
             sx={{
               fontSize: 10, fontWeight: 600,
-              color: deck.is_subscribed ? 'success.main' : 'primary.main',
+              color: deck.is_subscribed ? 'text.secondary' : 'primary.main',
               cursor: 'pointer', '&:hover': { textDecoration: 'underline' }, userSelect: 'none',
             }}
           >
@@ -322,13 +316,12 @@ const MarketPage: React.FC = () => {
   return (
     <Box className="space-y-3 py-4">
       {/* 顶部 */}
-      <Box className="flex items-center gap-2 flex-wrap">
-        <StoreIcon sx={{ color: 'primary.main', fontSize: 24 }} />
-        <Typography variant="h5" className="font-kai" sx={{ fontWeight: 600 }}>
-          市场
+      <Box sx={{ mb: 0.5 }}>
+        <Typography className="font-kai" sx={{ fontSize: 26, letterSpacing: 2, lineHeight: 1.3 }}>
+          碑帖市场
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          浏览并订阅书法牌组
+        <Typography sx={{ fontSize: 12, color: 'text.secondary', mt: 0.5 }}>
+          共 {total} 部 · 按书体与朝代筛选，订阅后进入书库
         </Typography>
       </Box>
 
@@ -339,7 +332,7 @@ const MarketPage: React.FC = () => {
           placeholder="搜索牌组 / 书家 / 朝代..."
           value={searchKeyword}
           onChange={(e) => setSearchKeyword(e.target.value)}
-          sx={{ minWidth: 220, flex: { xs: '1 1 100%', sm: '0 1 260px' }, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+          sx={{ minWidth: 220, flex: { xs: '1 1 100%', sm: '0 1 260px' }, '& .MuiOutlinedInput-root': { borderRadius: '2px' } }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start"><SearchIcon color="action" fontSize="small" /></InputAdornment>
@@ -375,7 +368,7 @@ const MarketPage: React.FC = () => {
               sx={{
                 cursor: 'pointer',
                 ...(selected && s !== '全部'
-                  ? { bgcolor: styleColor(s), color: '#fff', '&:hover': { bgcolor: styleColor(s) } }
+                  ? { bgcolor: 'primary.main', color: 'primary.contrastText', '&:hover': { bgcolor: 'primary.dark' } }
                   : {}),
               }}
             />
@@ -452,9 +445,9 @@ const MarketPage: React.FC = () => {
             <Box
               sx={{
                 p: { xs: 1.5, sm: 2 },
-                borderRadius: 2,
+                borderRadius: '2px',
                 bgcolor: 'background.paper',
-                boxShadow: (t: any) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',
+                border: '1px solid', borderColor: 'divider',
               }}
             >
               <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, mb: 1.5 }}>
@@ -463,13 +456,9 @@ const MarketPage: React.FC = () => {
                   sx={{
                     fontSize: { xs: 18, sm: 20 },
                     fontWeight: 700,
-                    background: 'linear-gradient(135deg, #1976d2 0%, #9c27b0 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
                   }}
                 >
-                  ✦ 编辑精选
+                  编辑精选
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
                   最值得收藏的书法字帖
@@ -519,7 +508,7 @@ const MarketPage: React.FC = () => {
             <Box
               sx={{
                 p: { xs: 1.5, sm: 2 },
-                borderRadius: 2,
+                borderRadius: '2px',
               }}
             >
               <Box
@@ -546,7 +535,7 @@ const MarketPage: React.FC = () => {
                 variant="outlined"
                 onClick={() => loadDecks(decks.length)}
                 disabled={loadingMore}
-                sx={{ borderRadius: 2 }}
+                sx={{ borderRadius: '2px' }}
               >
                 {loadingMore ? <CircularProgress size={18} sx={{ mr: 1 }} /> : null}
                 {loadingMore ? '加载中…' : `加载更多（已显示 ${decks.length}/${total}）`}

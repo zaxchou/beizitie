@@ -1,8 +1,5 @@
 import React from 'react';
-import { Box, Typography, useTheme } from '@mui/material';
-import LocalFireDepartmentIcon from '@mui/icons-material/LocalFireDepartment';
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
-import LibraryAddIcon from '@mui/icons-material/LibraryAdd';
+import { Box, Typography } from '@mui/material';
 
 export interface StatsBarProps {
   dueCount: number;
@@ -10,74 +7,49 @@ export interface StatsBarProps {
   streakDays: number;
 }
 
-interface StatItemConfig {
-  key: 'due' | 'new' | 'streak';
-  label: string;
-  icon: React.ReactNode;
-  color: string;
-  colorDark: string;
-  gradient: string;
-  gradientDark: string;
-}
-
-const statItems: StatItemConfig[] = [
-  {
-    key: 'due',
-    label: '待复习',
-    icon: <AutoStoriesIcon />,
-    color: '#ed6c02',
-    colorDark: '#ffb74d',
-    gradient: 'linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%)',
-    gradientDark: 'linear-gradient(135deg, rgba(237,108,2,0.15) 0%, rgba(237,108,2,0.08) 100%)',
-  },
-  {
-    key: 'new',
-    label: '新卡剩余',
-    icon: <LibraryAddIcon />,
-    color: '#1565c0',
-    colorDark: '#64b5f6',
-    gradient: 'linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%)',
-    gradientDark: 'linear-gradient(135deg, rgba(21,101,192,0.15) 0%, rgba(21,101,192,0.08) 100%)',
-  },
-  {
-    key: 'streak',
-    label: '连续打卡',
-    icon: <LocalFireDepartmentIcon />,
-    color: '#2e7d32',
-    colorDark: '#81c784',
-    gradient: 'linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%)',
-    gradientDark: 'linear-gradient(135deg, rgba(46,125,50,0.15) 0%, rgba(46,125,50,0.08) 100%)',
-  },
+const statItems: { key: 'due' | 'new' | 'streak'; label: string }[] = [
+  { key: 'due', label: '待复习' },
+  { key: 'new', label: '新卡剩余' },
+  { key: 'streak', label: '连续打卡' },
 ];
 
 const StatsBar: React.FC<StatsBarProps> = ({ dueCount, newCardRemaining, streakDays }) => {
-  const theme = useTheme();
-  const isDark = theme.palette.mode === 'dark';
   const values = { due: dueCount, new: newCardRemaining, streak: streakDays };
 
   return (
-    <Box className="flex gap-3">
-      {statItems.map((item) => (
-        <Box
-          key={item.key}
-          className="flex-1 flex items-center gap-3 px-4 py-3 rounded-lg"
-          sx={{ background: isDark ? item.gradientDark : item.gradient }}
-        >
-          <Box sx={{ color: isDark ? item.colorDark : item.color }}>{item.icon}</Box>
-          <Box>
-            <Typography
-              variant="h5"
-              fontWeight={700}
-              sx={{ color: isDark ? item.colorDark : item.color, lineHeight: 1.2 }}
-            >
-              {values[item.key]}
-            </Typography>
-            <Typography variant="caption" sx={{ color: isDark ? item.colorDark : item.color, opacity: 0.7 }}>
+    <Box
+      sx={{
+        display: 'flex', border: '1px solid', borderColor: 'divider',
+        borderRadius: '2px', bgcolor: 'background.paper', overflow: 'hidden',
+      }}
+    >
+      {statItems.map((item, i) => {
+        const v = values[item.key];
+        const urgent = item.key === 'due' && v > 0;
+        return (
+          <Box
+            key={item.key}
+            sx={{
+              flex: 1, minWidth: 0, px: 2, py: 1.5,
+              borderLeft: i > 0 ? '1px solid' : 'none', borderColor: 'divider',
+            }}
+          >
+            <Typography sx={{ fontSize: 11, color: 'text.secondary', lineHeight: 1.3, letterSpacing: 0.3 }}>
               {item.label}
             </Typography>
+            <Typography
+              className="font-kai"
+              sx={{
+                fontSize: 26, lineHeight: 1.15, mt: 0.25,
+                fontVariantNumeric: 'tabular-nums',
+                color: urgent ? 'primary.main' : 'text.primary',
+              }}
+            >
+              {v}
+            </Typography>
           </Box>
-        </Box>
-      ))}
+        );
+      })}
     </Box>
   );
 };

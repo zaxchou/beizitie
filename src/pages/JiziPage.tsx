@@ -298,7 +298,7 @@ const JiziPage: React.FC = () => {
               bgcolor: alpha(theme.palette.background.paper, 0.85),
               backdropFilter: 'blur(4px)',
               px: 1.25, py: 0.25,
-              borderRadius: 1.5,
+              borderRadius: '2px',
               fontSize: 12,
               color: 'text.secondary',
               boxShadow: 1,
@@ -341,7 +341,7 @@ const JiziPage: React.FC = () => {
                   gap: 0.25,
                   width: 48,
                   height: 40,
-                  borderRadius: 2,
+                  borderRadius: '2px',
                   bgcolor: activeTab === btn.value ? 'primary.main' : alpha(theme.palette.background.paper, 0.7),
                   color: activeTab === btn.value ? '#fff' : 'text.secondary',
                   backdropFilter: 'blur(8px)',
@@ -426,7 +426,7 @@ const JiziPage: React.FC = () => {
                 onChange={(e) => store.setText(e.target.value)}
                 placeholder="输入诗句，如：春江潮水连海平"
                 variant="outlined"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '2px' } }}
               />
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
                 支持中文汉字，标点自动忽略，最多 500 字
@@ -436,7 +436,7 @@ const JiziPage: React.FC = () => {
                 variant="contained"
                 onClick={handleMatch}
                 disabled={loading || !text.trim()}
-                sx={{ mt: 1.5, textTransform: 'none', py: 1, borderRadius: 2 }}
+                sx={{ mt: 1.5, textTransform: 'none', py: 1, borderRadius: '2px' }}
               >
                 {loading ? '集字中...' : '开始集字'}
               </Button>
@@ -454,7 +454,7 @@ const JiziPage: React.FC = () => {
                         <ListItemButton
                           key={item.id}
                           onClick={() => { store.setText(item.text); }}
-                          sx={{ borderRadius: 1, px: 1, py: 0.5 }}
+                          sx={{ borderRadius: '2px', px: 1, py: 0.5 }}
                         >
                           <ListItemIcon sx={{ minWidth: 28 }}>
                             <HistoryIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
@@ -562,7 +562,7 @@ const JiziPage: React.FC = () => {
                             cursor: 'pointer',
                             border: 1,
                             borderColor: 'divider',
-                            borderRadius: 1,
+                            borderRadius: '2px',
                             width: 56,
                             height: 56,
                             bgcolor: 'action.hover',
@@ -587,7 +587,7 @@ const JiziPage: React.FC = () => {
                                 color: 'text.secondary',
                                 bgcolor: alpha(theme.palette.background.paper, 0.8),
                                 px: 0.3,
-                                borderRadius: 0.5,
+                                borderRadius: '2px',
                                 lineHeight: 1.2,
                               }}
                             >

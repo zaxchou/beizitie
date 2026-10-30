@@ -159,7 +159,7 @@ export const JiziPageMini: React.FC = () => {
         取字范围：包内{bundledNames}
       </Typography>
 
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <TextField
             fullWidth multiline rows={2} size="small"
@@ -174,18 +174,18 @@ export const JiziPageMini: React.FC = () => {
               <Chip key={tpl} label={tpl} size="small" variant="outlined" onClick={() => run(tpl)} sx={{ cursor: 'pointer' }} />
             ))}
           </Box>
-          <Button fullWidth variant="contained" sx={{ borderRadius: 2 }} onClick={() => run(text)} disabled={!text.trim()}>
+          <Button fullWidth variant="contained" sx={{ borderRadius: '2px' }} onClick={() => run(text)} disabled={!text.trim()}>
             集字
           </Button>
         </CardContent>
       </Card>
 
       {hits && (
-        <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <Card variant="outlined" sx={{ borderRadius: '2px' }}>
           <CardContent>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
               {hits.map((h) => (
-                <Box key={h.rel} sx={{ width: 64, height: 64, borderRadius: 1, overflow: 'hidden', bgcolor: '#1c1c1c', boxShadow: '0 0 0 1px rgba(0,0,0,.25)' }}>
+                <Box key={h.rel} sx={{ width: 64, height: 64, borderRadius: '2px', overflow: 'hidden', bgcolor: '#1c1c1c', boxShadow: '0 0 0 1px rgba(0,0,0,.25)' }}>
                   <Box sx={{
                     width: '100%', height: '100%',
                     backgroundImage: `url(${parseAtlasUrl(h.rel)?.atlas})`,
@@ -205,7 +205,7 @@ export const JiziPageMini: React.FC = () => {
                 输入的字都不在包内帖中，换个短句试试
               </Typography>
             ) : (
-              <Button fullWidth variant="contained" sx={{ borderRadius: 2, mt: 1.5 }} onClick={async () => {
+              <Button fullWidth variant="contained" sx={{ borderRadius: '2px', mt: 1.5 }} onClick={async () => {
                 const dataUrl = await composeCanvas(hits, missing, text.replace(/\s/g, ''));
                 setWork(dataUrl);
                 setSaveTip(null);
@@ -218,10 +218,10 @@ export const JiziPageMini: React.FC = () => {
       )}
 
       {work && (
-        <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <Card variant="outlined" sx={{ borderRadius: '2px' }}>
           <CardContent>
-            <Box component="img" src={work} alt="集字作品" sx={{ width: '100%', display: 'block', borderRadius: 1 }} />
-            <Button fullWidth variant="contained" sx={{ borderRadius: 2, mt: 1.5 }} onClick={save}>
+            <Box component="img" src={work} alt="集字作品" sx={{ width: '100%', display: 'block', borderRadius: '2px' }} />
+            <Button fullWidth variant="contained" sx={{ borderRadius: '2px', mt: 1.5 }} onClick={save}>
               保存到相册
             </Button>
             {saveTip && (

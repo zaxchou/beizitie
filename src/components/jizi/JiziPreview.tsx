@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { Box, useTheme } from '@mui/material';
+import { Box, Typography, useTheme } from '@mui/material';
 import JiziCell from './JiziCell';
 import type { JiziMatchResult, JiziLayout } from '@/types/jizi';
 
@@ -165,11 +165,22 @@ const JiziPreview: React.FC<JiziPreviewProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           color: 'text.secondary',
-          fontSize: 14,
           pb: 10,
+          gap: 1.5,
         }}
       >
-        输入文字后这里会显示集字预览
+        <Typography
+          component="div"
+          sx={{ fontFamily: '"Noto Serif SC", "楷体", KaiTi, serif', fontSize: 26, letterSpacing: 6, color: 'text.primary' }}
+        >
+          集字
+        </Typography>
+        <Typography component="div" sx={{ fontSize: 13 }}>
+          输入文字后这里会显示集字预览
+        </Typography>
+        <Typography component="div" sx={{ fontSize: 12, color: 'text.disabled' }}>
+          从已核验碑帖里取原字，可导出高清图片
+        </Typography>
       </Box>
     );
   }
@@ -286,7 +297,7 @@ const JiziPreview: React.FC<JiziPreviewProps> = ({
             color: '#fff',
             px: 1.5,
             py: 0.5,
-            borderRadius: 2,
+            borderRadius: '2px',
             fontSize: 12,
             fontWeight: 600,
             cursor: 'pointer',

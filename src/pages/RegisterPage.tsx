@@ -1,3 +1,4 @@
+import BrandMark from '@/components/common/BrandMark';
 import { useState } from 'react';
 import { useNavigate, useLocation, Link as RouterLink } from 'react-router-dom';
 import {
@@ -38,12 +39,12 @@ export default function RegisterPage() {
         p: 2,
       }}
     >
-      <Card sx={{ maxWidth: 400, width: '100%' }} elevation={8}>
+      <Card sx={{ maxWidth: 400, width: '100%' }}>
         <CardContent sx={{ p: 4 }}>
           <Box sx={{ textAlign: 'center', mb: 3 }}>
-            <Typography variant="h4" sx={{ fontFamily: '"Noto Serif SC", serif', mb: 0.5 }}>
-              {'\u{1F58B}'} 背字帖
-            </Typography>
+            <Box sx={{ mb: 0.5 }}>
+              <BrandMark />
+            </Box>
             <Typography variant="body2" color="text.secondary">
               创建新账号
             </Typography>

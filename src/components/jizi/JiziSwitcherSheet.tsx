@@ -252,7 +252,7 @@ const JiziSwitcherSheet: React.FC<JiziSwitcherSheetProps> = ({
                             cursor: 'pointer',
                             border: isSelected ? 2 : 0,
                             borderColor: 'primary.main',
-                            borderRadius: 1.5,
+                            borderRadius: '2px',
                             p: 0.75,
                             bgcolor: isSelected ? 'action.selected' : 'background.paper',
                             boxShadow: (t) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',
@@ -269,7 +269,7 @@ const JiziSwitcherSheet: React.FC<JiziSwitcherSheetProps> = ({
                               aspectRatio: '1',
                               objectFit: 'contain',
                               bgcolor: '#fafafa',
-                              borderRadius: 1,
+                              borderRadius: '2px',
                             }}
                             draggable={false}
                           />

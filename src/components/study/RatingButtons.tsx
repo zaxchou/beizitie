@@ -19,10 +19,9 @@ export interface RatingButtonsProps {
   card?: SM2State | null;
 }
 
-/** 按钮配置：标签、颜色、评分值、快捷键、间隔预览 */
+/** 按钮配置：标签、评分值、快捷键 */
 interface ButtonConfig {
   label: string;
-  color: 'error' | 'warning' | 'success' | 'primary';
   rating: Rating;
   shortcut: string;
   intervalPreview?: string;
@@ -39,18 +38,17 @@ function formatInterval(minutes: number): string {
 }
 
 const buttonConfigs: ButtonConfig[] = [
-  { label: '重来', color: 'error', rating: 1, shortcut: '1' },
-  { label: '困难', color: 'warning', rating: 2, shortcut: '2' },
-  { label: '良好', color: 'success', rating: 3, shortcut: '3' },
-  { label: '简单', color: 'primary', rating: 4, shortcut: '4' },
+  { label: '重来', rating: 1, shortcut: '1' },
+  { label: '困难', rating: 2, shortcut: '2' },
+  { label: '良好', rating: 3, shortcut: '3' },
+  { label: '简单', rating: 4, shortcut: '4' },
 ];
 
 /**
  * 评分按钮组。
  *
- * 4 个并排按钮，分别对应 Again(1) / Hard(2) / Good(3) / Easy(4)。
- * 支持键盘快捷键 1-4。
- * 有卡片数据时，显示各评分对应的下次复习间隔预览。
+ * 四档**同等视觉权重**：不再用红/橙/绿/青四色暗示「良好」，
+ * 也不预高亮任何一档；间隔预览放右侧，键盘 1–4 仍然可用（web 端优势）。
  */
 const RatingButtons: React.FC<RatingButtonsProps> = ({ onRate, disabled = false, card = null }) => {
   // 计算各评分对应的预览间隔
@@ -104,21 +102,29 @@ const RatingButtons: React.FC<RatingButtonsProps> = ({ onRate, disabled = false,
   return (
     <Grid container spacing={1}>
       {extendedConfigs.map((config) => (
-        <Grid item xs={3} key={config.rating}>
+        <Grid item xs={6} sm={3} key={config.rating}>
           <Button
-            variant="contained"
-            color={config.color}
+            variant="outlined"
+            color="inherit"
             fullWidth
             disabled={disabled}
+            aria-keyshortcuts={config.shortcut}
             onClick={() => onRate(config.rating)}
-            sx={{ py: 1.5 }}
+            sx={{
+              minHeight: 58,
+              height: 58,
+              px: 2,
+              justifyContent: 'space-between',
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              '&:hover': { bgcolor: 'var(--surface)', borderColor: 'var(--line-strong)' },
+            }}
           >
-            <span className="flex flex-col items-center">
-              <span>{config.label}</span>
-              {config.intervalPreview && (
-                <span className="text-xs opacity-60">{config.intervalPreview}</span>
-              )}
-            </span>
+            <span className="font-kai" style={{ fontSize: 17, letterSpacing: 1 }}>{config.label}</span>
+            {config.intervalPreview && (
+              <span style={{ fontSize: 12, color: 'var(--muted)' }}>{config.intervalPreview}</span>
+            )}
           </Button>
         </Grid>
       ))}

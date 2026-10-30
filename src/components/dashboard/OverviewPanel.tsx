@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Typography, Card, CardContent, ToggleButton, ToggleButtonGroup, useTheme } from '@mui/material';
+import { Box, Typography, Card, CardContent, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import ActivityCalendar, { ActivityDay } from './ActivityCalendar';
 import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { useDeckStore } from '@/stores/useDeckStore';
@@ -10,14 +10,13 @@ interface StatCardProps {
   label: string;
   value: number | string;
   unit?: string;
-  dark: boolean;
   size?: 'sm' | 'md';
 }
-const StatCard: React.FC<StatCardProps> = ({ label, value, unit, dark, size = 'md' }) => (
+const StatCard: React.FC<StatCardProps> = ({ label, value, unit, size = 'md' }) => (
   <Box sx={{
-    boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)', borderRadius: 1.5,
+    border: '1px solid', borderColor: 'divider', borderRadius: '2px',
     p: size === 'sm' ? 1 : 1.25,
-    bgcolor: dark ? '#1a1a1a' : '#fafafa',
+    bgcolor: 'background.paper',
     minWidth: 0,
   }}>
     <Typography
@@ -29,7 +28,8 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, unit, dark, size = 'm
     </Typography>
     <Box sx={{ display: 'flex', alignItems: 'baseline', mt: size === 'sm' ? 0.25 : 0.5, gap: 0.5 }}>
       <Typography
-        sx={{ fontWeight: 600, fontSize: size === 'sm' ? 16 : 20, lineHeight: 1.1 }}
+        className="font-kai"
+        sx={{ fontSize: size === 'sm' ? 19 : 23, lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}
       >
         {value}
       </Typography>
@@ -53,8 +53,6 @@ export interface OverviewPanelProps {
  *  - variant='sidebar'：紧凑版（无 Card 外壳、6 张 3×2 卡更小），用于 PC 端左侧栏
  */
 const OverviewPanel: React.FC<OverviewPanelProps> = ({ variant = 'page' }) => {
-  const theme = useTheme();
-  const dark = theme.palette.mode === 'dark';
   const isSidebar = variant === 'sidebar';
   const {
     newCount, dueCount, totalMinutes, activityData, loading,
@@ -118,9 +116,9 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({ variant = 'page' }) => {
         gap={isSidebar ? 0.75 : 1.5}
         mb={isSidebar ? 1.25 : 2}
       >
-        <StatCard label="待学习" value={loading || decksLoading ? '-' : newCount} unit="张" dark={dark} size={isSidebar ? 'sm' : 'md'} />
-        <StatCard label="待复习" value={loading ? '-' : dueCount} unit="张" dark={dark} size={isSidebar ? 'sm' : 'md'} />
-        <StatCard label="学习" value={loading ? '-' : filteredActiveDays} unit="天" dark={dark} size={isSidebar ? 'sm' : 'md'} />
+        <StatCard label="待学习" value={loading || decksLoading ? '-' : newCount} unit="张" size={isSidebar ? 'sm' : 'md'} />
+        <StatCard label="待复习" value={loading ? '-' : dueCount} unit="张" size={isSidebar ? 'sm' : 'md'} />
+        <StatCard label="学习" value={loading ? '-' : filteredActiveDays} unit="天" size={isSidebar ? 'sm' : 'md'} />
       </Box>
 
       {/* 热力图 */}
@@ -144,7 +142,7 @@ const OverviewPanel: React.FC<OverviewPanelProps> = ({ variant = 'page' }) => {
   }
 
   return (
-    <Card variant="outlined" sx={{ borderRadius: 2 }}>
+    <Card variant="outlined" sx={{ borderRadius: '2px' }}>
       <CardContent sx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
         {content}
       </CardContent>

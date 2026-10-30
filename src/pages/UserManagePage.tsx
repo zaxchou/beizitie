@@ -180,7 +180,7 @@ const UserManagePage: React.FC = () => {
       {error && <Alert severity="error">{error}</Alert>}
 
       {/* 用户列表 */}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
           <TableContainer>
             <Table size="small">
@@ -372,7 +372,7 @@ const UserManagePage: React.FC = () => {
 
 /** 统计数字卡片 */
 const StatBox: React.FC<{ label: string; value: number; unit: string }> = ({ label, value, unit }) => (
-  <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 1.5, p: 1.25, bgcolor: 'action.hover' }}>
+  <Box sx={{ border: 1, borderColor: 'divider', borderRadius: '2px', p: 1.25, bgcolor: 'action.hover' }}>
     <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>{label}</Typography>
     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mt: 0.25 }}>
       <Typography sx={{ fontWeight: 600, fontSize: 20, lineHeight: 1.1 }}>{value}</Typography>

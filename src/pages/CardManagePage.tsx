@@ -847,7 +847,7 @@ const CardManagePage: React.FC = () => {
             </InputAdornment>
           ) : null,
         }}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
+        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '2px' } }}
       />
 
       {/* 学习上限设置 */}
@@ -855,7 +855,7 @@ const CardManagePage: React.FC = () => {
         expanded={deckLimitsOpen}
         onChange={() => setDeckLimitsOpen(!deckLimitsOpen)}
         variant="outlined"
-        sx={{ borderRadius: 2, '&:before': { display: 'none' } }}
+        sx={{ borderRadius: '2px', '&:before': { display: 'none' } }}
       >
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Box className="flex items-center gap-2 w-full">
@@ -998,7 +998,7 @@ const CardManagePage: React.FC = () => {
           />
         )
       ) : (
-        <MuiCard variant="outlined" sx={{ borderRadius: 2 }}>
+        <MuiCard variant="outlined" sx={{ borderRadius: '2px' }}>
           <List disablePadding>
             {pagedCards.map((card, index) => (
               <ListItem
@@ -1098,7 +1098,7 @@ const CardManagePage: React.FC = () => {
                 <Box
                   sx={{
                     width: '100%',
-                    borderRadius: 2,
+                    borderRadius: '2px',
                     overflow: 'hidden',
                     border: 1,
                     borderColor: 'divider',
@@ -1251,7 +1251,7 @@ const CardManagePage: React.FC = () => {
                   component="img"
                   src={newImagePreview}
                   alt="预览"
-                  sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: 2, border: 1, borderColor: 'divider', objectFit: 'contain' }}
+                  sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: '2px', border: 1, borderColor: 'divider', objectFit: 'contain' }}
                 />
               </Box>
             )}
@@ -1394,7 +1394,7 @@ const CardManagePage: React.FC = () => {
                     component="img"
                     src={getImageUrl(editTarget.image_url)}
                     alt={editTarget.front_text}
-                    sx={{ maxHeight: 160, maxWidth: '100%', borderRadius: 2, border: 1, borderColor: 'divider', objectFit: 'contain' }}
+                    sx={{ maxHeight: 160, maxWidth: '100%', borderRadius: '2px', border: 1, borderColor: 'divider', objectFit: 'contain' }}
                   />
                 </Box>
               )}
@@ -1427,7 +1427,7 @@ const CardManagePage: React.FC = () => {
                   component="img"
                   src={editImagePreview}
                   alt="新图片预览"
-                  sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: 2, border: 1, borderColor: 'divider', objectFit: 'contain' }}
+                  sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: '2px', border: 1, borderColor: 'divider', objectFit: 'contain' }}
                 />
               </Box>
             )}
@@ -1506,7 +1506,7 @@ const CardManagePage: React.FC = () => {
 
           {/* 文件预览列表 */}
           {batchPreviews.length > 0 && (
-            <MuiCard variant="outlined" sx={{ borderRadius: 2 }}>
+            <MuiCard variant="outlined" sx={{ borderRadius: '2px' }}>
               <List disablePadding dense>
                 {batchPreviews.map((entry, index) => (
                   <ListItem

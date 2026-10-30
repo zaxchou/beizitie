@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Typography, Button, LinearProgress, Paper, useTheme } from '@mui/material';
+import { Box, Typography, Button, LinearProgress, Paper } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import type { StudySession } from '@/types';
 
@@ -9,19 +9,18 @@ export interface StudyCompleteProps {
 }
 
 const ratingConfig = [
-  { key: 'again' as const, label: '重来', color: '#d32f2f', bg: '#fce4e4' },
-  { key: 'hard' as const, label: '困难', color: '#ed6c02', bg: '#fff3e0' },
-  { key: 'good' as const, label: '良好', color: '#2e7d32', bg: '#e8f5e9' },
-  { key: 'easy' as const, label: '简单', color: '#1565c0', bg: '#e3f2fd' },
+  { key: 'again' as const, label: '重来', color: '#8b3a30', bg: 'var(--surface)' },
+  { key: 'hard' as const, label: '困难', color: '#6e6458', bg: 'var(--surface)' },
+  { key: 'good' as const, label: '良好', color: '#302c25', bg: 'var(--surface)' },
+  { key: 'easy' as const, label: '简单', color: '#302c25', bg: 'var(--surface)' },
 ];
 
 const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboard }) => {
-  const theme = useTheme();
   const total = session.cards_studied || 1;
 
   return (
     <Box className="flex flex-col items-center justify-center py-6 px-4">
-      <CheckCircleIcon color="success" sx={{ fontSize: 56, mb: 2 }} />
+      <CheckCircleIcon sx={{ fontSize: 48, mb: 2, color: 'primary.main' }} />
 
       <Typography variant="h4" className="font-kai mb-1">
         学习完成！
@@ -49,7 +48,7 @@ const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboar
               key={item.key}
               elevation={0}
               className="flex items-center gap-3 px-3 py-2"
-              sx={{ bgcolor: item.bg, borderRadius: 2 }}
+              sx={{ bgcolor: item.bg, border: '1px solid', borderColor: 'divider', borderRadius: '2px' }}
             >
               <Typography variant="body2" fontWeight={600} sx={{ color: item.color, minWidth: 36 }}>
                 {item.label}
@@ -61,8 +60,8 @@ const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboar
                   flex: 1,
                   height: 10,
                   borderRadius: 5,
-                  bgcolor: theme.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
-                  '& .MuiLinearProgress-bar': { borderRadius: 5, bgcolor: item.color },
+                  bgcolor: 'var(--line)',
+                  '& .MuiLinearProgress-bar': { borderRadius: '2px', bgcolor: item.color },
                 }}
               />
               <Typography variant="body2" fontWeight={600} sx={{ color: item.color, minWidth: 24, textAlign: 'right' }}>
@@ -77,7 +76,7 @@ const StudyComplete: React.FC<StudyCompleteProps> = ({ session, onBackToDashboar
         variant="contained"
         size="large"
         onClick={onBackToDashboard}
-        sx={{ px: 6, py: 1.5, borderRadius: 2, fontSize: 16 }}
+        sx={{ px: 6, py: 1.5, borderRadius: '2px', fontSize: 16 }}
       >
         返回 背字帖
       </Button>

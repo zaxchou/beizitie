@@ -154,7 +154,7 @@ const SideMenu: React.FC<SideMenuProps> = ({ width = 260, children }) => {
             )}
             {user?.role !== 'guest' && (
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
-                背字帖 · v1.0
+                背字帖 · v{__APP_VERSION__}
               </Typography>
             )}
           </Box>

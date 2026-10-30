@@ -80,7 +80,7 @@ function MetricCard({ label, value, helper, tone = 'default' }: MetricCardProps)
         height: '100%',
         px: 1.5,
         py: 1.25,
-        borderRadius: 1.5,
+        borderRadius: '2px',
         bgcolor: 'background.default',
         boxShadow: 'inset 0 0 0 1px var(--mui-palette-divider)',
       }}
@@ -102,7 +102,7 @@ function MetricCard({ label, value, helper, tone = 'default' }: MetricCardProps)
 
 function SectionCard({ title, icon, children }: SectionCardProps) {
   return (
-    <Card variant="outlined" sx={{ borderRadius: 2 }}>
+    <Card variant="outlined" sx={{ borderRadius: '2px' }}>
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
         <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 1.5 }}>
           <Box sx={{ color: 'text.secondary', display: 'flex' }}>{icon}</Box>
@@ -152,7 +152,7 @@ const AdminDashboardPage: React.FC = () => {
 
   return (
     <Box className="py-3" sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 } }}>
           <Stack spacing={1.25}>
             <Stack direction="row" spacing={1.25} alignItems="center" justifyContent="space-between">
@@ -214,7 +214,7 @@ const AdminDashboardPage: React.FC = () => {
       )}
 
       {loading ? (
-        <Card variant="outlined" sx={{ borderRadius: 2 }}>
+        <Card variant="outlined" sx={{ borderRadius: '2px' }}>
           <CardContent sx={{ py: 5, textAlign: 'center' }}>
             <CircularProgress size={26} />
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>正在加载后台数据…</Typography>

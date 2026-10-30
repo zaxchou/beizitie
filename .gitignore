@@ -27,3 +27,6 @@ mini/.cache/
 dist-mini/
 
 beizitie-mini.zip
+
+# Agent 会话产物（技能截图、二维码等），不入库
+.zcode/

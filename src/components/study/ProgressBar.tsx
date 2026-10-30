@@ -20,7 +20,7 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ current, total }) => {
       <LinearProgress
         variant="determinate"
         value={Math.min(progress, 100)}
-        sx={{ height: 8, borderRadius: 4 }}
+        sx={{ height: 4, borderRadius: '2px' }}
       />
       <Typography
         variant="body2"
