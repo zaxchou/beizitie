@@ -102,16 +102,34 @@ async function main() {
   const cardDeck = new Map();
   for (const d of decks) for (const c of d.cards) cardDeck.set(c, d);
   const deckOf = (c) => cardDeck.get(c);
-  // 原图多为非正方形（如 332×512），cover 会把笔画裁掉：contain 完整放入，
-  // 补边色取原图角部采样（纸色），图块拼进图集后看不出接缝。
+  // 原图多为非正方形（如 332×512），cover 会把笔画裁掉：contain 完整放入。
+  // 补边色不能用「左上角 8×8 均值」——竖幅扫描的角部常是深色纸边或邻字残墨，
+  // 实测 1312 个图块里 48% 的补边色比纸色暗 25~60，拼进图集就是两条棕色竖带。
+  // 改为纸色估计：缩到 64px，取亮度前 25% 像素的均值（书法扫描里纸是最大且最亮的一簇）。
+  async function paperTone(raw) {
+    const { data, info } = await sharp(raw)
+      .resize(64, 64, { fit: 'inside' }).removeAlpha().raw()
+      .toBuffer({ resolveWithObject: true });
+    const c = info.channels;
+    const n = info.width * info.height;
+    const lums = [];
+    for (let i = 0; i < n; i++) {
+      const p = i * c;
+      lums.push([0.299 * data[p] + 0.587 * data[p + 1] + 0.114 * data[p + 2], p]);
+    }
+    lums.sort((a, b) => a[0] - b[0]);
+    let r = 0, g = 0, b = 0, k = 0;
+    for (let j = Math.floor(n * 0.75); j < n; j++) {
+      const p = lums[j][1];
+      r += data[p]; g += data[p + 1]; b += data[p + 2]; k++;
+    }
+    return { r: Math.round(r / k), g: Math.round(g / k), b: Math.round(b / k) };
+  }
   // median(3) 中值滤波：YGSF 图为照片底，传感器噪声是 webp 体积大头，去噪实测省 ~35%
   // （多帖共用 10MB 预算的关键）；细笔画侵蚀风险靠事后抽字目检把关。
   async function squareTile(card, size, q) {
     const raw = fs.readFileSync(path.join(CACHE, deckOf(card).z, `${card.key}.jpg`));
-    const meta = await sharp(raw).metadata();
-    const s = Math.min(8, meta.width, meta.height);
-    const { channels } = await sharp(raw).extract({ left: 0, top: 0, width: s, height: s }).stats();
-    const [r, g, b] = channels.map((c) => Math.round(c.mean));
+    const { r, g, b } = await paperTone(raw);
     return sharp(raw)
       .resize(size, size, { fit: 'contain', background: { r, g, b, alpha: 1 } })
       .median(3)
