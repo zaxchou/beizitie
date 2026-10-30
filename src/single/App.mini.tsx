@@ -82,7 +82,7 @@ export default function MiniApp() {
             <Typography color="text.secondary" sx={{ fontSize: 12.5 }}>
               本机存储暂时不可用。可以直接重试——即使存储异常，背字功能也完整可用。
             </Typography>
-            <Button variant="contained" onClick={() => void init()} sx={{ borderRadius: 2, minWidth: 160 }}>
+            <Button variant="contained" onClick={() => void init()} sx={{ borderRadius: '2px', minWidth: 160 }}>
               重试
             </Button>
           </Box>
@@ -129,7 +129,7 @@ export default function MiniApp() {
                 ))}
               </Box>
 
-              <Button fullWidth variant="contained" size="large" onClick={() => setStudying(true)} sx={{ borderRadius: 2 }}>
+              <Button fullWidth variant="contained" size="large" onClick={() => setStudying(true)} sx={{ borderRadius: '2px' }}>
                 开始背字
               </Button>
             </Box>

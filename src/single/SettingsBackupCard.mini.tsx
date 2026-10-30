@@ -4,7 +4,7 @@ import { Typography, Card, CardContent } from '@mui/material';
 /** mini 构建：容器禁用下载与文件选择，无导出/导入——以进度说明卡替代数据备份卡。 */
 export const SettingsBackupCard: React.FC<{ onChanged?: () => void }> = () => (
   <>
-    <Card variant="outlined" sx={{ borderRadius: 2 }}>
+    <Card variant="outlined" sx={{ borderRadius: '2px' }}>
       <CardContent>
         <Typography sx={{ fontWeight: 600, mb: 0.5 }}>学习进度</Typography>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.8 }}>

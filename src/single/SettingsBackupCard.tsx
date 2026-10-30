@@ -47,17 +47,17 @@ export const SettingsBackupCard: React.FC<{ onChanged?: () => void }> = ({ onCha
           {msg.text}
         </Alert>
       )}
-      <Card variant="outlined" sx={{ borderRadius: 2 }}>
+      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
         <CardContent>
           <Typography sx={{ fontWeight: 600, mb: 0.5 }}>数据备份</Typography>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
             学习记录只保存在本机浏览器中。定期导出 JSON 备份，换机或清缓存时可恢复。备份格式与在线版互通。
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
-            <Button variant="contained" onClick={handleExport} disabled={busy} sx={{ borderRadius: 2 }}>
+            <Button variant="contained" onClick={handleExport} disabled={busy} sx={{ borderRadius: '2px' }}>
               导出备份
             </Button>
-            <Button variant="outlined" onClick={() => fileRef.current?.click()} disabled={busy} sx={{ borderRadius: 2 }}>
+            <Button variant="outlined" onClick={() => fileRef.current?.click()} disabled={busy} sx={{ borderRadius: '2px' }}>
               导入备份
             </Button>
             <input

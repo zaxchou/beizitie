@@ -94,7 +94,7 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
       onClose={onClose}
       maxWidth="sm"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
+      PaperProps={{ sx: { borderRadius: '2px', overflow: 'hidden' } }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, pb: 0 }}>
         <Typography component="span" sx={{ flex: 1, fontWeight: 600, fontSize: 17 }} noWrap>
@@ -115,7 +115,7 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
               aspectRatio: '3/4',
               maxWidth: isMobile ? 180 : undefined,
               mx: isMobile ? 'auto' : undefined,
-              borderRadius: 1.5,
+              borderRadius: '2px',
               overflow: 'hidden',
               bgcolor: 'grey.50',
               boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.08)',
@@ -213,7 +213,7 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
                 title={p.context ? '查看整页原拓中的位置' : undefined}
                 sx={{
                   position: 'relative',
-                  aspectRatio: '1/1', borderRadius: 1, overflow: 'hidden', bgcolor: 'grey.50',
+                  aspectRatio: '1/1', borderRadius: '2px', overflow: 'hidden', bgcolor: 'grey.50',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0px 0px 0px 1px rgba(0,0,0,0.06)',
                   cursor: p.context ? 'zoom-in' : 'default',
@@ -234,7 +234,7 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
                   <Box
                     sx={{
                       position: 'absolute', top: 2, right: 2,
-                      px: 0.4, py: '1px', borderRadius: 0.5,
+                      px: 0.4, py: '1px', borderRadius: '2px',
                       bgcolor: 'rgba(224,178,95,0.92)', color: '#3b2a10',
                       fontSize: 9, fontWeight: 700, lineHeight: 1.3,
                     }}
@@ -250,7 +250,7 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
 
       <DialogActions sx={{ px: 2, pb: 2 }}>
         {subscribed ? (
-          <Button variant="outlined" startIcon={<CheckCircleIcon />} sx={{ borderRadius: 2 }} disabled>
+          <Button variant="outlined" startIcon={<CheckCircleIcon />} sx={{ borderRadius: '2px' }} disabled>
             已加入书库
           </Button>
         ) : (
@@ -258,7 +258,7 @@ export const DeckDetailDialog: React.FC<Props> = ({ open, zuopin, subscribed, pe
             variant="contained"
             disabled={pending}
             onClick={() => onSubscribe(zuopin)}
-            sx={{ borderRadius: 2 }}
+            sx={{ borderRadius: '2px' }}
           >
             {pending ? <CircularProgress size={16} sx={{ mr: 1 }} /> : null}
             {pending ? '加入中…' : '加入书库'}
