@@ -502,3 +502,9 @@ bash deploy.sh anki --content <pkg>  # 内容发布（dry-run + APPLY 确认）
 - 集字回真拓图集版（字体排版版弃用），取字范围 = 两帖；模板短语核验后用碑帖繁体字形（惠風和暢/天朗氣清/茂林脩竹——清单为繁体，简体对不上）。瘦金体清单含异体字码位（㑹/䔍/䫙…YGSF 标签习惯），仅影响索引键，卡面显示无碍。
 - 回归：健康 IDB 两帖学习 ✓（两帖卡片均真拓图集渲染）；断 IDB 注入下背字可点 ✓（存储降级生效）。openDb/withFallback 容错、泄题修复、Chrome 61 兼容全部保留。
 - 经验：多帖塞 10MB 的组合拳 = contain + 纸色补边 + **median 去噪** + 内容哈希文件名 + 网格搜索自动降档；帖数与分辨率不可兼得，管线按预算自动取舍。
+
+### 补记 26（2026-10-30）：七连拒总根因实锤——内联 module 脚本撞容器 CSP，已修复并实证
+- 平台网页预览出现**纯白页**（此前七次拒审的"功能缺陷/按钮无法点击"同源）。重读 zip-artifact-spec.md §3/§5，规范白纸黑字：容器 CSP 的 script-src **不含 unsafe-inline → 内联 <script> 被禁止**；且**脚本必须是经典脚本，禁止 type="module"**，"典型症状是页面渲染出来但 JS 完全不执行"。而 vite-plugin-singlefile 的产物恰是一整段内联 module 脚本——**两条全踩**。CSP 只拦 JS 不拦 HTML/CSS → React 从未挂载 → 纯白。本地 http 服务器无 CSP，永远复现不了；此前所有轮次（含网页预览与真机审核）看到的一直是这个死页面。Chrome 61/存储等修复仍是真实加固，但都不是拦路虎。
+- 修复：弃用 vite-plugin-singlefile，改为 **IIFE 经典脚本外置**——产物 index.html + ./app.js（classic，无 import/export）+ ./style.css + img/atlas/*.webp；base './' 相对路径；脚本标签移至 </body> 前（head 同步执行时 #root 不存在，React #299 空白的第二个坑）。build-mini.sh 新增 **CSP 门禁**：入口禁内联 <script> / type="module"，必须含 <script src="./app.js">。
+- 实证：以容器同款 CSP 头（script-src 'self' 无 unsafe-inline）伺服新包 → 全流程通过（主屏/真拓学习/集字生成/数据/设置），控制台 0 报错。
+- 流程教训：平台规范文档（zip-artifact-spec §3/§5 的 CSP 与经典脚本条款）从第一天就写明了这条红线，接入新渠道时**规范文档必须先于构建工具选型通读**；vite 默认产物形态是 ES module，与"禁 module"容器天然冲突，不能用 singlefile 想当然。

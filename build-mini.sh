@@ -14,15 +14,39 @@ node mini/build-data.mjs
 
 echo "== 2/3 构建 =="
 npm run build:mini 2>&1 | tail -1
-# 诊断版字体名收敛：包内引用只保留系统黑体/宋体（零字体文件，仅改产物里的字体名）
+# 容器 CSP 合规 + 字体名收敛（产物：mini.html / app.js / index.css）
+# CSP 硬约束（zip-artifact-spec §3）：脚本必须外置经典脚本——内联 <script> 与 type="module" 均被禁止；
+# 违规症状 = 容器内 JS 完全不执行（七连拒的真正根因，见 HANDOFF 补记 26）
 node -e "
 const fs = require('fs');
-const p = 'dist-mini/mini.html';
+const files = ['dist-mini/mini.html', 'dist-mini/app.js', 'dist-mini/index.css'].filter(f => fs.existsSync(f));
 const MAP = [['Noto Serif SC','SimSun'],['Noto Sans SC','SimHei'],['Ma Shan Zheng','SimSun'],['KaiTi','SimSun'],['Kaiti','SimSun'],['楷体','宋体'],['Roboto','SimHei']];
-let html = fs.readFileSync(p, 'utf-8');
-for (const [a, b] of MAP) html = html.split(a).join(b);
-fs.writeFileSync(p, html);
-console.log('字体名已收敛为系统黑体/宋体');
+for (const p of files) {
+  let s = fs.readFileSync(p, 'utf-8');
+  for (const [a, b] of MAP) s = s.split(a).join(b);
+  if (p.endsWith('.html')) {
+    s = s.replace(/ type=\"module\"/g, '').replace(/ crossorigin/g, '');
+    // 经典脚本在 <head> 同步执行时 #root 尚未存在（React #299 空白）——移到 </body> 前，与规范模板一致
+    const tag = '<script src=\"./app.js\"></script>';
+    if (!s.includes(tag)) { console.error('❌ 未找到脚本标签', tag); process.exit(1); }
+    s = s.replace(tag, '');
+    if (!s.includes('</body>')) { console.error('❌ 未找到 </body>'); process.exit(1); }
+    s = s.replace('</body>', tag + '</body>');
+  }
+  fs.writeFileSync(p, s);
+}
+console.log('字体名收敛 + CSP 合规处理完成:', files.join(', '));
+"
+# 门禁：入口 html 禁内联 <script> / type="module"，脚本必须为外置 ./app.js
+node -e "
+const fs = require('fs');
+const html = fs.readFileSync('dist-mini/mini.html', 'utf-8');
+const scripts = html.match(/<script\b[^>]*>/gi) || [];
+const inline = scripts.filter(t => !/\bsrc=/.test(t));
+if (inline.length) { console.error('❌ 入口存在内联 <script>（容器 CSP 禁止）:', inline.join(' ')); process.exit(1); }
+if (/type=[\"']?module/i.test(html)) { console.error('❌ type=module（容器 CSP 禁止）'); process.exit(1); }
+if (!/<script src=\"\.\/app\.js\"><\/script>/.test(html)) { console.error('❌ 未找到 <script src=\"./app.js\">'); process.exit(1); }
+console.log('✅ CSP 合规：外置经典脚本', scripts.length, '个');
 "
 cp dist-mini/mini.html dist-mini/index.html
 rm -f dist-mini/mini.html
