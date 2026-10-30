@@ -30,3 +30,6 @@ beizitie-mini.zip
 
 # Agent 会话产物（技能截图、二维码等），不入库
 .zcode/
+
+# 设计工作区（三个方向的探索稿、截图、预览脚本）
+.oil-ui/
