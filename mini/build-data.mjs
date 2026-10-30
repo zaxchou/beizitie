@@ -25,6 +25,7 @@ const GRID = 4; // 每图集 4×4 = 16 字；1536² 解码内存约 9MB，移动
 // images=false：纯文字诊断版——零图片、零字体文件，字卡用系统字体渲染。
 // 用于二分定位平台拒审原因（过→问题在素材；仍拒→问题在包外）
 const IMAGES = cfg.images !== false;
+let atlasCount = 0;
 
 /** 缓存键 = 内容 URL 哈希：catalog 数据更新导致字符顺序变化时不会字图错位 */
 const cacheKey = (url) => crypto.createHash('sha1').update(url).digest('hex').slice(0, 16);
@@ -102,7 +103,9 @@ async function main() {
   for (const d of decks) for (const c of d.cards) cardDeck.set(c, d);
   const deckOf = (c) => cardDeck.get(c);
   // 原图多为非正方形（如 332×512），cover 会把笔画裁掉：contain 完整放入，
-  // 补边色取原图角部采样（纸色），图块拼进图集后看不出接缝
+  // 补边色取原图角部采样（纸色），图块拼进图集后看不出接缝。
+  // median(3) 中值滤波：YGSF 图为照片底，传感器噪声是 webp 体积大头，去噪实测省 ~35%
+  // （多帖共用 10MB 预算的关键）；细笔画侵蚀风险靠事后抽字目检把关。
   async function squareTile(card, size, q) {
     const raw = fs.readFileSync(path.join(CACHE, deckOf(card).z, `${card.key}.jpg`));
     const meta = await sharp(raw).metadata();
@@ -111,6 +114,7 @@ async function main() {
     const [r, g, b] = channels.map((c) => Math.round(c.mean));
     return sharp(raw)
       .resize(size, size, { fit: 'contain', background: { r, g, b, alpha: 1 } })
+      .median(3)
       .webp({ quality: q, effort: 5, smartSubsample: true })
       .toBuffer();
   }
@@ -142,7 +146,7 @@ async function main() {
   // ---- 按 4×4 拼图集（每帖独立编号；缩放后单次编码，无二次损失）----
   fs.rmSync(PUB_IMG, { recursive: true, force: true });
   let total = 0;
-  let atlasCount = 0;
+  atlasCount = 0;
   for (const deck of decks) {
     const outDir = path.join(PUB_IMG, 'atlas');
     fs.mkdirSync(outDir, { recursive: true });

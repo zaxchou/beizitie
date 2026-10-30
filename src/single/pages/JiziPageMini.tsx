@@ -1,20 +1,37 @@
 /**
- * 集字（mini 专属·字体排版版）：取字范围 = 包内字帖《兰亭序》。
- * 纯本地匹配（包内清单即索引），作品经 Canvas 以系统宋体排版生成，走 JSBridge 存相册；
+ * 集字（mini 专属·真拓图集版）：取字范围 = 包内字帖（兰亭序 + 瘦金体千字文）。
+ * 纯本地匹配（包内清单即索引），作品经 Canvas 生成，走 JSBridge 存相册；
  * 无 JSBridge 环境（PC 模拟器）显示预览图并提示。
- * 不打包任何字图/字体文件——轻量化提审形态（HANDOFF 补记 24）。
  */
 import React, { useMemo, useState } from 'react';
 import { Box, Typography, Button, Card, CardContent, Chip, TextField } from '@mui/material';
 import { bundledZitie, catalogJson } from '@catalog/source';
+import { parseAtlasUrl } from '../../core/types';
 import type { CatalogZuopin } from '../../core/types';
 
 interface Hit {
   h: string;
+  rel: string;
   deckName: string;
 }
 
-/** char → 命中（包内清单即索引；同字多帖取先出现） */
+/** 图集图片缓存：同一图集只加载一次 */
+const atlasImages = new Map<string, Promise<HTMLImageElement>>();
+function loadAtlas(atlasPath: string): Promise<HTMLImageElement> {
+  let p = atlasImages.get(atlasPath);
+  if (!p) {
+    p = new Promise((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = () => rej(new Error('atlas load'));
+      img.src = atlasPath;
+    });
+    atlasImages.set(atlasPath, p);
+  }
+  return p;
+}
+
+/** char → 命中（两帖合并索引；同字多帖取先出现，帖序即用户学习顺序） */
 const index = (() => {
   const m = new Map<string, Hit>();
   const decks = JSON.parse(catalogJson) as { zuopins: CatalogZuopin[] };
@@ -24,18 +41,16 @@ const index = (() => {
     for (const g of manifest.g) {
       const h = (g.h || '').trim();
       if (!h || h === '□') continue;
-      if (!m.has(h)) m.set(h, { h, deckName: nameByZ.get(z) || z });
+      if (!m.has(h)) m.set(h, { h, rel: g.rel, deckName: nameByZ.get(z) || z });
     }
   }
   return m;
 })();
 
-// 模板短语用碑帖原文字形（神龙本为繁体）：经清单逐字核验全覆盖
+// 模板短语用碑帖原文字形（清单为繁体），经清单逐字核验全覆盖
 const TEMPLATES = ['永和九年', '天朗氣清', '惠風和暢', '茂林脩竹'];
-const SONG = `'SimSun','宋体','Songti SC',serif`;
 
-/** 字体排版成作品：宣纸底 + 朱线字块 + 题头落款，全程 Canvas 文字绘制 */
-function composeCanvas(hits: Hit[], missing: string[], text: string): string {
+async function composeCanvas(hits: Hit[], missing: string[], text: string): Promise<string> {
   const COLS = 5;
   const CELL = 170;
   const PAD = 24;
@@ -51,29 +66,28 @@ function composeCanvas(hits: Hit[], missing: string[], text: string): string {
   ctx.fillStyle = '#f4eee0';
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = '#8a7d68';
-  ctx.font = `22px ${SONG}`;
+  ctx.font = '22px "BeizitieKai", KaiTi, serif';
   ctx.textAlign = 'center';
   ctx.fillText(`集字 · ${text.slice(0, 18)}`, W / 2, 52);
-  // 字块（宋体大字 + 朱线框）
+  // 字块（真拓图 + 朱线框）
   for (let i = 0; i < hits.length; i++) {
+    const ref = parseAtlasUrl(hits[i].rel);
+    if (!ref) continue;
+    const atlasImg = await loadAtlas(ref.atlas);
+    const src = atlasImg.naturalWidth / 4; // 图集为 4×4
     const col = i % COLS;
     const row = Math.floor(i / COLS);
     const x = PAD + col * CELL + 10;
     const y = HEAD + row * CELL + 10;
-    ctx.fillStyle = '#fbf7ec';
+    ctx.fillStyle = '#1c1c1c';
     ctx.fillRect(x, y, CELL - 20, CELL - 20);
+    ctx.drawImage(atlasImg, ref.col * src, ref.row * src, src, src, x, y, CELL - 20, CELL - 20);
     ctx.strokeStyle = 'rgba(180,120,60,.55)';
     ctx.lineWidth = 2;
     ctx.strokeRect(x, y, CELL - 20, CELL - 20);
-    ctx.fillStyle = '#1c1c1c';
-    ctx.font = `112px ${SONG}`;
-    ctx.textBaseline = 'middle';
-    ctx.fillText(hits[i].h, x + (CELL - 20) / 2, y + (CELL - 20) / 2 + 6);
-    ctx.textBaseline = 'alphabetic';
   }
   ctx.fillStyle = '#a99f8a';
-  ctx.font = `16px ${SONG}`;
-  ctx.textAlign = 'center';
+  ctx.font = '16px "BeizitieKai", KaiTi, serif';
   ctx.fillText('背字帖 · 集字', W / 2, H - 40);
   if (missing.length) {
     ctx.fillText(`缺字 ${missing.length} 个`, W / 2, H - 50);
@@ -170,15 +184,14 @@ export const JiziPageMini: React.FC = () => {
         <Card variant="outlined" sx={{ borderRadius: 2 }}>
           <CardContent>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {hits.map((h, i) => (
-                <Box key={`${h.h}-${i}`} sx={{
-                  width: 64, height: 64, borderRadius: 1,
-                  bgcolor: '#fbf7ec', boxShadow: '0 0 0 1px rgba(180,120,60,.45)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <Box component="span" className="font-kai" sx={{ fontSize: 38, color: '#1c1c1c', lineHeight: 1 }}>
-                    {h.h}
-                  </Box>
+              {hits.map((h) => (
+                <Box key={h.rel} sx={{ width: 64, height: 64, borderRadius: 1, overflow: 'hidden', bgcolor: '#1c1c1c', boxShadow: '0 0 0 1px rgba(0,0,0,.25)' }}>
+                  <Box sx={{
+                    width: '100%', height: '100%',
+                    backgroundImage: `url(${parseAtlasUrl(h.rel)?.atlas})`,
+                    backgroundSize: '400% 400%',
+                    backgroundPosition: (() => { const r = parseAtlasUrl(h.rel); return r ? `${r.col * (100 / 3)}% ${r.row * (100 / 3)}%` : '0 0'; })(),
+                  }} />
                 </Box>
               ))}
             </Box>
@@ -192,8 +205,9 @@ export const JiziPageMini: React.FC = () => {
                 输入的字都不在包内帖中，换个短句试试
               </Typography>
             ) : (
-              <Button fullWidth variant="contained" sx={{ borderRadius: 2, mt: 1.5 }} onClick={() => {
-                setWork(composeCanvas(hits, missing, text.replace(/\s/g, '')));
+              <Button fullWidth variant="contained" sx={{ borderRadius: 2, mt: 1.5 }} onClick={async () => {
+                const dataUrl = await composeCanvas(hits, missing, text.replace(/\s/g, ''));
+                setWork(dataUrl);
                 setSaveTip(null);
               }}>
                 生成作品
