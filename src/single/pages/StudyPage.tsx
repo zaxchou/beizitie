@@ -253,6 +253,7 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
               borderColor: 'text.primary',
               bgcolor: 'background.paper',
               overflow: 'hidden',
+              display: 'flex',
             }}
           >
             <FlashCard
@@ -260,6 +261,7 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
               card={progress!}
               flipped={flipped}
               onFlip={() => setFlipped((f) => !f)}
+              fill
               bare
             />
           </Box>
