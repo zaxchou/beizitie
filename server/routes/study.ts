@@ -257,21 +257,34 @@ studyRouter.get('/daily-stats/:date', async (req: Request, res: Response) => {
 studyRouter.put('/daily-stats/:date', async (req: Request, res: Response) => {
   try {
     const date = String(req.params.date);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-      res.status(400).json({ error: 'date must be YYYY-MM-DD' });
+    const parsed = new Date(`${date}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+      res.status(400).json({ error: 'date must be a real YYYY-MM-DD date' });
       return;
     }
     const clamp = (v: unknown): number => {
       const n = Number(v);
       return Number.isFinite(n) ? Math.max(0, Math.min(100000, Math.round(n))) : 0;
     };
-    const cardsStudied = clamp(req.body.cards_studied);
-    const newLearned = Math.min(cardsStudied, clamp(req.body.new_cards_learned));
-
     const db = getDb();
 
     // 单条 upsert：避免"先查后插"在并发首写时撞主键
     const deckId = (req.body.deck_id as string | undefined) || '';
+
+    // 只传一个字段时沿用旧值，避免把另一个字段静默清零
+    const prev = (await db.query(
+      'SELECT cards_studied, new_cards_learned FROM daily_stats WHERE date = $1 AND user_id = $2 AND deck_id = $3',
+      [date, req.user!.userId, deckId]
+    )).rows[0];
+    const cardsStudied = req.body.cards_studied === undefined
+      ? clamp(prev?.cards_studied ?? 0)
+      : clamp(req.body.cards_studied);
+    const newLearned = Math.min(
+      cardsStudied,
+      req.body.new_cards_learned === undefined
+        ? clamp(prev?.new_cards_learned ?? 0)
+        : clamp(req.body.new_cards_learned),
+    );
     const { rows } = await db.query(
       `INSERT INTO daily_stats (date, user_id, deck_id, cards_studied, new_cards_learned)
        VALUES ($1, $2, $3, $4, $5)

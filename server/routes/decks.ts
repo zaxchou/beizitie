@@ -308,6 +308,13 @@ decksRouter.put('/decks/:id/reset-progress', async (req: Request, res: Response)
     }
 
     const now = nowISO();
+
+    // 先判定是否帖主，再删进度：避免"进度删了但后续步骤失败"
+    const isOwner = isAdmin || (await db.query(
+      'SELECT 1 FROM decks WHERE id = $1 AND user_id = $2',
+      [id, req.user!.userId]
+    )).rows[0];
+
     const deleteResult = await db.query(
       `DELETE FROM user_card_progress
        WHERE user_id = $1
@@ -317,10 +324,6 @@ decksRouter.put('/decks/:id/reset-progress', async (req: Request, res: Response)
 
     // 共享牌组的卡片列与帖设置只允许帖主/管理员重置；
     // 订阅者重置只清自己的进度，否则会改到其他订阅者的学习节奏。
-    const isOwner = isAdmin || (await db.query(
-      'SELECT 1 FROM decks WHERE id = $1 AND user_id = $2',
-      [id, req.user!.userId]
-    )).rows[0];
     if (isOwner) {
       await db.query(
         `UPDATE cards SET ease = 2.5, interval = 0, repetitions = 0,

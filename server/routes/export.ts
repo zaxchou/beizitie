@@ -42,9 +42,17 @@ exportRouter.get('/export/:deckId', requireAdmin, async (req: Request, res: Resp
 
     // 2. 获取卡片
     const { rows: cards } = await db.query(
-      `SELECT id, deck_id, front_text, back_text, image_url, ease, interval, repetitions, next_review, created_at
-       FROM cards WHERE deck_id = $1 ORDER BY created_at ASC`,
-      [deckId]
+      `SELECT c.id, c.deck_id, c.front_text, c.back_text, c.image_url,
+              COALESCE(p.ease, c.ease) AS ease,
+              COALESCE(p.interval, c.interval) AS interval,
+              COALESCE(p.repetitions, c.repetitions) AS repetitions,
+              COALESCE(p.next_review, c.next_review) AS next_review,
+              c.created_at
+       FROM cards c
+       LEFT JOIN user_card_progress p ON p.card_id = c.id AND p.user_id = $2
+       WHERE c.deck_id = $1 AND c.archived_at IS NULL
+       ORDER BY c.created_at ASC`,
+      [deckId, req.user!.userId]
     ) as unknown as { rows: Array<Record<string, unknown>> };
 
     if (cards.length === 0) {

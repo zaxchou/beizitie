@@ -233,6 +233,7 @@ export const localDataSource: LocalDataSource = {
     async list() {
       const decks = await getAllDecks();
       const now = new Date();
+      const today = todayLocal();
       const result = [];
       for (const d of decks.sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
         const [cards, progress] = await Promise.all([getCardsByDeck(d.id), getProgressByDeck(d.id)]);
@@ -248,7 +249,10 @@ export const localDataSource: LocalDataSource = {
           newCount = 0;
           reviewCount = 0;
         } else {
-          newCount = Math.min(newCount, d.settings.dailyNewLimit);
+          const learnedNewToday = progress.filter(
+            (p) => (p.firstReviewedAt || '').slice(0, 10) === today,
+          ).length;
+          newCount = Math.min(newCount, Math.max(0, d.settings.dailyNewLimit - learnedNewToday));
           reviewCount = Math.min(reviewCount, d.settings.dailyReviewLimit);
         }
         result.push({
@@ -303,9 +307,12 @@ export const localDataSource: LocalDataSource = {
           ? [...dueAll].sort(byOrder)
           : [...dueAll].sort((a, b) => (pMap.get(a.id)!.dueAt || '').localeCompare(pMap.get(b.id)!.dueAt || ''))
       ).slice(0, settings.dailyReviewLimit);
-      // 今天已经学过的新字要占额度：否则退出再进可以无限刷每日新字
-      const todayStat = await getStat(todayLocal());
-      const remainingNew = Math.max(0, settings.dailyNewLimit - (todayStat?.newLearned ?? 0));
+      // 今日已学新字按「本帖」算：全局日统计会把 A 帖的额度带到 B 帖
+      const today = todayLocal();
+      const learnedNewToday = progress.filter(
+        (p) => (p.firstReviewedAt || '').slice(0, 10) === today,
+      ).length;
+      const remainingNew = Math.max(0, settings.dailyNewLimit - learnedNewToday);
       const fresh = cards.filter((c) => !pMap.get(c.id)).sort(byOrder).slice(0, remainingNew);
       let ordered: LocalCard[];
       if (settings.paused) ordered = [];
@@ -336,6 +343,7 @@ export const localDataSource: LocalDataSource = {
         repetitions: next.repetitions,
         dueAt: next.next_review,
         lastReviewed: nowIso,
+        ...(existing ? {} : { firstReviewedAt: nowIso }),
       };
       const date = todayLocal();
       const stat = (await getStat(date)) || { date, studied: 0, newLearned: 0 };
@@ -435,6 +443,7 @@ export const localDataSource: LocalDataSource = {
           repetitions: p.repetitions,
           next_review: p.dueAt,
           last_review: p.lastReviewed,
+          first_reviewed_at: p.firstReviewedAt ?? null,
         })),
         stats: await getAllStats(),
       };
@@ -486,6 +495,7 @@ export const localDataSource: LocalDataSource = {
           repetitions: p.repetitions,
           dueAt: p.next_review,
           lastReviewed: p.last_review ?? null,
+          ...(p.first_reviewed_at ? { firstReviewedAt: p.first_reviewed_at } : {}),
         });
         report.progress++;
       }

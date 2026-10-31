@@ -312,7 +312,14 @@ const StudyPage: React.FC = () => {
       <Box className="py-4">
         <Alert severity="error" className="mb-4">{error}</Alert>
         <Alert severity="info" action={
-          <Box component="button" onClick={() => startSession(deckId!)} className="cursor-pointer bg-transparent border-0 underline" style={{ color: 'var(--vermilion)' }}>重试</Box>
+          <Box
+            component="button"
+            onClick={() => startSession(deckId!, setupNewLimit, setupReviewLimit, difficultyFilter || undefined, setupMode)}
+            className="cursor-pointer bg-transparent border-0 underline"
+            style={{ color: 'var(--vermilion)' }}
+          >
+            重试
+          </Box>
         }>加载学习内容失败</Alert>
       </Box>
     );

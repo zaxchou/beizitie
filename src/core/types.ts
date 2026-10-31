@@ -128,6 +128,8 @@ export interface LocalProgress {
   repetitions: number;
   dueAt: string;             // ISO
   lastReviewed: string | null;
+  /** 首次学习时间（本地版用于按帖算「今日已学新字」额度） */
+  firstReviewedAt?: string;
 }
 
 /** 每日统计（IndexedDB stats store，键 YYYY-MM-DD，本地时区） */

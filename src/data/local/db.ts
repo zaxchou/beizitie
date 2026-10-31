@@ -103,7 +103,14 @@ async function withFallback<T>(idbOp: () => Promise<T>, memOp: () => T): Promise
   try {
     return await idbOp();
   } catch (e) {
-    markBroken();
+    // 只有「库本身不可用」才整体降级；配额不足/单条写失败只影响这一次操作，
+    // 否则一次字图缓存写满会让书库、进度、统计全部显示为空。
+    const name = (e as { name?: string } | null)?.name || '';
+    if (name === 'VersionError' || name === 'InvalidStateError' || name === 'NotFoundError') {
+      markBroken();
+    } else {
+      console.warn('[beizitie] IndexedDB 操作失败，本次降级内存：', name || e);
+    }
     return memOp();
   }
 }

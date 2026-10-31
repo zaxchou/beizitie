@@ -93,11 +93,20 @@ cardsRouter.get('/decks/:deckId/cards', async (req: Request, res: Response) => {
       return;
     }
 
+    // SM-2 状态在 user_card_progress：卡片管理页必须看「我」的进度，
+    // 不能拿 cards 表里的历史列（那列只在导入/重置时写）
     const cards = (await db.query(
-      `SELECT id, deck_id, front_text, back_text, image_url, ease, interval, repetitions,
-              next_review, last_review, created_at, updated_at
-       FROM cards WHERE deck_id = $1 AND archived_at IS NULL ORDER BY created_at DESC`,
-      [deckId]
+      `SELECT c.id, c.deck_id, c.front_text, c.back_text, c.image_url,
+              COALESCE(p.ease, c.ease) AS ease,
+              COALESCE(p.interval, c.interval) AS interval,
+              COALESCE(p.repetitions, c.repetitions) AS repetitions,
+              COALESCE(p.next_review, c.next_review) AS next_review,
+              p.last_review, c.created_at, c.updated_at
+       FROM cards c
+       LEFT JOIN user_card_progress p ON p.card_id = c.id AND p.user_id = $2
+       WHERE c.deck_id = $1 AND c.archived_at IS NULL
+       ORDER BY c.created_at DESC`,
+      [deckId, req.user!.userId]
     )).rows;
 
     res.json(cards);
@@ -408,7 +417,10 @@ cardsRouter.put('/cards/:id/progress', async (req: Request, res: Response) => {
     const isAdmin = req.user!.role === 'admin';
 
     const db = getDb();
-    const card = (await db.query('SELECT id, deck_id FROM cards WHERE id = $1', [id])).rows[0] as { id: string; deck_id: string } | undefined;
+    const card = (await db.query(
+      'SELECT id, deck_id FROM cards WHERE id = $1 AND archived_at IS NULL',
+      [id]
+    )).rows[0] as { id: string; deck_id: string } | undefined;
     if (!card) {
       res.status(404).json({ error: 'Card not found' });
       return;
@@ -433,9 +445,27 @@ cardsRouter.put('/cards/:id/progress', async (req: Request, res: Response) => {
       return;
     }
 
+    // 客户端传来的 SRS 字段必须有界：否则一条请求就能让卡片永久退出队列
+    const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+    if (ease !== undefined && (!isNum(ease) || ease < 1.3 || ease > 5)) {
+      res.status(400).json({ error: 'ease must be a number in [1.3, 5]' }); return;
+    }
+    if (interval !== undefined && (!isNum(interval) || interval < 0 || interval > 36500)) {
+      res.status(400).json({ error: 'interval must be a number in [0, 36500]' }); return;
+    }
+    if (repetitions !== undefined && (!Number.isInteger(repetitions) || repetitions < 0 || repetitions > 100000)) {
+      res.status(400).json({ error: 'repetitions must be a non-negative integer' }); return;
+    }
+    if (next_review !== undefined && (typeof next_review !== 'string' || Number.isNaN(Date.parse(next_review)))) {
+      res.status(400).json({ error: 'next_review must be an ISO timestamp' }); return;
+    }
+    if (last_review !== undefined && last_review !== null && (typeof last_review !== 'string' || Number.isNaN(Date.parse(last_review)))) {
+      res.status(400).json({ error: 'last_review must be an ISO timestamp or null' }); return;
+    }
+
     await db.query(
       `INSERT INTO user_card_progress (user_id, card_id, ease, interval, repetitions, next_review, last_review)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       VALUES ($1, $2, $3, $4, $5, COALESCE($6, now()), $7)
        ON CONFLICT(user_id, card_id) DO UPDATE SET
          ease = COALESCE(excluded.ease, user_card_progress.ease),
          interval = COALESCE(excluded.interval, user_card_progress.interval),

@@ -248,8 +248,8 @@ analyticsRouter.get('/analytics/daily-extra', async (req: Request, res: Response
                        ELSE 0 END) as minutes
        FROM study_sessions
        WHERE user_id = $1
-         AND started_at::timestamptz >= $2::date
-         AND started_at::timestamptz < ($3::date + interval '1 day')
+         AND (started_at::timestamptz AT TIME ZONE 'Asia/Shanghai')::date >= $2::date
+         AND (started_at::timestamptz AT TIME ZONE 'Asia/Shanghai')::date <= $3::date
          AND ended_at IS NOT NULL
          ${sessionWhere}
        GROUP BY date_key`,
