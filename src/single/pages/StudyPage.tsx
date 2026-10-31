@@ -1,14 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Box,
-  Typography,
-  Button,
-  Card as MuiCard,
-  CardContent,
-  Chip,
-  LinearProgress,
-} from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import { Box, Typography, Button } from '@mui/material';
 import FlashCard from '@/components/study/FlashCard';
 import RatingButtons from '@/components/study/RatingButtons';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
@@ -133,82 +124,182 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
     }
   };
 
+  // 空格翻面 / ESC 退出（焦点在输入框时不抢键）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      const typing = tag === 'input' || tag === 'textarea' || tag === 'select';
+      if (e.code === 'Space' && !typing) {
+        e.preventDefault();
+        if (!sessionDone && queue.length > 0) setFlipped((f) => !f);
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (rated > 0 && !sessionDone) setConfirmExit(true);
+        else onExitStudy();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [rated, sessionDone, queue.length, onExitStudy]);
+
   // ---- 加载中 ----
   if (loading) {
-    return <Typography color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>正在出卡…</Typography>;
+    return <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.7, textAlign: 'center', py: 6 }}>正在出卡…</Typography>;
   }
 
   const done = sessionDone || queue.length === 0;
   const totalToday = queue.length;
 
   return (
-    <Box className="space-y-3" sx={{ maxWidth: 560, mx: 'auto', px: 2, pb: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* 顶栏 */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-        <Button
-          size="small" startIcon={<ArrowBackIcon />}
+    <Box sx={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+      {/* 顶栏：返回 / 帖名 / 进度 · 计时 */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1.5, md: 2.5 },
+          px: { xs: 2, md: 4 },
+          height: 56,
+          flexShrink: 0,
+          borderBottom: '1px solid',
+          borderColor: 'text.primary',
+        }}
+      >
+        <Box
+          component="button"
+          type="button"
           onClick={() => (rated > 0 && !sessionDone ? setConfirmExit(true) : onExitStudy())}
-          sx={{ borderRadius: '2px' }}
+          sx={{
+            border: 0,
+            background: 'none',
+            color: 'inherit',
+            p: 0,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-mono)',
+            fontSize: 11,
+            letterSpacing: '0.04em',
+            opacity: 0.75,
+            whiteSpace: 'nowrap',
+            '&:hover': { opacity: 1, textDecoration: 'underline' },
+          }}
         >
-          {exitLabel}
-        </Button>
-        <Box sx={{ flex: 1, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 0 }}>
-          <Typography className="font-kai" sx={{ fontSize: 17 }} noWrap>{studyingDeck.name}</Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', fontVariantNumeric: 'tabular-nums' }}>{mmss}</Typography>
+          ← {exitLabel}
         </Box>
+        <Typography
+          sx={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.06em', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+        >
+          {studyingDeck.name}
+        </Typography>
+        <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.04em', opacity: 0.7, whiteSpace: 'nowrap' }}>
+          {done ? mmss : `${index + 1}/${totalToday} · ${mmss}`}
+        </Typography>
       </Box>
 
+      {/* 进度：一条 2px 墨线 */}
       {!done && (
-        <LinearProgress
-          variant="determinate"
-          value={totalToday ? (index / totalToday) * 100 : 100}
-          sx={{ height: 4, borderRadius: '2px', width: '100%' }}
-        />
+        <Box sx={{ height: 2, bgcolor: 'divider', flexShrink: 0 }}>
+          <Box sx={{ width: `${totalToday ? (index / totalToday) * 100 : 100}%`, height: '100%', bgcolor: 'text.primary', transition: 'width 200ms linear' }} />
+        </Box>
       )}
 
       {done ? (
-        <MuiCard variant="outlined" sx={{ borderRadius: '2px', textAlign: 'center', py: 6 }}>
-          <CardContent>
-            <Typography className="font-kai" sx={{ fontSize: 40, mb: 1, color: 'text.disabled' }}>畢</Typography>
-            <Typography sx={{ fontWeight: 700, fontSize: 18, mb: 0.5 }}>
-              {queue.length === 0 ? '今日无需学习' : '本轮完成'}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              {queue.length === 0 ? '这张帖今天没有到期的卡片' : `共完成 ${rated} 张`}
-            </Typography>
-            <Button variant="contained" onClick={onExitStudy} sx={{ borderRadius: '2px' }}>
-              返回{exitLabel}
-            </Button>
-          </CardContent>
-        </MuiCard>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', px: 3, textAlign: 'center' }}>
+          <Typography className="font-kai" sx={{ fontSize: 96, fontWeight: 900, lineHeight: 1, opacity: 0.14 }}>畢</Typography>
+          <Typography sx={{ mt: 2, fontSize: 18, fontWeight: 700, letterSpacing: '0.08em' }}>
+            {queue.length === 0 ? '今日无需背写' : '本轮完成'}
+          </Typography>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.04em', opacity: 0.65, mt: 0.75 }}>
+            {queue.length === 0 ? 'NOTHING DUE · 这帖今天没有到期的字' : `DONE · 共背写 ${rated} 字 · 用时 ${mmss}`}
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={onExitStudy}
+            sx={{ mt: 3, height: 46, px: 3, justifyContent: 'space-between', gap: 4 }}
+          >
+            <span>返回{exitLabel}</span>
+            <span aria-hidden>→</span>
+          </Button>
+        </Box>
       ) : (
-        <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Chip label={`${index + 1} / ${totalToday}`} size="small" variant="outlined" />
-            <Chip
-              label={current.isNew ? '新卡' : '复习'}
-              size="small"
-              color={current.isNew ? 'primary' : 'secondary'}
-              variant="outlined"
+        <Box
+          sx={{
+            flex: 1,
+            width: '100%',
+            maxWidth: 760,
+            mx: 'auto',
+            px: { xs: 2.5, md: 4 },
+            py: { xs: 2, md: 3 },
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            minHeight: 0,
+          }}
+        >
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.16em', opacity: 0.6 }}>
+            {current.isNew ? 'NEW · 新字' : 'REVIEW · 复习'}
+          </Typography>
+          <Typography sx={{ fontSize: { xs: 14, md: 15 }, fontWeight: 500, letterSpacing: '0.14em', mt: 0.75 }}>
+            这个字，原帖怎么写？
+          </Typography>
+
+          {/* 卡面：翻面前是今字，翻面后是原帖字图 */}
+          <Box
+            sx={{
+              mt: { xs: 1.5, md: 2 },
+              height: { xs: 'min(46vh, 380px)', md: 'min(52vh, 460px)' },
+              minHeight: 220,
+              border: '2px solid',
+              borderColor: 'text.primary',
+              bgcolor: 'background.paper',
+              overflow: 'hidden',
+            }}
+          >
+            <FlashCard
+              key={current.card.id}
+              card={progress!}
+              flipped={flipped}
+              onFlip={() => setFlipped((f) => !f)}
+              bare
             />
           </Box>
 
-          {/* key=卡id：换卡重挂载，不做翻回动画（动画前半段背面会泄露下一张答案），与在线版一致 */}
-          <Box sx={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', my: 1.5 }}>
-            <FlashCard key={current.card.id} card={progress!} flipped={flipped} onFlip={() => setFlipped((f) => !f)} fill />
-          </Box>
-
-          {/* 动作区高度固定：评分是 2×2（124px），揭晓前后卡面高度不再跳 */}
-          <Box sx={{ minHeight: { xs: 124, sm: 58 }, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          {/* 动作区高度固定：翻面前后不再跳 */}
+          <Box sx={{ mt: { xs: 1.5, md: 2 }, minHeight: { xs: 124, md: 58 } }}>
             {flipped ? (
-              <RatingButtons onRate={handleRate} card={{ ease: current.card.ease, interval: current.card.interval, repetitions: current.card.repetitions }} />
+              <RatingButtons
+                onRate={handleRate}
+                card={{
+                  ease: current.card.ease,
+                  interval: current.card.interval,
+                  repetitions: current.card.repetitions,
+                }}
+              />
             ) : (
-              <Button fullWidth variant="contained" size="large" onClick={() => setFlipped(true)}
-                sx={{ borderRadius: '2px', height: 58 }}>
-                显示字帖原字
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={() => setFlipped(true)}
+                sx={{ height: 56, justifyContent: 'space-between', px: 2.25 }}
+              >
+                <span>看原帖</span>
+                <span aria-hidden>→</span>
               </Button>
             )}
           </Box>
+
+          <Typography
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              fontFamily: 'var(--font-mono)',
+              fontSize: 9.5,
+              letterSpacing: '0.06em',
+              opacity: 0.5,
+              mt: 1,
+            }}
+          >
+            空格翻面 · 1–4 评分 · ESC 退出
+          </Typography>
         </Box>
       )}
 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Card, CardContent, LinearProgress } from '@mui/material';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Box, Typography } from '@mui/material';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { localDataSource } from '@/data/local/localAdapter';
 import type { LocalDailyStat } from '@/core/types';
 
@@ -66,116 +66,187 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
     复习: Math.max(0, s.studied - s.newLearned),
   }));
 
-  return (
-    <Box className="space-y-3">
-      <Typography className="font-kai" sx={{ fontSize: 20, fontWeight: 700 }}>学习数据</Typography>
+  const mono = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
-        {[
-          { label: '今日学习', value: todayStudied, unit: '张' },
-          { label: '累计学习', value: totalStudied, unit: '张' },
-          { label: '学习天数', value: days, unit: '天' },
-          { label: '连续打卡', value: streak, unit: '天' },
-          { label: '待复习', value: dueNow, unit: '张' },
-          { label: '订阅帖数', value: decks.length, unit: '帖' },
-        ].map((x) => (
+  const stats6 = [
+    { label: '今日学习', en: 'TODAY', value: todayStudied, unit: '字' },
+    { label: '累计学习', en: 'TOTAL', value: totalStudied, unit: '字' },
+    { label: '学习天数', en: 'DAYS', value: days, unit: '天' },
+    { label: '连续打卡', en: 'STREAK', value: streak, unit: '天' },
+    { label: '待复习', en: 'DUE', value: dueNow, unit: '字' },
+    { label: '订阅帖数', en: 'DECKS', value: decks.length, unit: '帖' },
+  ];
+
+  return (
+    <Box>
+      {/* 页头 */}
+      <Box sx={{ pb: { xs: 1.5, md: 1.75 } }}>
+        <Typography component="h1" sx={{ fontSize: { xs: 30, md: 44 }, fontWeight: 900, letterSpacing: { xs: '4px', md: '7px' }, lineHeight: 1.1 }}>
+          数据
+        </Typography>
+        <Typography sx={{ ...mono, fontSize: 11, opacity: 0.72, mt: 1 }}>
+          累计 {totalStudied} 字 · {days} 天有记录 · 连续 {streak} 天
+        </Typography>
+      </Box>
+
+      {/* 六个数字 */}
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' },
+          borderTop: '2px solid',
+          borderBottom: '1px solid',
+          borderColor: 'text.primary',
+        }}
+      >
+        {stats6.map((x, i) => (
           <Box
-            key={x.label}
+            key={x.en}
             sx={{
-              p: 1.2, borderRadius: '2px', textAlign: 'center', bgcolor: 'background.paper',
-              border: '1px solid', borderColor: 'divider',
+              py: 1.75,
+              px: { xs: 1.25, md: 1.5 },
+              borderRight: { xs: i % 3 === 2 ? 0 : '1px solid', md: i === 5 ? 0 : '1px solid' },
+              borderBottom: { xs: i < 3 ? '1px solid' : 0, md: 0 },
+              borderColor: 'divider',
             }}
           >
-            <Typography className="font-kai" sx={{ fontSize: 24, lineHeight: 1.2, fontVariantNumeric: 'tabular-nums' }}>
-              {x.value}
-              <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.3 }}>
-                {x.unit}
-              </Typography>
+            <Typography sx={{ ...mono, fontSize: 9, letterSpacing: '0.1em', opacity: 0.6 }}>
+              {x.label} · {x.en}
             </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>
-              {x.label}
+            <Typography
+              sx={{
+                fontSize: { xs: 26, md: 34 },
+                fontWeight: 900,
+                lineHeight: 1,
+                letterSpacing: '-0.03em',
+                mt: 0.9,
+                fontVariantNumeric: 'tabular-nums',
+                color: x.en === 'DUE' && x.value > 0 ? 'var(--hot-ink)' : 'inherit',
+              }}
+            >
+              {x.value}
+              <Box component="span" sx={{ fontSize: 10, fontWeight: 400, letterSpacing: 0, ml: 0.5, opacity: 0.7 }}>{x.unit}</Box>
             </Typography>
           </Box>
         ))}
       </Box>
 
-      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>近 14 天学习量（新卡 / 复习）</Typography>
-          <Box sx={{ height: 200 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={2} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  formatter={(v: any, k: any) => [`${v} 张`, k]}
-                  labelStyle={{ fontSize: 12 }}
-                  contentStyle={{ fontSize: 12, borderRadius: 2 }}
-                />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="新卡" stackId="a" fill="#8b3a30" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="复习" stackId="a" fill="#a08d74" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-        </CardContent>
-      </Card>
-
-      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>未来 14 天到期预测</Typography>
-          <Box sx={{ height: 160 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={forecast} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={2} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <Tooltip
-                  formatter={(v: any) => [`${v} 张`, '到期']}
-                  labelStyle={{ fontSize: 12 }}
-                  contentStyle={{ fontSize: 12, borderRadius: 2 }}
-                />
-                <Bar dataKey="count" fill="#8b3a30" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            按 SM-2 计划的到期时间统计，可据此安排每日复习量
-          </Typography>
-        </CardContent>
-      </Card>
-
-      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
-        <CardContent>
-          <Typography sx={{ fontWeight: 600, mb: 1.5, fontSize: 14 }}>按帖进度</Typography>
-          {decks.length === 0 ? (
-            <Typography variant="body2" color="text.secondary">还没有订阅字帖</Typography>
-          ) : (
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-              {decks.map((d) => {
-                const pct = d.totalCards ? Math.round((d.learnedCount / d.totalCards) * 100) : 0;
-                return (
-                  <Box key={d.id}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.4 }}>
-                      <Typography variant="body2" noWrap sx={{ maxWidth: '65%' }}>{d.name}</Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        已学 {d.learnedCount}/{d.totalCards} · 待学 {d.newRemaining} · 待复习 {d.dueRemaining}
-                      </Typography>
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={pct}
-                      sx={{ height: 4, borderRadius: '2px' }}
-                      color={pct >= 100 ? 'success' : 'primary'}
-                    />
-                  </Box>
-                );
-              })}
+      {/* 近 14 天 */}
+      <Box sx={{ borderBottom: '1px solid', borderColor: 'text.primary', py: 1.75 }}>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 1 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 900, letterSpacing: '2px' }}>近 14 天学习量</Typography>
+          <Box sx={{ display: 'flex', gap: 1.5, alignItems: 'center' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box component="span" sx={{ width: 7, height: 7, bgcolor: 'var(--vermilion)' }} />
+              <Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.7 }}>新卡</Box>
             </Box>
-          )}
-        </CardContent>
-      </Card>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <Box component="span" sx={{ width: 7, height: 7, bgcolor: 'var(--ink)' }} />
+              <Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.7 }}>复习</Box>
+            </Box>
+          </Box>
+        </Box>
+        {totalStudied === 0 ? (
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.55, py: 6 }}>
+            NO DATA · 还没有学习记录，先去「今日」背几个字
+          </Typography>
+        ) : (
+        <Box sx={{ height: 190 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={barData} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={2} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                formatter={(v: any, k: any) => [`${v} 张`, k]}
+                labelStyle={{ fontSize: 12 }}
+                contentStyle={{ fontSize: 12, borderRadius: 0, border: '1px solid #17130c', background: '#fbf6ea' }}
+              />
+              <Bar dataKey="新卡" stackId="a" fill="var(--vermilion)" radius={0} />
+              <Bar dataKey="复习" stackId="a" fill="var(--ink)" radius={0} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+        )}
+      </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center' }}>
+      {/* 到期预测 */}
+      <Box sx={{ borderBottom: '1px solid', borderColor: 'text.primary', py: 1.75 }}>
+        <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 1 }}>
+          <Typography sx={{ fontSize: 13, fontWeight: 900, letterSpacing: '2px' }}>未来 14 天到期</Typography>
+          <Typography sx={{ ...mono, fontSize: 9.5, opacity: 0.6 }}>按 SM-2 到期时间统计</Typography>
+        </Box>
+        {forecast.every((f) => f.count === 0) ? (
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.55, py: 4 }}>
+            NO DATA · 暂无到期安排
+          </Typography>
+        ) : (
+        <Box sx={{ height: 150 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={forecast} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
+              <XAxis dataKey="date" tick={{ fontSize: 9 }} interval={2} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 9 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <Tooltip
+                formatter={(v: any) => [`${v} 张`, '到期']}
+                labelStyle={{ fontSize: 12 }}
+                contentStyle={{ fontSize: 12, borderRadius: 0, border: '1px solid #17130c', background: '#fbf6ea' }}
+              />
+              <Bar dataKey="count" fill="var(--ink)" radius={0} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Box>
+        )}
+      </Box>
+
+      {/* 按帖进度 */}
+      <Box sx={{ pt: 2.5 }}>
+        <Typography sx={{ fontSize: 13, fontWeight: 900, letterSpacing: '2px', pb: 0.75 }}>
+          按帖进度
+          <Box component="span" sx={{ ...mono, fontSize: 10.5, fontWeight: 400, letterSpacing: '0.04em', opacity: 0.65, ml: 1 }}>Decks · {decks.length}</Box>
+        </Typography>
+
+        {decks.length === 0 ? (
+          <Typography sx={{ ...mono, fontSize: 11, opacity: 0.65, py: 3 }}>还没有订阅字帖</Typography>
+        ) : (
+          <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary' }}>
+            {decks.map((d) => {
+              const pct = d.totalCards ? Math.round((d.learnedCount / d.totalCards) * 100) : 0;
+              return (
+                <Box
+                  key={d.id}
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'minmax(0,1.4fr) 140px 180px' },
+                    alignItems: 'center',
+                    columnGap: 2,
+                    rowGap: 0.75,
+                    py: 1.25,
+                    px: { xs: 0.5, md: 1 },
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography sx={{ fontSize: 14, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {d.name}
+                  </Typography>
+                  <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.7, fontVariantNumeric: 'tabular-nums' }}>
+                    已学 {d.learnedCount}/{d.totalCards}
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Box sx={{ flex: 1, height: 4, bgcolor: 'divider' }}>
+                      <Box sx={{ width: `${pct}%`, height: '100%', bgcolor: pct >= 100 ? 'var(--vermilion)' : 'text.primary' }} />
+                    </Box>
+                    <Typography sx={{ ...mono, fontSize: 10.5, minWidth: 44, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                      待学 {d.newRemaining} · {pct}%
+                    </Typography>
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+        )}
+      </Box>
+
+      <Typography sx={{ ...mono, fontSize: 10, opacity: 0.5, pt: 2 }}>
         数据仅存本机 · 可在设置中导出备份
       </Typography>
     </Box>

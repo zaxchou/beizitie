@@ -14,11 +14,6 @@ import {
   ThemeProvider,
   useMediaQuery,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import BarChartIcon from '@mui/icons-material/BarChart';
-import SettingsIcon from '@mui/icons-material/Settings';
-import StoreIcon from '@mui/icons-material/Store';
-import BrushIcon from '@mui/icons-material/Brush';
 import { buildThemeOptions } from '@/theme';
 import { localDataSource, catalogIndex, resyncBundledImages } from '@/data/local/localAdapter';
 import { kvGet, kvSet } from '@/data/local/db';
@@ -31,12 +26,12 @@ import SettingsPage from './pages/SettingsPage';
 
 type Tab = 'dashboard' | 'market' | 'jizi' | 'data' | 'settings';
 
-const ALL_TABS: { key: Tab; label: string; icon: JSX.Element }[] = [
-  { key: 'dashboard', label: '背字帖', icon: <DashboardIcon /> },
-  { key: 'market', label: '市场', icon: <StoreIcon /> },
-  { key: 'jizi', label: '集字', icon: <BrushIcon /> },
-  { key: 'data', label: '数据', icon: <BarChartIcon /> },
-  { key: 'settings', label: '设置', icon: <SettingsIcon /> },
+const ALL_TABS: { key: Tab; en: string; cn: string }[] = [
+  { key: 'dashboard', en: 'TODAY', cn: '今日' },
+  { key: 'market', en: 'MARKET', cn: '市场' },
+  { key: 'jizi', en: 'JIZI', cn: '集字' },
+  { key: 'data', en: 'STATS', cn: '数据' },
+  { key: 'settings', en: 'SET', cn: '设置' },
 ];
 // mini 构建：无市场（帖已内置），集字为离线限定版（取字范围=包内帖）
 const TABS = __MINI__
@@ -86,7 +81,7 @@ export default function SingleApp() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ pb: studyingDeck ? 0 : 'calc(64px + env(safe-area-inset-bottom, 0px))', minHeight: '100vh', bgcolor: 'background.default' }}>
+      <Box sx={{ minHeight: '100vh', bgcolor: 'background.default', display: 'flex', flexDirection: 'column' }}>
         {studyingDeck ? (
           <StudyPage
             studyingDeck={studyingDeck}
@@ -94,21 +89,94 @@ export default function SingleApp() {
           />
         ) : (
           <>
-            {/* 顶栏 */}
+            {/* 桌面顶栏：字标 + 中英导航 + 本机说明 */}
             <Box
               sx={{
-                px: 2, py: 1.2, display: 'flex', alignItems: 'center', gap: 1.2,
-                borderBottom: '1px solid', borderColor: 'divider',
-                position: 'sticky', top: 0, zIndex: 10, bgcolor: 'background.paper',
+                display: { xs: 'none', md: 'flex' },
+                alignItems: 'center',
+                gap: 3,
+                px: 5,
+                height: 64,
+                borderBottom: '2px solid',
+                borderColor: 'text.primary',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                bgcolor: 'background.default',
               }}
             >
-              <Typography className="font-kai" sx={{ fontSize: 20, fontWeight: 700 }}>背字帖</Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: 10 }}>
-                {__MINI__ ? '像背单词一样背字帖' : '单文件版 · 数据仅存本机'}
+              <Typography sx={{ fontSize: 28, fontWeight: 900, letterSpacing: '0.14em', lineHeight: 1 }}>背字帖</Typography>
+              <Box sx={{ display: 'flex', alignSelf: 'stretch' }}>
+                {TABS.map((t) => {
+                  const on = tab === t.key;
+                  return (
+                    <Box
+                      key={t.key}
+                      component="button"
+                      type="button"
+                      onClick={() => setTab(t.key)}
+                      aria-pressed={on}
+                      sx={{
+                        border: 0,
+                        background: 'none',
+                        color: 'inherit',
+                        px: 1.75,
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.75,
+                        borderBottom: on ? '2px solid' : '2px solid transparent',
+                        borderColor: on ? 'text.primary' : 'transparent',
+                        mb: '-2px',
+                        opacity: on ? 1 : 0.62,
+                        '&:hover': { opacity: 1 },
+                      }}
+                    >
+                      <Box component="span" sx={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.12em' }}>{t.en}</Box>
+                      <Box component="span" sx={{ fontSize: 13.5, fontWeight: 700, letterSpacing: '0.06em' }}>{t.cn}</Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+              <Box sx={{ ml: 'auto', fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '0.04em', opacity: 0.6 }}>
+                {__MINI__ ? '离线版 · 数据仅存本机' : '单文件版 · 数据仅存本机'}
+              </Box>
+            </Box>
+
+            {/* 手机字标栏 */}
+            <Box
+              sx={{
+                display: { xs: 'flex', md: 'none' },
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                px: 2.5,
+                height: 56,
+                borderBottom: '1px solid',
+                borderColor: 'text.primary',
+                position: 'sticky',
+                top: 0,
+                zIndex: 10,
+                bgcolor: 'background.default',
+              }}
+            >
+              <Typography sx={{ fontSize: 22, fontWeight: 900, letterSpacing: '0.12em' }}>背字帖</Typography>
+              <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.04em', opacity: 0.6 }}>
+                {__MINI__ ? '离线版 · 仅存本机' : '单文件版 · 仅存本机'}
               </Typography>
             </Box>
 
-            <Box sx={{ p: { xs: 1.5, sm: 3 } }}>
+            <Box
+              component="main"
+              sx={{
+                flex: 1,
+                width: '100%',
+                maxWidth: 1440,
+                mx: 'auto',
+                px: { xs: 2.5, md: 5 },
+                pt: { xs: 2, md: 2.5 },
+                pb: { xs: 'calc(74px + env(safe-area-inset-bottom, 0px))', md: 3 },
+              }}
+            >
               {tab === 'dashboard' && (
                 <DashboardPage
                   refreshKey={refreshKey}
@@ -125,28 +193,49 @@ export default function SingleApp() {
               {tab === 'settings' && <SettingsPage darkMode={darkMode} onDarkModeChange={setDarkMode} onChanged={bumpRefresh} />}
             </Box>
 
-            {/* 底部导航（与在线版一致；集字待 P2） */}
+            {/* 手机底部导航 */}
             <Box
               sx={{
-                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
-                display: 'flex', bgcolor: 'background.paper', borderTop: '1px solid', borderColor: 'divider',
+                display: { xs: 'flex', md: 'none' },
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 20,
+                bgcolor: 'background.default',
+                borderTop: '1px solid',
+                borderColor: 'text.primary',
                 paddingBottom: 'env(safe-area-inset-bottom, 0px)',
               }}
             >
-              {TABS.map((t) => (
-                <Box
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  sx={{
-                    flex: 1, py: 1, cursor: 'pointer', textAlign: 'center',
-                    color: tab === t.key ? 'primary.main' : 'text.secondary',
-                    bgcolor: 'transparent',
-                  }}
-                >
-                  {t.icon}
-                  <Typography sx={{ fontSize: 11 }}>{t.label}</Typography>
-                </Box>
-              ))}
+              {TABS.map((t) => {
+                const on = tab === t.key;
+                return (
+                  <Box
+                    key={t.key}
+                    component="button"
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    aria-current={on ? 'page' : undefined}
+                    sx={{
+                      flex: 1,
+                      py: 0.75,
+                      border: 0,
+                      borderTop: on ? '3px solid var(--vermilion)' : '3px solid transparent',
+                      background: 'none',
+                      color: on ? 'text.primary' : 'text.secondary',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      gap: 0.25,
+                    }}
+                  >
+                    <Box component="span" sx={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '0.1em', opacity: 0.7 }}>{t.en}</Box>
+                    <Box component="span" sx={{ fontSize: 12, fontWeight: 700, letterSpacing: '0.06em' }}>{t.cn}</Box>
+                  </Box>
+                );
+              })}
             </Box>
 
             <Snackbar open={!!toast} autoHideDuration={2500} onClose={() => setToast(null)}>
