@@ -4,12 +4,10 @@ import {
   Box,
   Typography,
   Button,
-  IconButton,
   List,
   ListItem,
   ListItemAvatar,
   ListItemText,
-  ListItemSecondaryAction,
   Avatar,
   Dialog,
   DialogTitle,
@@ -21,31 +19,12 @@ import {
   Card as MuiCard,
   Chip,
   LinearProgress,
-  Slider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   CardMedia,
-  InputAdornment,
-  Stack,
-  Switch,
-  FormControlLabel,
 } from '@mui/material';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import AddIcon from '@mui/icons-material/Add';
-import DeleteIcon from '@mui/icons-material/Delete';
-import EditIcon from '@mui/icons-material/Edit';
 import ImageIcon from '@mui/icons-material/Image';
 import UploadIcon from '@mui/icons-material/Upload';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import SchoolIcon from '@mui/icons-material/School';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
-import StoreIcon from '@mui/icons-material/Store';
-import SortIcon from '@mui/icons-material/Sort';
 import { useDeckStore } from '@/stores/useDeckStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE } from '@/lib/constants';
@@ -57,16 +36,13 @@ import {
   fetchDecks,
   getImageUrl,
   updateCard,
-  updateDeckLimits,
   fetchMarketplaceDeck,
   unpublishDeck,
   setArticleText,
-  updateStudyMode,
-  toggleDeckPause,
 } from '@/lib/api';
 import type { Card, Deck, MarketplaceDeck } from '@/types';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
-import { LoadingState, EmptyState } from '@/components/common/LoadingState';
+import { LoadingState } from '@/components/common/LoadingState';
 import EditDeckDialog from '@/components/market/EditDeckDialog';
 
 const PAGE_SIZE = 20;
@@ -185,11 +161,6 @@ const CardManagePage: React.FC = () => {
   const [textBatchImporting, setTextBatchImporting] = useState(false);
   const [textBatchResult, setTextBatchResult] = useState<string | null>(null);
 
-  // 牌组学习上限编辑
-  const [deckLimitsOpen, setDeckLimitsOpen] = useState(false);
-  const [editingNewLimit, setEditingNewLimit] = useState(20);
-  const [editingReviewLimit, setEditingReviewLimit] = useState(200);
-  const [savingLimits, setSavingLimits] = useState(false);
   const [batchImporting, setBatchImporting] = useState(false);
   const [batchImportProgress, setBatchImportProgress] = useState(0);
   const [batchImportTotal, setBatchImportTotal] = useState(0);
@@ -223,7 +194,6 @@ const CardManagePage: React.FC = () => {
   const [articleTextValue, setArticleTextValue] = useState('');
   const [articleSetting, setArticleSetting] = useState(false);
   const [articleError, setArticleError] = useState('');
-  const [modeError, setModeError] = useState('');
   const [articleResult, setArticleResult] = useState<{
     matched: number;
     unmatched: number;
@@ -276,8 +246,6 @@ const CardManagePage: React.FC = () => {
       setDeck(deckData);
       setCards(cardsData);
       setPage(1); // reset to page 1 when loading new deck
-      setEditingNewLimit(deckData.daily_new_card_limit ?? 20);
-      setEditingReviewLimit(deckData.daily_review_limit ?? 200);
 
       // 检查牌组是否已发布到市场
       loadAbortedRef.current = false;
@@ -660,24 +628,6 @@ const CardManagePage: React.FC = () => {
     }
   }, [deckId, textBatchContent, textBatchImporting, refreshCardCount]);
 
-  /** 保存牌组学习上限 */
-  const handleSaveLimits = useCallback(async () => {
-    if (!deckId || savingLimits) return;
-    setSavingLimits(true);
-    try {
-      const updated = await updateDeckLimits(deckId, {
-        daily_new_card_limit: editingNewLimit,
-        daily_review_limit: editingReviewLimit,
-      });
-      setDeck((prev) => prev ? { ...prev, ...updated } : prev);
-      setDeckLimitsOpen(false);
-    } catch (err) {
-      console.error('保存上限失败:', err);
-    } finally {
-      setSavingLimits(false);
-    }
-  }, [deckId, editingNewLimit, editingReviewLimit, savingLimits]);
-
   /** 清理 ObjectURL（组件卸载时） */
   useEffect(() => {
     return () => {
@@ -719,357 +669,407 @@ const CardManagePage: React.FC = () => {
     );
   }
 
+  const mono = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
+
+  /** 每张字的状态：以 SM-2 的 interval / ease 判定 */
+  const statusOf = (c: Card): { label: string; en: string; hard: boolean } => {
+    if (c.interval === 0) return { label: '新卡', en: 'NEW', hard: false };
+    if (c.ease < 2) return { label: '困难', en: 'HARD', hard: true };
+    if (c.ease < 2.5) return { label: '普通', en: 'MID', hard: false };
+    return { label: '简单', en: 'EASY', hard: false };
+  };
+
+  /** 下次复习：只给相对天数，避免一列日期读不动 */
+  const nextLabel = (c: Card): string => {
+    if (c.interval === 0) return '—';
+    const t = new Date(c.next_review).getTime();
+    if (Number.isNaN(t)) return '—';
+    const days = Math.ceil((t - Date.now()) / 86400000);
+    if (days <= 0) return '今天';
+    return `${days} 天后`;
+  };
+
+  const counts = cards.reduce(
+    (acc, c) => {
+      if (c.interval === 0) acc.new += 1;
+      else if (c.ease < 2) acc.hard += 1;
+      else if (c.ease < 2.5) acc.medium += 1;
+      else acc.easy += 1;
+      return acc;
+    },
+    { new: 0, hard: 0, medium: 0, easy: 0 },
+  );
+
+  const FILTERS: { key: string | null; label: string; en: string; n: number }[] = [
+    { key: null, label: '全部', en: 'ALL', n: cards.length },
+    { key: 'new', label: '新卡', en: 'NEW', n: counts.new },
+    { key: 'hard', label: '困难', en: 'HARD', n: counts.hard },
+    { key: 'medium', label: '普通', en: 'MID', n: counts.medium },
+    { key: 'easy', label: '简单', en: 'EASY', n: counts.easy },
+  ];
+
+  const startStudy = (): void => {
+    if (!deck) return;
+    const filter = difficultyFilter ? `?difficulty=${difficultyFilter}` : '';
+    navigate(`/study/${deck.id}${filter}`);
+  };
+
+  const pagerSx = {
+    border: '1px solid',
+    borderColor: 'text.primary',
+    background: 'transparent',
+    color: 'inherit',
+    ...mono,
+    fontSize: 11,
+    px: 1.25,
+    height: 28,
+    cursor: 'pointer',
+    '&:hover': { backgroundColor: 'text.primary', color: 'background.default' },
+    '&:disabled': { opacity: 0.28, cursor: 'not-allowed', backgroundColor: 'transparent', color: 'inherit' },
+  } as const;
+
+  const rowActionSx = {
+    border: 0,
+    background: 'none',
+    color: 'inherit',
+    p: 0,
+    cursor: 'pointer',
+    ...mono,
+    fontSize: 11,
+    opacity: 0.72,
+    textDecoration: 'none',
+    '&:hover': { opacity: 1, textDecoration: 'underline' },
+  } as const;
+
   return (
-    <Box className="space-y-4 py-4">
-      {/* 顶部：返回按钮 + 牌组名称 + 开始学习按钮 */}
-      <Box className="flex items-center gap-2 flex-wrap">
-        <IconButton
-          edge="start"
-          aria-label="返回"
-          onClick={() => navigate(-1)}
-          size="small"
-        >
-          <ArrowBackIcon />
-        </IconButton>
-        <Typography
-          noWrap
-          sx={{ fontSize: { xs: 18, md: 22 }, fontWeight: 900, letterSpacing: '0.06em', minWidth: 0 }}
-        >
-          {deck?.name ?? '牌组'}
-        </Typography>
-        {deck && isAdmin && (
-          <IconButton size="small" color="inherit" onClick={() => setPublishDialogOpen(true)} aria-label="编辑牌组">
-            <EditIcon fontSize="small" />
-          </IconButton>
-        )}
-        {deck && (
-          <Chip
-            label={`${deck.card_count} 张卡片`}
-            size="small"
-            color="primary"
-            variant="outlined"
-          />
-        )}
-        <Box sx={{ flex: 1 }} />
-        {deck && isAdmin && (
-          <>
-            <Button
-              variant="outlined"
-              startIcon={<StoreIcon />}
-              onClick={() => setPublishDialogOpen(true)}
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              {publishedDeck ? '编辑' : '发布'}
-            </Button>
-            {publishedDeck && (
-              <Button
-                variant="outlined"
-                color="error"
-                onClick={handleUnpublishClick}
-                sx={{ textTransform: 'none', fontWeight: 600, ml: 1 }}
-              >
-                撤回
-              </Button>
-            )}
-          </>
-        )}
-        {deck && (
-          <Button
-            variant="contained"
-            startIcon={<SchoolIcon />}
-            onClick={() => {
-              const base = `/study/${deck.id}`;
-              const filter = difficultyFilter ? `?difficulty=${difficultyFilter}` : '';
-              navigate(base + filter);
-            }}
-            disabled={deck.card_count === 0}
-            sx={{ fontWeight: 600 }}
-          >
-            开始学习
-          </Button>
-        )}
-        {deck && isAdmin && deck.card_count > 0 && (
+    <Box>
+      {/* 帖头 */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, pb: { xs: 1.5, md: 1.75 } }}>
+        <Box sx={{ minWidth: 0 }}>
           <Button
             variant="text"
-            size="small"
-            startIcon={<SortIcon />}
-            onClick={() => {
-              setArticleTextValue(deck.article_text || '');
-              setArticleResult(null);
-              setArticleDialogOpen(true);
+            onClick={() => navigate(-1)}
+            sx={{ minHeight: 0, p: 0, mb: 1, fontSize: 11, ...mono, color: 'text.primary', opacity: 0.7, '&:hover': { backgroundColor: 'transparent', opacity: 1 } }}
+          >
+            ← 返回
+          </Button>
+          <Typography
+            component="h1"
+            sx={{
+              fontSize: { xs: 24, md: 44 },
+              fontWeight: 900,
+              letterSpacing: { xs: '2px', md: '7px' },
+              lineHeight: 1.12,
+              overflowWrap: 'anywhere',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
             }}
-            sx={{ textTransform: 'none', ml: 0.5 }}
           >
-            碑帖文本
-          </Button>
-        )}
-      </Box>
-
-      {/* 难度筛选（支持从分析页跳转） */}
-      <Box className="flex items-center gap-2 flex-wrap">
-        {[null, 'new', 'hard', 'medium', 'easy'].map((f) => {
-          const label = f === null ? '全部' : f === 'new' ? '新卡片' : f === 'hard' ? '困难' : f === 'medium' ? '普通' : '简单';
-          return (
-            <Chip
-              key={f ?? 'all'}
-              label={label}
-              size="small"
-              color={difficultyFilter === f ? 'primary' : 'default'}
-              variant={difficultyFilter === f ? 'filled' : 'outlined'}
-              onClick={() => setDifficultyFilter(f)}
-              sx={{ cursor: 'pointer' }}
-            />
-          );
-        })}
-        {difficultyFilter && (
-          <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-            {filteredCards.length}/{cards.length}
+            {deck?.name ?? '牌组'}
           </Typography>
+          {deck && (
+            <Typography sx={{ ...mono, fontSize: 11, opacity: 0.75, mt: 1 }}>
+              {deck.card_count} 字 · {deck.study_mode === 'sequential' ? '原帖顺序' : deck.study_mode === 'random' ? '随机' : '默认顺序'}
+              {' · '}每日新字 {deck.daily_new_card_limit} · 复习 {deck.daily_review_limit}
+              {publishedDeck ? ' · 已上市场' : ''}
+            </Typography>
+          )}
+        </Box>
+        {deck && (
+          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, flexShrink: 0, alignItems: 'center' }}>
+            <Button variant="outlined" onClick={() => navigate(`/decks/${deck.id}`)} sx={{ height: 42 }}>
+              帖设置
+            </Button>
+            <Button variant="contained" onClick={startStudy} disabled={deck.card_count === 0} sx={{ height: 42, px: 2.5 }}>
+              开始背写 →
+            </Button>
+          </Box>
         )}
       </Box>
 
-      {/* 卡片搜索框 */}
-      <TextField
-        fullWidth
-        size="small"
-        variant="outlined"
-        placeholder="搜索卡片..."
-        value={searchKeyword}
-        onChange={(e) => setSearchKeyword(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon color="action" />
-            </InputAdornment>
-          ),
-          endAdornment: searchKeyword ? (
-            <InputAdornment position="end">
-              <IconButton size="small" onClick={() => setSearchKeyword('')} edge="end">
-                <CloseIcon fontSize="small" />
-              </IconButton>
-            </InputAdornment>
-          ) : null,
+      {/* 工具条：搜索 + 状态筛选 + 计数 */}
+      <Box
+        sx={{
+          borderTop: '1px solid',
+          borderBottom: '1px solid',
+          borderColor: 'text.primary',
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1.25, md: 2 },
+          flexWrap: 'wrap',
+          py: 1.25,
         }}
-        sx={{ '& .MuiOutlinedInput-root': { borderRadius: '2px' } }}
-      />
-
-      {/* 学习上限设置 */}
-      <Accordion
-        expanded={deckLimitsOpen}
-        onChange={() => setDeckLimitsOpen(!deckLimitsOpen)}
-        variant="outlined"
-        sx={{ borderRadius: '2px', '&:before': { display: 'none' } }}
       >
-        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Box className="flex items-center gap-2 w-full">
-            <Typography variant="body2" fontWeight={500}>
-              每日上限：新卡 {editingNewLimit} · 复习 {editingReviewLimit}
-            </Typography>
-            {deck && (
-              <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', mr: 2 }}>
-                学习模式：{deck.study_mode === 'sequential' ? '碑帖文本' : deck.study_mode === 'random' ? '随机' : '默认'}
-              </Typography>
-            )}
-          </Box>
-        </AccordionSummary>
-        <AccordionDetails>
-          <Box className="space-y-4">
-            <Box>
-              <Typography variant="body2" className="mb-1">每日新卡上限：{editingNewLimit}</Typography>
-              <Slider value={editingNewLimit} onChange={(_, v) => setEditingNewLimit(v as number)} min={1} max={100} step={1} valueLabelDisplay="auto" />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, borderBottom: '1px solid', borderColor: 'text.primary', pb: '3px', width: { xs: '100%', md: 210 } }}>
+          <SearchIcon sx={{ fontSize: 15, opacity: 0.55 }} />
+          <Box
+            component="input"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            placeholder="搜索正字 / SEARCH"
+            aria-label="搜索卡片"
+            sx={{ border: 0, outline: 'none', background: 'transparent', color: 'text.primary', ...mono, fontSize: 12, width: '100%', p: 0 }}
+          />
+          {searchKeyword && (
+            <Box component="button" type="button" onClick={() => setSearchKeyword('')} aria-label="清除搜索" sx={{ border: 0, background: 'none', p: 0, cursor: 'pointer', color: 'inherit', display: 'flex' }}>
+              <CloseIcon sx={{ fontSize: 14, opacity: 0.6 }} />
             </Box>
-            <Box>
-              <Typography variant="body2" className="mb-1">每日复习上限：{editingReviewLimit}</Typography>
-              <Slider value={editingReviewLimit} onChange={(_, v) => setEditingReviewLimit(v as number)} min={1} max={500} step={1} valueLabelDisplay="auto" />
-            </Box>
-            <Button variant="contained" size="small" onClick={handleSaveLimits} disabled={savingLimits}>
-              {savingLimits ? '保存中...' : '保存上限'}
-            </Button>
+          )}
+        </Box>
 
-            {/* 暂停学习 */}
-            <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={!!deck?.paused_at}
-                    onChange={async () => {
-                      if (!deck) return;
-                      const paused = !deck.paused_at;
-                      setDeck({ ...deck, paused_at: paused ? new Date().toISOString() : null });
-                      try {
-                        await toggleDeckPause(deck.id, paused);
-                      } catch {
-                        setDeck({ ...deck, paused_at: !paused ? new Date().toISOString() : null });
-                      }
-                    }}
-                  />
-                }
-                label={<Typography variant="body2" fontWeight={500}>暂停学习</Typography>}
-              />
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                开启后暂停新卡和复习卡片的推送，可随时恢复
-              </Typography>
-            </Box>
+        <Box sx={{ display: 'flex' }}>
+          {FILTERS.map((f, i) => {
+            const active = difficultyFilter === f.key;
+            return (
+              <Box
+                key={f.en}
+                component="button"
+                type="button"
+                onClick={() => setDifficultyFilter(f.key)}
+                aria-pressed={active}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'text.primary',
+                  borderLeftWidth: i === 0 ? 1 : 0,
+                  px: 1.1,
+                  height: 28,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  bgcolor: active ? 'text.primary' : 'transparent',
+                  color: active ? 'background.default' : 'inherit',
+                  ...mono,
+                  fontSize: 11,
+                  '&:hover': active ? {} : { backgroundColor: 'action.hover' },
+                }}
+              >
+                {f.label}
+                <Box component="span" sx={{ ml: 0.6, opacity: 0.58 }}>{f.n}</Box>
+              </Box>
+            );
+          })}
+        </Box>
 
-            {/* 学习模式 */}
-            <Box sx={{ borderTop: '1px solid', borderColor: 'divider', pt: 2 }}>
-              <Typography variant="body2" fontWeight={500} className="mb-1">
-                学习模式
-              </Typography>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-                设置学习时卡片的排序方式。有碑帖文本的牌组可选择「碑帖文本」。
-              </Typography>
-              <Stack direction="row" spacing={1}>
-                {(['default', 'sequential', 'random'] as const).map((mode) => {
-                  const disabled = mode === 'sequential' && !deck?.article_text;
-                  return (
-                    <Chip
-                      key={mode}
-                      label={mode === 'sequential' ? '碑帖文本' : mode === 'random' ? '随机' : '默认'}
-                      variant={deck?.study_mode === mode ? 'filled' : 'outlined'}
-                      color={deck?.study_mode === mode ? 'primary' : 'default'}
-                      onClick={async () => {
-                        if (disabled || !deck) return;
-                        const prev = deck.study_mode;
-                        setDeck({ ...deck, study_mode: mode });
-                        setModeError('');
-                        try {
-                          await updateStudyMode(deck.id, mode);
-                        } catch (err) {
-                          setDeck({ ...deck, study_mode: prev });
-                          setModeError(err instanceof Error ? err.message : '模式切换失败');
-                        }
-                      }}
-                      sx={{ cursor: disabled ? 'not-allowed' : 'pointer' }}
-                    />
-                  );
-                })}
-              </Stack>
-              {modeError && (
-                <Alert severity="error" sx={{ mt: 1 }} onClose={() => setModeError('')}>
-                  <Typography variant="body2">{modeError}</Typography>
-                </Alert>
-              )}
-            </Box>
-          </Box>
-        </AccordionDetails>
-      </Accordion>
+        <Box sx={{ flex: 1 }} />
 
-      {/* 添加 / 批量导入按钮（仅管理员可见） */}
-      {isAdmin && (
-        <Box className="flex gap-2">
-          <Button
-            variant="contained"
-            fullWidth
-            startIcon={<AddIcon />}
-            onClick={handleOpenAddDialog}
-          >
-            添加卡片
+        <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.62, display: { xs: 'none', md: 'block' } }}>
+          {filteredCards.length} / {cards.length} 字
+        </Typography>
+      </Box>
+
+      {/* 移动端主动作 */}
+      {deck && (
+        <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 1, mt: 1.5 }}>
+          <Button variant="contained" fullWidth onClick={startStudy} disabled={deck.card_count === 0} sx={{ height: 44 }}>
+            开始背写 →
           </Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            startIcon={<FolderOpenIcon />}
-            onClick={handleOpenBatchDialog}
-          >
-            批量导入
-          </Button>
-          <Button
-            variant="outlined"
-            fullWidth
-            startIcon={<EditIcon />}
-            onClick={() => setTextBatchOpen(true)}
-          >
-            文字导入
+          <Button variant="outlined" onClick={() => navigate(`/decks/${deck.id}`)} sx={{ height: 44, flexShrink: 0 }}>
+            设置
           </Button>
         </Box>
       )}
 
-      {/* 卡片列表或空状态 */}
-      {filteredCards.length === 0 ? (
-        searchKeyword.trim() ? (
-          <EmptyState
-            icon={<SearchIcon />}
-            title="没有找到匹配的卡片"
-            description={`没有包含「${searchKeyword.trim()}」的卡片，试试其他关键词`}
-          />
-        ) : (
-          <EmptyState
-            icon={<ImageIcon />}
-            title="还没有卡片"
-            description="点击上方按钮添加书法记忆卡片"
-          />
-        )
-      ) : (
-        <MuiCard variant="outlined" sx={{ borderRadius: '2px' }}>
-          <List disablePadding>
-            {pagedCards.map((card, index) => (
-              <ListItem
-                key={card.id}
-                divider={index < pagedCards.length - 1}
-                className="px-4 py-3"
-              >
-                <ListItemAvatar
-                  sx={{ cursor: 'pointer' }}
-                  onClick={() => setPreviewCard(card)}
-                >
-                  {card.image_url ? (
-                    <Avatar
-                      variant="rounded"
-                      src={getImageUrl(card.image_url)}
-                      alt={card.front_text}
-                      sx={{ width: 48, height: 48 }}
-                    />
-                  ) : (
-                    <Avatar variant="rounded" sx={{ width: 48, height: 48, bgcolor: 'grey.200' }}>
-                      <ImageIcon color="disabled" />
-                    </Avatar>
-                  )}
-                </ListItemAvatar>
-                <ListItemText
-                  sx={{ cursor: 'pointer' }}
-                  onClick={() => setPreviewCard(card)}
-                  primary={
-                    <Typography variant="subtitle1" className="font-kai">
-                      {card.front_text}
-                    </Typography>
-                  }
-                  secondary={`创建于 ${new Date(card.created_at).toLocaleDateString('zh-CN')}`}
-                />
-                <ListItemSecondaryAction>
-                  {isAdmin && (
-                    <>
-                      <IconButton
-                        edge="end"
-                        onClick={() => handleOpenEdit(card)}
-                        size="small"
-                      >
-                        <EditIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        edge="end"
-                        aria-label={`删除卡片 ${card.front_text}`}
-                        onClick={() => handleOpenDelete(card)}
-                        size="small"
-                        color="error"
-                      >
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
-                    </>
-                  )}
-                </ListItemSecondaryAction>
-              </ListItem>
-            ))}
-          </List>
-        </MuiCard>
+      {/* 管理员动作 */}
+      {deck && isAdmin && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 1.5 }}>
+          <Button variant="outlined" onClick={handleOpenAddDialog} sx={{ height: 36, px: 1.75 }}>添加卡片</Button>
+          <Button variant="outlined" onClick={handleOpenBatchDialog} sx={{ height: 36, px: 1.75 }}>批量导入</Button>
+          <Button variant="outlined" onClick={() => setTextBatchOpen(true)} sx={{ height: 36, px: 1.75 }}>文字导入</Button>
+          <Box sx={{ flex: 1 }} />
+          {deck.card_count > 0 && (
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => {
+                setArticleTextValue(deck.article_text || '');
+                setArticleResult(null);
+                setArticleDialogOpen(true);
+              }}
+              sx={{ ...mono, fontSize: 11, color: 'text.primary', opacity: 0.75, '&:hover': { backgroundColor: 'transparent', opacity: 1 } }}
+            >
+              碑帖文本
+            </Button>
+          )}
+          <Button
+            variant="text"
+            size="small"
+            onClick={() => setPublishDialogOpen(true)}
+            sx={{ ...mono, fontSize: 11, color: 'text.primary', opacity: 0.75, '&:hover': { backgroundColor: 'transparent', opacity: 1 } }}
+          >
+            {publishedDeck ? '编辑发布' : '发布到市场'}
+          </Button>
+          {publishedDeck && (
+            <Button
+              variant="text"
+              size="small"
+              color="error"
+              onClick={handleUnpublishClick}
+              sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', '&:hover': { backgroundColor: 'transparent' } }}
+            >
+              撤回
+            </Button>
+          )}
+        </Box>
       )}
 
-      {/* 分页 */}
-      {totalPages > 1 && (
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1, mt: 2 }}>
-          <Button size="small" variant="outlined" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>上一页</Button>
-          <Typography variant="body2" color="text.secondary">{page} / {totalPages}</Typography>
-          <Button size="small" variant="outlined" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>下一页</Button>
+      {/* 字表 */}
+      {filteredCards.length === 0 ? (
+        <Box sx={{ borderTop: '2px solid', borderColor: 'text.primary', py: { xs: 8, md: 10 }, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 64, fontWeight: 900, lineHeight: 1, opacity: 0.14, letterSpacing: '0.12em' }}>
+            {searchKeyword.trim() ? '无' : difficultyFilter ? '零' : '空'}
+          </Typography>
+          <Typography sx={{ mt: 1.5, fontSize: 15, fontWeight: 700, letterSpacing: '0.1em' }}>
+            {searchKeyword.trim() ? '没有匹配的字' : difficultyFilter ? '这帖没有这一类的字' : '这帖还没有字'}
+          </Typography>
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.65, mt: 0.75 }}>
+            {searchKeyword.trim()
+              ? `NO MATCH · 「${searchKeyword.trim()}」`
+              : difficultyFilter
+                ? `FILTER · ${FILTERS.find((f) => f.key === difficultyFilter)?.label ?? difficultyFilter} 0 字`
+                : isAdmin ? 'EMPTY · 用上面的按钮导入碑帖图片' : 'EMPTY'}
+          </Typography>
+        </Box>
+      ) : (
+        <Box>
+          {/* 表头 */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '32px minmax(0,1fr) 96px', md: '52px minmax(0,1fr) 104px 116px 132px' },
+              alignItems: 'center',
+              columnGap: { xs: 1, md: 2 },
+              borderTop: '2px solid',
+              borderBottom: '1px solid',
+              borderColor: 'text.primary',
+              px: { xs: 0.5, md: 1 },
+              py: 0.9,
+              ...mono,
+              fontSize: 9.5,
+              opacity: 0.6,
+              letterSpacing: '0.12em',
+            }}
+          >
+            <Box>NO</Box>
+            <Box>字形 · 正字 / 背字</Box>
+            <Box sx={{ display: { xs: 'none', md: 'block' } }}>状态</Box>
+            <Box sx={{ display: { xs: 'none', md: 'block' } }}>下次复习</Box>
+            <Box sx={{ textAlign: 'right' }}>操作</Box>
+          </Box>
+
+          {pagedCards.map((card, index) => {
+            const st = statusOf(card);
+            return (
+              <Box
+                key={card.id}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '32px minmax(0,1fr) 96px', md: '52px minmax(0,1fr) 104px 116px 132px' },
+                  alignItems: 'center',
+                  columnGap: { xs: 1, md: 2 },
+                  px: { xs: 0.5, md: 1 },
+                  py: { xs: '9px', md: '10px' },
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  transition: 'background-color 120ms linear, color 120ms linear',
+                  '&:hover': { backgroundColor: 'text.primary', color: 'background.default' },
+                }}
+              >
+                <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.5, fontVariantNumeric: 'tabular-nums' }}>
+                  {String((page - 1) * PAGE_SIZE + index + 1).padStart(2, '0')}
+                </Typography>
+
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => setPreviewCard(card)}
+                  aria-label={`预览 ${card.front_text}`}
+                  sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, md: 1.5 }, border: 0, background: 'none', color: 'inherit', p: 0, minWidth: 0, textAlign: 'left', cursor: 'pointer' }}
+                >
+                  <Box
+                    sx={{
+                      width: { xs: 40, md: 52 },
+                      height: { xs: 40, md: 52 },
+                      flexShrink: 0,
+                      border: '1px solid',
+                      borderColor: 'currentColor',
+                      opacity: 0.9,
+                      overflow: 'hidden',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {card.image_url ? (
+                      <Box
+                        component="img"
+                        src={getImageUrl(card.image_url)}
+                        alt={card.front_text}
+                        loading="lazy"
+                        sx={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(1) contrast(1.05)' }}
+                      />
+                    ) : (
+                      <Typography sx={{ fontSize: { xs: 18, md: 24 }, fontWeight: 900, lineHeight: 1 }}>{card.front_text.slice(0, 1)}</Typography>
+                    )}
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography
+                      className="font-kai"
+                      sx={{ fontSize: { xs: 17, md: 19 }, fontWeight: 600, letterSpacing: '0.06em', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >
+                      {card.front_text}
+                    </Typography>
+                    {card.back_text && (
+                      <Typography sx={{ ...mono, fontSize: 10, opacity: 0.58, mt: 0.35, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {card.back_text}
+                      </Typography>
+                    )}
+                  </Box>
+                </Box>
+
+                <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'baseline', gap: 0.6 }}>
+                  <Typography sx={{ fontSize: 12.5, fontWeight: st.hard ? 900 : 500 }}>{st.label}</Typography>
+                  <Typography sx={{ ...mono, fontSize: 9.5, opacity: 0.55 }}>{st.en}</Typography>
+                </Box>
+
+                <Typography
+                  sx={{ display: { xs: 'none', md: 'block' }, ...mono, fontSize: 11, opacity: 0.75, fontVariantNumeric: 'tabular-nums' }}
+                >
+                  {nextLabel(card)}
+                </Typography>
+
+                <Box sx={{ display: 'flex', gap: { xs: 0.75, md: 1.25 }, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <Box component="button" type="button" onClick={() => setPreviewCard(card)} sx={rowActionSx}>看</Box>
+                  {isAdmin && (
+                    <>
+                      <Box component="button" type="button" onClick={() => handleOpenEdit(card)} aria-label={`编辑 ${card.front_text}`} sx={rowActionSx}>改</Box>
+                      <Box component="button" type="button" onClick={() => handleOpenDelete(card)} aria-label={`删除 ${card.front_text}`} sx={rowActionSx}>删</Box>
+                    </>
+                  )}
+                </Box>
+              </Box>
+            );
+          })}
+
+          {/* 分页 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, borderBottom: '1px solid', borderColor: 'text.primary', py: 1.25 }}>
+            <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.62, fontVariantNumeric: 'tabular-nums' }}>
+              {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filteredCards.length)} / {filteredCards.length} 字
+            </Typography>
+            {totalPages > 1 && (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box component="button" type="button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)} sx={pagerSx}>
+                  ← 上一页
+                </Box>
+                <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.7, fontVariantNumeric: 'tabular-nums' }}>
+                  {page} / {totalPages}
+                </Typography>
+                <Box component="button" type="button" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} sx={pagerSx}>
+                  下一页 →
+                </Box>
+              </Box>
+            )}
+          </Box>
         </Box>
       )}
 
@@ -1085,86 +1085,71 @@ const CardManagePage: React.FC = () => {
         maxWidth="xs"
         fullWidth
       >
-        <DialogTitle sx={{ pb: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6" className="font-kai" fontWeight={600}>
-            卡片预览
+        <DialogTitle sx={{ p: '14px 20px 10px', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography sx={{ ...mono, fontSize: 10.5, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.7 }}>
+            卡片预览 · Preview
           </Typography>
-          <Typography variant="caption" color="text.secondary">
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.6, fontVariantNumeric: 'tabular-nums' }}>
             {idx + 1} / {cards.length}
           </Typography>
         </DialogTitle>
-        <DialogContent sx={{ pt: 3, pb: 2 }}>
+        <DialogContent sx={{ p: '16px 20px 6px' }}>
           {previewCard && (
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-              {/* 图片 */}
               {previewCard.image_url && (
-                <Box
-                  sx={{
-                    width: '100%',
-                    borderRadius: '2px',
-                    overflow: 'hidden',
-                    border: 1,
-                    borderColor: 'divider',
-                  }}
-                >
+                <Box sx={{ width: '100%', border: '1px solid', borderColor: 'text.primary', overflow: 'hidden' }}>
                   <CardMedia
                     component="img"
                     image={getImageUrl(previewCard.image_url)}
                     alt={previewCard.front_text}
-                    sx={{ maxHeight: 280, objectFit: 'contain', bgcolor: 'grey.50' }}
+                    sx={{ maxHeight: 300, objectFit: 'contain' }}
                   />
                 </Box>
               )}
 
-              {/* 正面 */}
-              <Box sx={{ px: 1 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                  正面
+              <Box>
+                <Typography sx={{ ...mono, fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.6 }}>
+                  正面 · Front
                 </Typography>
-                <Typography variant="h5" className="font-kai" fontWeight={700} sx={{ mt: 0.5 }}>
+                <Typography className="font-kai" sx={{ fontSize: 34, fontWeight: 700, lineHeight: 1.1, mt: 0.5, letterSpacing: '0.06em' }}>
                   {previewCard.front_text}
                 </Typography>
               </Box>
 
-              {/* 反面 */}
-              <Box sx={{ px: 1 }}>
-                <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                  背面
+              <Box>
+                <Typography sx={{ ...mono, fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.6 }}>
+                  背面 · Back
                 </Typography>
-                <Typography variant="body1" sx={{ mt: 0.5, whiteSpace: 'pre-wrap' }}>
+                <Typography sx={{ fontSize: 14, lineHeight: 1.8, mt: 0.5, whiteSpace: 'pre-wrap' }}>
                   {previewCard.back_text || '（无背面内容）'}
                 </Typography>
               </Box>
 
-              {/* 元信息 */}
-              <Box sx={{ px: 1, pt: 1 }}>
-                <Typography variant="caption" color="text.secondary">
-                  创建于 {new Date(previewCard.created_at).toLocaleDateString('zh-CN')}
-                  {previewCard.interval > 0 && ` · 已学习 ${previewCard.repetitions} 次`}
-                </Typography>
-              </Box>
+              <Typography sx={{ ...mono, fontSize: 10, opacity: 0.55, fontVariantNumeric: 'tabular-nums' }}>
+                {new Date(previewCard.created_at).toLocaleDateString('zh-CN')}
+                {previewCard.interval > 0 && ` · 已复习 ${previewCard.repetitions} 次`}
+                {previewCard.interval > 0 && ` · ${statusOf(previewCard).label}`}
+              </Typography>
             </Box>
           )}
         </DialogContent>
-        <DialogActions sx={{ px: 3, pb: 2, justifyContent: 'space-between' }}>
+        <DialogActions sx={{ p: '10px 20px 16px', gap: 1, justifyContent: 'space-between' }}>
           <Button
             onClick={() => prevCard && setPreviewCard(prevCard)}
             disabled={!prevCard}
-            startIcon={<ChevronLeftIcon />}
-            sx={{ textTransform: 'none' }}
+            sx={{ ...mono, fontSize: 11, color: 'text.primary', px: 0, minWidth: 0, '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' } }}
           >
-            上一张
+            ← 上一张
           </Button>
-          <Button onClick={() => setPreviewCard(null)} variant="outlined" sx={{ textTransform: 'none' }}>
+          <Button onClick={() => setPreviewCard(null)} variant="outlined" sx={{ ...mono, fontSize: 11, height: 34, px: 2 }}>
             关闭
           </Button>
           <Button
             onClick={() => nextCard && setPreviewCard(nextCard)}
             disabled={!nextCard}
-            endIcon={<ChevronRightIcon />}
-            sx={{ textTransform: 'none' }}
+            sx={{ ...mono, fontSize: 11, color: 'text.primary', px: 0, minWidth: 0, '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' } }}
           >
-            下一张
+            下一张 →
           </Button>
         </DialogActions>
       </Dialog>
