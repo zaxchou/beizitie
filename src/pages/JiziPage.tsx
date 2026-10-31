@@ -4,43 +4,23 @@ import {
   Typography,
   Button,
   Drawer,
-  TextField,
   Alert,
   CircularProgress,
-  Chip,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  ToggleButtonGroup,
-  ToggleButton,
   Slider,
-  Switch,
-  IconButton,
   Fab,
   Paper,
-  Stack,
-  Divider,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
 } from '@mui/material';
-import { useTheme, alpha } from '@mui/material/styles';
 import EditIcon from '@mui/icons-material/Edit';
 import StyleIcon from '@mui/icons-material/Style';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import DownloadIcon from '@mui/icons-material/Download';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
-import FullscreenIcon from '@mui/icons-material/Fullscreen';
-import HistoryIcon from '@mui/icons-material/History';
 import JiziPresetButton from '@/components/jizi/JiziPresetButton';
 import JiziPreview from '@/components/jizi/JiziPreview';
 import JiziSwitcherSheet from '@/components/jizi/JiziSwitcherSheet';
@@ -72,18 +52,95 @@ function extractFilters(results: JiziMatchResult[]): { styles: string[]; calligr
   };
 }
 
-/** Sheet 顶部标题栏 */
+const MONO = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
+
+/** 底部抽屉统一：直角 + 2px 墨线上边 + 88vh 上限 */
+const drawerPaper = {
+  borderTopLeftRadius: 0,
+  borderTopRightRadius: 0,
+  borderTop: '2px solid',
+  borderColor: 'text.primary',
+  maxHeight: '88vh',
+} as const;
+
+/** 表单小标签：等宽、小号、字距放开 */
+const labelSx = {
+  ...MONO,
+  fontSize: 9.5,
+  letterSpacing: '0.14em',
+  textTransform: 'uppercase',
+  opacity: 0.6,
+  display: 'block',
+  mb: 0.75,
+} as const;
+
+const linkBtnSx = {
+  border: 0,
+  background: 'none',
+  color: 'inherit',
+  p: 0,
+  cursor: 'pointer',
+  ...MONO,
+  fontSize: 11,
+  '&:hover': { textDecoration: 'underline' },
+} as const;
+
+const stepBtnSx = {
+  width: 34,
+  height: 32,
+  border: 0,
+  bgcolor: 'transparent',
+  color: 'inherit',
+  cursor: 'pointer',
+  fontSize: 15,
+  lineHeight: 1,
+  '&:hover': { bgcolor: 'text.primary', color: 'background.default' },
+} as const;
+
+const sliderSx = {
+  height: 2,
+  '& .MuiSlider-rail': { bgcolor: 'divider', opacity: 1 },
+  '& .MuiSlider-track': { border: 0, color: 'text.primary' },
+  '& .MuiSlider-thumb': {
+    width: 9,
+    height: 9,
+    borderRadius: 0,
+    color: 'text.primary',
+    '&:hover, &.Mui-focusVisible, &.Mui-active': { boxShadow: 'none' },
+  },
+  '& .MuiSlider-valueLabel': { borderRadius: 0, fontFamily: 'var(--font-mono)', fontSize: 10 },
+} as const;
+
+/** Sheet 顶部标题栏：标题 + 方框关闭，下面一条墨线 */
 const SheetHeader: React.FC<{ title: string; onClose: () => void }> = ({ title, onClose }) => (
-  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{title}</Typography>
-    <IconButton size="small" onClick={onClose}>
-      <CloseIcon fontSize="small" />
-    </IconButton>
+  <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', pb: 1.25, mb: 1.75, borderBottom: '1px solid', borderColor: 'text.primary' }}>
+    <Typography component="h2" sx={{ fontSize: 20, fontWeight: 900, letterSpacing: '0.08em', lineHeight: 1.1 }}>{title}</Typography>
+    <Box
+      component="button"
+      type="button"
+      onClick={onClose}
+      aria-label="关闭"
+      sx={{
+        border: '1px solid',
+        borderColor: 'text.primary',
+        bgcolor: 'transparent',
+        color: 'inherit',
+        width: 28,
+        height: 28,
+        p: 0,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+        '&:hover': { bgcolor: 'text.primary', color: 'background.default' },
+      }}
+    >
+      <CloseIcon sx={{ fontSize: 16 }} />
+    </Box>
   </Box>
 );
 
 const JiziPage: React.FC = () => {
-  const theme = useTheme();
   const store = useJiziStore();
   const { text, results, selections: selectedCardIds, layout, scope, styleFilter, calligrapherFilter } = store;
   const [loading, setLoading] = useState(false);
@@ -414,88 +471,108 @@ const JiziPage: React.FC = () => {
         anchor="bottom"
         open={activeTab === 'text'}
         onClose={closeSheet}
-        PaperProps={{ sx: { borderTopLeftRadius: 0, borderTopRightRadius: 0, borderTop: '2px solid', borderColor: 'text.primary', maxHeight: '70vh' } }}
+        PaperProps={{ sx: drawerPaper }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: { xs: 2, md: '18px 28px 24px' }, width: '100%', maxWidth: 780, mx: 'auto' }}>
           <SheetHeader title="编辑文字" onClose={closeSheet} />
-          <Stack spacing={2}>
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                <Typography variant="body2" sx={{ fontWeight: 500 }}>集字内容</Typography>
-                <Box sx={{ display: 'flex', gap: 0.5 }}>
-                  {text && (
-                    <Button size="small" color="error" onClick={() => store.setText('')} sx={{ minWidth: 0, fontSize: 12, px: 1 }}>
-                      清空
-                    </Button>
-                  )}
-                  <JiziPresetButton onSelect={store.setText} />
-                </Box>
-              </Box>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                value={text}
-                onChange={(e) => store.setText(e.target.value)}
-                placeholder="输入诗句，如：春江潮水连海平"
-                variant="outlined"
-                sx={{ '& .MuiOutlinedInput-root': { borderRadius: '2px' } }}
-              />
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                支持中文汉字，标点自动忽略，最多 500 字
-              </Typography>
-              <Button
-                fullWidth
-                variant="contained"
-                onClick={handleMatch}
-                disabled={loading || !text.trim()}
-                sx={{ mt: 1.5, textTransform: 'none', py: 1, borderRadius: '2px' }}
-              >
-                {loading ? '集字中...' : '开始集字'}
-              </Button>
-              {isLoggedIn && history.length > 0 && (
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5, color: 'text.secondary' }}>
-                    历史记录
-                  </Typography>
-                  <List dense disablePadding sx={{ maxHeight: 200, overflowY: 'auto' }}>
-                    {history.map((item) => {
-                      const firstLine = item.text.split('\n')[0];
-                      const display = firstLine.length > 30 ? firstLine.slice(0, 30) + '…' : firstLine;
-                      const date = item.created_at.slice(0, 10);
-                      return (
-                        <ListItemButton
-                          key={item.id}
-                          onClick={() => { store.setText(item.text); }}
-                          sx={{ borderRadius: '2px', px: 1, py: 0.5 }}
-                        >
-                          <ListItemIcon sx={{ minWidth: 28 }}>
-                            <HistoryIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          </ListItemIcon>
-                          <ListItemText
-                            primary={display}
-                            secondary={date}
-                            primaryTypographyProps={{ fontSize: 13, noWrap: true }}
-                            secondaryTypographyProps={{ fontSize: 11 }}
-                          />
-                          <Button
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeleteConfirmId(item.id);
-                            }}
-                            sx={{ minWidth: 0, px: 0.75, py: 0, fontSize: 11, whiteSpace: 'nowrap', flexShrink: 0, color: 'text.disabled', '&:hover': { color: 'error.main' } }}
-                          >
-                            删除
-                          </Button>
-                        </ListItemButton>
-                      );
-                    })}
-                  </List>
+
+          <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 0.75 }}>
+            <Typography sx={labelSx}>集字内容 · Text</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.25 }}>
+              {text && (
+                <Box component="button" type="button" onClick={() => store.setText('')} sx={linkBtnSx}>
+                  清空
                 </Box>
               )}
+              <JiziPresetButton onSelect={store.setText} />
             </Box>
-          </Stack>
+          </Box>
+          <Box
+            component="textarea"
+            value={text}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => store.setText(e.target.value)}
+            placeholder="输入诗句，如：春江潮水连海平"
+            rows={4}
+            sx={{
+              width: '100%',
+              resize: 'none',
+              border: '1px solid',
+              borderColor: 'text.primary',
+              bgcolor: 'transparent',
+              color: 'text.primary',
+              p: '10px 12px',
+              fontSize: 15,
+              lineHeight: 1.9,
+              letterSpacing: '0.05em',
+              outline: 'none',
+              fontFamily: 'inherit',
+              '&::placeholder': { color: 'text.disabled' },
+            }}
+          />
+          <Typography sx={{ ...MONO, fontSize: 10, opacity: 0.55, mt: 0.75 }}>
+            支持中文汉字，标点自动忽略，最多 500 字
+          </Typography>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={handleMatch}
+            disabled={loading || !text.trim()}
+            sx={{ mt: 1.75, height: 48, justifyContent: 'space-between', px: 2.25 }}
+          >
+            <span>{loading ? '集字中…' : '开始集字'}</span>
+            <span aria-hidden>→</span>
+          </Button>
+
+          {isLoggedIn && history.length > 0 && (
+            <Box sx={{ mt: 2.5 }}>
+              <Typography sx={labelSx}>历史记录 · History</Typography>
+              <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary' }}>
+                {history.map((item) => {
+                  const firstLine = item.text.split('\n')[0];
+                  const display = firstLine.length > 30 ? firstLine.slice(0, 30) + '…' : firstLine;
+                  const date = item.created_at.slice(0, 10);
+                  return (
+                    <Box
+                      key={item.id}
+                      sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.9, borderBottom: '1px solid', borderColor: 'divider' }}
+                    >
+                      <Box
+                        component="button"
+                        type="button"
+                        onClick={() => store.setText(item.text)}
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          textAlign: 'left',
+                          border: 0,
+                          background: 'none',
+                          color: 'inherit',
+                          p: 0,
+                          cursor: 'pointer',
+                          fontSize: 13,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          '&:hover': { textDecoration: 'underline' },
+                        }}
+                      >
+                        {display}
+                      </Box>
+                      <Typography sx={{ ...MONO, fontSize: 10, opacity: 0.5, flexShrink: 0 }}>{date}</Typography>
+                      <Box
+                        component="button"
+                        type="button"
+                        onClick={() => setDeleteConfirmId(item.id)}
+                        sx={{ ...linkBtnSx, flexShrink: 0, opacity: 0.55, '&:hover': { opacity: 1, color: 'var(--hot-ink)' } }}
+                      >
+                        删除
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
         </Box>
       </Drawer>
 
@@ -504,117 +581,140 @@ const JiziPage: React.FC = () => {
         anchor="bottom"
         open={activeTab === 'select'}
         onClose={closeSheet}
-        PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '85vh' } }}
+        PaperProps={{ sx: drawerPaper }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: { xs: 2, md: '18px 28px 24px' }, width: '100%', maxWidth: 780, mx: 'auto' }}>
           <SheetHeader title="选择风格" onClose={closeSheet} />
-          <Stack spacing={2.5}>
-            {/* 书体筛选 */}
-            {filters.styles.length > 0 && (
-              <Box>
-                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>书体</Typography>
-                <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                  <Chip
-                    label="全部"
-                    size="small"
-                    variant={!styleFilter ? 'filled' : 'outlined'}
-                    color={!styleFilter ? 'primary' : 'default'}
-                    onClick={() => store.setStyleFilter('')}
-                  />
-                  {filters.styles.map((s) => (
-                    <Chip
-                      key={s}
-                      label={s}
-                      size="small"
-                      variant={styleFilter === s ? 'filled' : 'outlined'}
-                      color={styleFilter === s ? 'primary' : 'default'}
+
+          {filters.styles.length > 0 && (
+            <Box sx={{ mb: 2.25 }}>
+              <Typography sx={labelSx}>书体 · Style</Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                {['', ...filters.styles].map((s) => {
+                  const on = (s === '' && !styleFilter) || styleFilter === s;
+                  return (
+                    <Box
+                      key={s || 'all'}
+                      component="button"
+                      type="button"
                       onClick={() => store.setStyleFilter(s)}
-                    />
-                  ))}
-                </Box>
+                      aria-pressed={on}
+                      sx={{
+                        border: '1px solid',
+                        borderColor: on ? 'text.primary' : 'divider',
+                        bgcolor: on ? 'text.primary' : 'transparent',
+                        color: on ? 'background.default' : 'inherit',
+                        ...MONO,
+                        fontSize: 11,
+                        height: 28,
+                        px: 1.1,
+                        cursor: 'pointer',
+                        '&:hover': on ? {} : { borderColor: 'text.primary' },
+                      }}
+                    >
+                      {s || '全部'}
+                    </Box>
+                  );
+                })}
               </Box>
-            )}
+            </Box>
+          )}
 
-            {/* 书家筛选 */}
-            {filters.calligraphers.length > 0 && (
-              <FormControl size="small" fullWidth>
-                <InputLabel>书家</InputLabel>
-                <Select
-                  value={calligrapherFilter || ''}
-                  onChange={(e) => store.setCalligrapherFilter(e.target.value)}
-                  label="书家"
-                >
-                  <MenuItem value="">全部书家</MenuItem>
-                  {filters.calligraphers.map((name) => (
-                    <MenuItem key={name} value={name}>{name}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            )}
+          {filters.calligraphers.length > 0 && (
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, py: 1.25, borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'divider', mb: 2.25 }}>
+              <Typography sx={{ fontSize: 13 }}>书家<Box component="span" sx={{ ...MONO, fontSize: 9.5, opacity: 0.55, ml: 0.75 }}>ARTIST</Box></Typography>
+              <Box
+                component="select"
+                value={calligrapherFilter || ''}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => store.setCalligrapherFilter(e.target.value)}
+                aria-label="选择书家"
+                sx={{
+                  border: 0,
+                  borderBottom: '1px solid',
+                  borderColor: 'text.primary',
+                  background: 'transparent',
+                  color: 'text.primary',
+                  ...MONO,
+                  fontSize: 11,
+                  py: '3px',
+                  pr: '16px',
+                  maxWidth: 200,
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                <option value="">全部书家</option>
+                {filters.calligraphers.map((name) => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </Box>
+            </Box>
+          )}
 
-            {/* 逐字调整 */}
-            {hasResults && (
-              <>
-                <Divider />
-                <Box>
-                  <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>逐字调整</Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                    点击下方任一文字，可切换写法
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                    {filteredResults.map((r, i) => {
-                      const sel = selections[i] ?? 0;
-                      const hit = r.hits[sel];
-                      if (!hit) return null;
-                      return (
-                        <Box
-                          key={i}
-                          onClick={() => handleOpenPickerFromList(i)}
+          {hasResults && (
+            <Box>
+              <Typography sx={labelSx}>逐字调整 · Per character</Typography>
+              <Typography sx={{ ...MONO, fontSize: 10, opacity: 0.55, mb: 1.25 }}>
+                点击任一文字，可切换写法
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75 }}>
+                {filteredResults.map((r, i) => {
+                  const sel = selections[i] ?? 0;
+                  const hit = r.hits[sel];
+                  if (!hit) return null;
+                  return (
+                    <Box
+                      key={i}
+                      onClick={() => handleOpenPickerFromList(i)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          handleOpenPickerFromList(i);
+                        }
+                      }}
+                      sx={{
+                        position: 'relative',
+                        cursor: 'pointer',
+                        border: '1px solid',
+                        borderColor: 'text.primary',
+                        width: 58,
+                        height: 58,
+                        overflow: 'hidden',
+                        '&:hover': { bgcolor: 'text.primary', color: 'background.default' },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={getImageUrl(hit.image_url)}
+                        alt={r.char}
+                        sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        draggable={false}
+                      />
+                      {r.hits.length > 1 && (
+                        <Typography
                           sx={{
-                            position: 'relative',
-                            cursor: 'pointer',
-                            border: 1,
-                            borderColor: 'divider',
-                            borderRadius: '2px',
-                            width: 56,
-                            height: 56,
-                            bgcolor: 'action.hover',
-                            overflow: 'hidden',
-                            '&:hover': { borderColor: 'primary.main' },
+                            position: 'absolute',
+                            bottom: 1,
+                            right: 2,
+                            ...MONO,
+                            fontSize: 8,
+                            bgcolor: 'background.paper',
+                            color: 'text.primary',
+                            px: 0.3,
+                            lineHeight: 1.3,
                           }}
                         >
-                          <Box
-                            component="img"
-                            src={getImageUrl(hit.image_url)}
-                            alt={r.char}
-                            sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                            draggable={false}
-                          />
-                          {r.hits.length > 1 && (
-                            <Typography
-                              sx={{
-                                position: 'absolute',
-                                bottom: 1,
-                                right: 2,
-                                fontSize: 8,
-                                color: 'text.secondary',
-                                bgcolor: alpha(theme.palette.background.paper, 0.8),
-                                px: 0.3,
-                                borderRadius: '2px',
-                                lineHeight: 1.2,
-                              }}
-                            >
-                              {sel + 1}/{r.hits.length}
-                            </Typography>
-                          )}
-                        </Box>
-                      );
-                    })}
-                  </Box>
-                </Box>
-              </>
-            )}
-          </Stack>
+                          {sel + 1}/{r.hits.length}
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
+          )}
         </Box>
       </Drawer>
 
@@ -623,213 +723,230 @@ const JiziPage: React.FC = () => {
         anchor="bottom"
         open={activeTab === 'layout'}
         onClose={closeSheet}
-        PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '85vh' } }}
+        PaperProps={{ sx: drawerPaper }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: { xs: 2, md: '18px 28px 24px' }, width: '100%', maxWidth: 780, mx: 'auto' }}>
           <SheetHeader title="排版设置" onClose={closeSheet} />
-          <Stack spacing={2}>
-            {/* —— 方向 + 字号 同一行 —— */}
-            <Box sx={{ display: 'flex', gap: 2, alignItems: 'stretch' }}>
-              <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
-                  方向
-                </Typography>
-                <ToggleButtonGroup
-                  exclusive
-                  size="small"
-                  fullWidth
-                  value={layout.direction}
-                  onChange={(_, v: JiziDirection | null) => v && update({ direction: v })}
+
+          {/* 方向 */}
+          <Typography sx={labelSx}>方向 · Direction</Typography>
+          <Box sx={{ display: 'flex', mb: 2.25 }}>
+            {([
+              { value: 'vertical-rl', glyph: '↓←', label: '竖右' },
+              { value: 'vertical-lr', glyph: '↓→', label: '竖左' },
+              { value: 'horizontal-lr', glyph: '→↓', label: '横左' },
+              { value: 'horizontal-rl', glyph: '←↓', label: '横右' },
+            ] as const).map((d, i) => {
+              const on = layout.direction === d.value;
+              return (
+                <Box
+                  key={d.value}
+                  component="button"
+                  type="button"
+                  onClick={() => update({ direction: d.value as JiziDirection })}
+                  aria-pressed={on}
+                  aria-label={`${d.label}排`}
                   sx={{
                     flex: 1,
-                    '& .MuiToggleButton-root': {
-                      flex: 1,
-                      px: 0,
-                      py: 0.5,
-                      lineHeight: 1.1,
-                      fontSize: 11,
-                      flexDirection: 'column',
-                      gap: 0.25,
-                    },
+                    border: '1px solid',
+                    borderColor: on ? 'text.primary' : 'divider',
+                    borderLeftWidth: i === 0 ? 1 : 0,
+                    bgcolor: on ? 'text.primary' : 'transparent',
+                    color: on ? 'background.default' : 'inherit',
+                    height: 54,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 0.5,
+                    '&:hover': on ? {} : { borderColor: 'text.primary' },
                   }}
                 >
-                  <ToggleButton value="vertical-rl" aria-label="竖排右起">
-                    <Box sx={{ fontSize: 14, fontFamily: 'monospace', letterSpacing: -1 }}>↓←</Box>
-                    竖右
-                  </ToggleButton>
-                  <ToggleButton value="vertical-lr" aria-label="竖排左起">
-                    <Box sx={{ fontSize: 14, fontFamily: 'monospace', letterSpacing: -1 }}>↓→</Box>
-                    竖左
-                  </ToggleButton>
-                  <ToggleButton value="horizontal-lr" aria-label="横排左起">
-                    <Box sx={{ fontSize: 14, fontFamily: 'monospace', letterSpacing: -1 }}>→↓</Box>
-                    横左
-                  </ToggleButton>
-                  <ToggleButton value="horizontal-rl" aria-label="横排右起">
-                    <Box sx={{ fontSize: 14, fontFamily: 'monospace', letterSpacing: -1 }}>←↓</Box>
-                    横右
-                  </ToggleButton>
-                </ToggleButtonGroup>
+                  <Box component="span" sx={{ fontFamily: 'monospace', fontSize: 14, letterSpacing: -1 }}>{d.glyph}</Box>
+                  <Box component="span" sx={{ ...MONO, fontSize: 10 }}>{d.label}</Box>
+                </Box>
+              );
+            })}
+          </Box>
+
+          {/* 字号 */}
+          <Typography sx={labelSx}>字号 · Size</Typography>
+          <Box sx={{ display: 'flex', mb: 1 }}>
+            {([
+              { value: 80, label: '小' },
+              { value: 120, label: '中' },
+              { value: 160, label: '大' },
+            ] as const).map((s, i) => {
+              const on = layout.fontSize === s.value;
+              return (
+                <Box
+                  key={s.value}
+                  component="button"
+                  type="button"
+                  onClick={() => update({ fontSize: s.value })}
+                  aria-pressed={on}
+                  sx={{
+                    flex: 1,
+                    border: '1px solid',
+                    borderColor: on ? 'text.primary' : 'divider',
+                    borderLeftWidth: i === 0 ? 1 : 0,
+                    bgcolor: on ? 'text.primary' : 'transparent',
+                    color: on ? 'background.default' : 'inherit',
+                    height: 34,
+                    cursor: 'pointer',
+                    fontSize: 13,
+                    '&:hover': on ? {} : { borderColor: 'text.primary' },
+                  }}
+                >
+                  {s.label}
+                </Box>
+              );
+            })}
+          </Box>
+
+          {/* 每列/行字数 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5, borderTop: '1px solid', borderColor: 'divider', mt: 1.5 }}>
+            <Typography sx={{ fontSize: 13 }}>
+              {layout.direction.startsWith('vertical') ? '每列字数' : '每行字数'}
+              <Box component="span" sx={{ ...MONO, fontSize: 9.5, opacity: 0.55, ml: 0.75 }}>PER LINE</Box>
+            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', border: '2px solid', borderColor: 'text.primary' }}>
+              <Box
+                component="button"
+                type="button"
+                aria-label="减少每行字数"
+                onClick={() => update({ colCount: Math.max(4, layout.colCount - 2) })}
+                sx={stepBtnSx}
+              >
+                −
               </Box>
-              <Box sx={{ width: 120, display: 'flex', flexDirection: 'column' }}>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
-                  字号
-                </Typography>
-                <ToggleButtonGroup
-                  exclusive
-                  size="small"
-                  fullWidth
-                  value={layout.fontSize}
-                  onChange={(_, v: number | null) => v && update({ fontSize: v })}
-                  sx={{
-                    flex: 1,
-                    '& .MuiToggleButton-root': { flex: 1, px: 0, fontSize: 12 },
-                  }}
-                >
-                  <ToggleButton value={80}>小</ToggleButton>
-                  <ToggleButton value={120}>中</ToggleButton>
-                  <ToggleButton value={160}>大</ToggleButton>
-                </ToggleButtonGroup>
+              <Box sx={{ width: 52, textAlign: 'center', ...MONO, fontSize: 14, fontVariantNumeric: 'tabular-nums' }}>
+                {layout.colCount}
+              </Box>
+              <Box
+                component="button"
+                type="button"
+                aria-label="增加每行字数"
+                onClick={() => update({ colCount: Math.min(20, layout.colCount + 2) })}
+                sx={stepBtnSx}
+              >
+                ＋
               </Box>
             </Box>
+          </Box>
 
-            <Divider sx={{ my: 0.5 }} />
+          {/* 间距 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.5, borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Box>
+              <Typography sx={{ fontSize: 13 }}>间距</Typography>
+              <Typography sx={{ ...MONO, fontSize: 9.5, opacity: 0.55, mt: 0.25 }}>字距 / 行距</Typography>
+            </Box>
+            <Box
+              component="button"
+              type="button"
+              onClick={() => update({ compact: !layout.compact })}
+              aria-pressed={layout.compact}
+              sx={{
+                border: '1px solid',
+                borderColor: 'text.primary',
+                bgcolor: layout.compact ? 'text.primary' : 'transparent',
+                color: layout.compact ? 'background.default' : 'inherit',
+                ...MONO,
+                fontSize: 11,
+                height: 28,
+                px: 1.25,
+                cursor: 'pointer',
+              }}
+            >
+              {layout.compact ? '紧凑' : '常规'}
+            </Box>
+          </Box>
 
-            {/* —— 每行/列字数 —— */}
+          <Box sx={{ opacity: layout.compact ? 0.35 : 1, pointerEvents: layout.compact ? 'none' : 'auto', transition: 'opacity 0.2s', py: 1.25 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-              <Typography variant="caption" color="text.secondary" sx={{ minWidth: 60 }}>
-                {layout.direction.startsWith('vertical') ? '每列字数' : '每行字数'}
-              </Typography>
+              <Typography sx={{ ...MONO, fontSize: 10, minWidth: 32, opacity: 0.7 }}>字距</Typography>
               <Box sx={{ flex: 1, px: 0.5 }}>
                 <Slider
                   size="small"
-                  min={4}
-                  max={20}
-                  step={2}
-                  marks
-                  value={layout.colCount}
-                  onChange={(_, v) => update({ colCount: v as number })}
+                  min={0}
+                  max={0.4}
+                  step={0.02}
+                  value={layout.charGap}
+                  onChange={(_, v) => update({ charGap: v as number })}
                   valueLabelDisplay="auto"
-                  valueLabelFormat={(v) => `${v} 字`}
+                  valueLabelFormat={(v) => `${Math.round(v * 100)}%`}
+                  sx={sliderSx}
                 />
               </Box>
-              <Typography variant="body2" sx={{ minWidth: 32, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                {layout.colCount}
+              <Typography sx={{ ...MONO, fontSize: 10, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                {Math.round(layout.charGap * 100)}%
               </Typography>
             </Box>
-
-            <Divider sx={{ my: 0.5 }} />
-
-            {/* —— 间距 + 紧凑模式 —— */}
-            <Box>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption" color="text.secondary">间距</Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography variant="caption" color={layout.compact ? 'primary.main' : 'text.secondary'} sx={{ fontWeight: layout.compact ? 600 : 400 }}>
-                    紧凑模式
-                  </Typography>
-                  <Switch
-                    size="small"
-                    checked={layout.compact}
-                    onChange={(e) => update({ compact: e.target.checked })}
-                  />
-                </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography sx={{ ...MONO, fontSize: 10, minWidth: 32, opacity: 0.7 }}>行距</Typography>
+              <Box sx={{ flex: 1, px: 0.5 }}>
+                <Slider
+                  size="small"
+                  min={0}
+                  max={0.6}
+                  step={0.02}
+                  value={layout.lineGap}
+                  onChange={(_, v) => update({ lineGap: v as number })}
+                  valueLabelDisplay="auto"
+                  valueLabelFormat={(v) => `${Math.round(v * 100)}%`}
+                  sx={sliderSx}
+                />
               </Box>
-              <Box sx={{ opacity: layout.compact ? 0.4 : 1, pointerEvents: layout.compact ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ minWidth: 32 }}>字距</Typography>
-                  <Box sx={{ flex: 1, px: 0.5 }}>
-                    <Slider
-                      size="small"
-                      min={0}
-                      max={0.4}
-                      step={0.02}
-                      value={layout.charGap}
-                      onChange={(_, v) => update({ charGap: v as number })}
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={(v) => `${Math.round(v * 100)}%`}
-                    />
-                  </Box>
-                  <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {Math.round(layout.charGap * 100)}%
-                  </Typography>
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <Typography variant="caption" color="text.secondary" sx={{ minWidth: 32 }}>行距</Typography>
-                  <Box sx={{ flex: 1, px: 0.5 }}>
-                    <Slider
-                      size="small"
-                      min={0}
-                      max={0.6}
-                      step={0.02}
-                      value={layout.lineGap}
-                      onChange={(_, v) => update({ lineGap: v as number })}
-                      valueLabelDisplay="auto"
-                      valueLabelFormat={(v) => `${Math.round(v * 100)}%`}
-                    />
-                  </Box>
-                  <Typography variant="caption" sx={{ minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
-                    {Math.round(layout.lineGap * 100)}%
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-
-            <Divider sx={{ my: 0.5 }} />
-
-            {/* —— 背景：色块 —— */}
-            <Box>
-              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                背景
+              <Typography sx={{ ...MONO, fontSize: 10, minWidth: 36, textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>
+                {Math.round(layout.lineGap * 100)}%
               </Typography>
-              <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'space-around', px: 1 }}>
-                {([
-                  { value: 'default', label: '渐变', color: '#e0e0e0' },
-                  { value: 'xuan', label: '宣纸', color: '#f5ecd9' },
-                  { value: 'white', label: '纯白', color: '#ffffff' },
-                  { value: 'ink', label: '墨色', color: '#1a1a1a' },
-                  { value: 'vermilion', label: '朱砂', color: '#8b0000' },
-                ] as const).map((bg) => {
-                  const active = layout.background === bg.value;
-                  return (
-                    <Box
-                      key={bg.value}
-                      onClick={() => update({ background: bg.value as JiziBackground })}
-                      sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 0.5,
-                        cursor: 'pointer',
-                      }}
-                    >
-                      <Box
-                        sx={{
-                          width: 36,
-                          height: 36,
-                          borderRadius: '50%',
-                          bgcolor: bg.color,
-                          border: '2px solid',
-                          borderColor: active ? 'primary.main' : 'rgba(0,0,0,0.12)',
-                          boxShadow: active ? '0 0 0 2px rgba(25,118,210,0.2)' : 'inset 0 0 0 1px rgba(0,0,0,0.04)',
-                          transition: 'all 0.15s',
-                        }}
-                      />
-                      <Typography variant="caption" sx={{ fontSize: 10, color: active ? 'primary.main' : 'text.secondary', fontWeight: active ? 600 : 400 }}>
-                        {bg.label}
-                      </Typography>
-                    </Box>
-                  );
-                })}
-              </Box>
             </Box>
+          </Box>
 
-            <Box sx={{ display: 'flex', justifyContent: 'center', pt: 0.5 }}>
-              <Button size="small" onClick={handleResetLayout} sx={{ color: 'text.secondary', textTransform: 'none' }}>
-                恢复默认
-              </Button>
+          {/* 背景 */}
+          <Typography sx={{ ...labelSx, mt: 1 }}>背景 · Ground</Typography>
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {([
+              { value: 'default', label: '渐变', color: '#e0e0e0' },
+              { value: 'xuan', label: '宣纸', color: '#f5ecd9' },
+              { value: 'white', label: '纯白', color: '#ffffff' },
+              { value: 'ink', label: '墨色', color: '#1a1a1a' },
+              { value: 'vermilion', label: '朱砂', color: '#8b0000' },
+            ] as const).map((bg) => {
+              const active = layout.background === bg.value;
+              return (
+                <Box
+                  key={bg.value}
+                  component="button"
+                  type="button"
+                  onClick={() => update({ background: bg.value as JiziBackground })}
+                  aria-pressed={active}
+                  sx={{
+                    border: '1px solid',
+                    borderColor: active ? 'var(--hot-ink)' : 'divider',
+                    background: 'none',
+                    p: 0.5,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.75,
+                  }}
+                >
+                  <Box sx={{ width: 18, height: 18, bgcolor: bg.color, border: '1px solid', borderColor: 'divider' }} />
+                  <Box component="span" sx={{ ...MONO, fontSize: 10, color: active ? 'var(--hot-ink)' : 'inherit', opacity: active ? 1 : 0.7 }}>
+                    {bg.label}
+                  </Box>
+                </Box>
+              );
+            })}
+          </Box>
+
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5 }}>
+            <Box component="button" type="button" onClick={handleResetLayout} sx={linkBtnSx}>
+              恢复默认
             </Box>
-          </Stack>
+          </Box>
         </Box>
       </Drawer>
 
@@ -838,41 +955,39 @@ const JiziPage: React.FC = () => {
         anchor="bottom"
         open={activeTab === 'preview'}
         onClose={closeSheet}
-        PaperProps={{ sx: { borderTopLeftRadius: 16, borderTopRightRadius: 16 } }}
+        PaperProps={{ sx: drawerPaper }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: { xs: 2, md: '18px 28px 24px' }, width: '100%', maxWidth: 780, mx: 'auto' }}>
           <SheetHeader title="预览与导出" onClose={closeSheet} />
-          <Stack spacing={1.5}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<FullscreenIcon />}
-              onClick={() => {
-                closeSheet();
-                setFullscreenOpen(true);
-              }}
-              disabled={!hasResults}
-              sx={{ textTransform: 'none', py: 1.25 }}
-            >
-              全屏预览
-            </Button>
-            <Button
-              fullWidth
-              variant="contained"
-              startIcon={exporting ? <CircularProgress size={16} color="inherit" /> : <DownloadIcon />}
-              onClick={() => {
-                closeSheet();
-                handleExport();
-              }}
-              disabled={!hasResults || exporting}
-              sx={{ textTransform: 'none', py: 1.25 }}
-            >
-              {exporting ? '导出中...' : '导出 PNG'}
-            </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', pt: 1 }}>
-              也可点击预览区右下角的导出按钮
-            </Typography>
-          </Stack>
+          <Button
+            fullWidth
+            variant="outlined"
+            onClick={() => {
+              closeSheet();
+              setFullscreenOpen(true);
+            }}
+            disabled={!hasResults}
+            sx={{ height: 46, justifyContent: 'space-between', px: 2.25 }}
+          >
+            <span>全屏预览</span>
+            <span aria-hidden>↗</span>
+          </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            onClick={() => {
+              closeSheet();
+              handleExport();
+            }}
+            disabled={!hasResults || exporting}
+            sx={{ mt: 1, height: 46, justifyContent: 'space-between', px: 2.25 }}
+          >
+            <span>{exporting ? '导出中…' : '导出 PNG'}</span>
+            <span aria-hidden>↓</span>
+          </Button>
+          <Typography sx={{ ...MONO, fontSize: 10, opacity: 0.55, textAlign: 'center', pt: 1.5 }}>
+            也可点预览区右下角的导出按钮
+          </Typography>
         </Box>
       </Drawer>
 

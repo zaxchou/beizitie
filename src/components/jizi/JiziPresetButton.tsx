@@ -1,13 +1,5 @@
 import React, { useState } from 'react';
-import {
-  Box,
-  Button,
-  Popover,
-  Typography,
-  Chip,
-  Divider,
-} from '@mui/material';
-import AutoStoriesIcon from '@mui/icons-material/AutoStories';
+import { Box, Button, Popover, Typography } from '@mui/material';
 
 /** 预设分类 */
 interface PresetCategory {
@@ -76,13 +68,19 @@ const JiziPresetButton: React.FC<JiziPresetButtonProps> = ({ onSelect }) => {
   return (
     <>
       <Button
-        size="small"
         variant="text"
-        startIcon={<AutoStoriesIcon />}
         onClick={(e) => setAnchorEl(e.currentTarget)}
-        sx={{ textTransform: 'none', fontSize: 12 }}
+        sx={{
+          minWidth: 0,
+          p: 0,
+          fontFamily: 'var(--font-mono)',
+          fontSize: 11,
+          letterSpacing: '0.04em',
+          color: 'text.primary',
+          '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline' },
+        }}
       >
-        预设
+        预设 · Presets
       </Button>
 
       <Popover
@@ -90,26 +88,36 @@ const JiziPresetButton: React.FC<JiziPresetButtonProps> = ({ onSelect }) => {
         anchorEl={anchorEl}
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-        slotProps={{ paper: { sx: { maxWidth: 360, p: 1.5 } } }}
+        slotProps={{ paper: { sx: { maxWidth: 380, p: 2, border: '2px solid', borderColor: 'text.primary', borderRadius: 0, boxShadow: 'none' } } }}
       >
         {PRESETS.map((cat, ci) => (
-          <Box key={cat.label}>
-            <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+          <Box key={cat.label} sx={{ pt: ci === 0 ? 0 : 1.5, mt: ci === 0 ? 0 : 1.5, borderTop: ci === 0 ? 0 : '1px solid', borderColor: 'divider' }}>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.6 }}>
               {cat.label}
             </Typography>
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.75, mb: ci < PRESETS.length - 1 ? 1 : 0 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1 }}>
               {cat.items.map((item) => (
-                <Chip
+                <Box
                   key={item}
-                  label={item}
-                  size="small"
-                  variant="outlined"
+                  component="button"
+                  type="button"
                   onClick={() => handleSelect(item)}
-                  sx={{ fontSize: 11 }}
-                />
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    background: 'none',
+                    color: 'inherit',
+                    fontSize: 12,
+                    px: 1,
+                    py: '4px',
+                    cursor: 'pointer',
+                    '&:hover': { borderColor: 'text.primary', bgcolor: 'text.primary', color: 'background.default' },
+                  }}
+                >
+                  {item}
+                </Box>
               ))}
             </Box>
-            {ci < PRESETS.length - 1 && <Divider sx={{ my: 1 }} />}
           </Box>
         ))}
       </Popover>

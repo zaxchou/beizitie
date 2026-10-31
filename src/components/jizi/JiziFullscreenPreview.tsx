@@ -3,13 +3,11 @@ import {
   Dialog,
   AppBar,
   Toolbar,
-  IconButton,
   Typography,
   Box,
   Button,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
-import DownloadIcon from '@mui/icons-material/Download';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import JiziPreview from './JiziPreview';
 import type { JiziMatchResult, JiziLayout } from '@/types/jizi';
@@ -66,29 +64,67 @@ const JiziFullscreenPreview: React.FC<JiziFullscreenPreviewProps> = ({
         color="transparent"
         elevation={0}
         sx={{
-          bgcolor: 'rgba(0,0,0,0.3)',
-          backdropFilter: 'blur(8px)',
+          bgcolor: '#17130c',
+          backgroundImage: 'none',
+          borderBottom: '1px solid rgba(242,236,221,0.28)',
+          boxShadow: 'none',
         }}
       >
-        <Toolbar variant="dense">
-          <IconButton
-            edge="start"
+        <Toolbar variant="dense" sx={{ minHeight: 52, px: { xs: 1.5, md: 3 } }}>
+          <Box
+            component="button"
+            type="button"
             onClick={onClose}
-            sx={{ color: 'rgba(255,255,255,0.7)' }}
+            aria-label="退出全屏"
+            sx={{
+              border: '1px solid rgba(242,236,221,0.4)',
+              background: 'none',
+              color: 'rgba(242,236,221,0.86)',
+              width: 30,
+              height: 30,
+              p: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              mr: 1.5,
+              '&:hover': { bgcolor: '#f2ecdd', color: '#17130c' },
+            }}
           >
-            <FullscreenExitIcon />
-          </IconButton>
+            <FullscreenExitIcon sx={{ fontSize: 16 }} />
+          </Box>
           <Typography
-            sx={{ flex: 1, color: 'rgba(255,255,255,0.6)', fontSize: 14 }}
+            sx={{
+              flex: 1,
+              color: 'rgba(242,236,221,0.7)',
+              fontFamily: 'var(--font-mono)',
+              fontSize: 10.5,
+              letterSpacing: '0.14em',
+            }}
           >
             集字预览 · {results.length} 字
           </Typography>
-          <IconButton
+          <Box
+            component="button"
+            type="button"
             onClick={onClose}
-            sx={{ color: 'rgba(255,255,255,0.5)' }}
+            aria-label="关闭"
+            sx={{
+              border: '1px solid rgba(242,236,221,0.4)',
+              background: 'none',
+              color: 'rgba(242,236,221,0.86)',
+              width: 30,
+              height: 30,
+              p: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              '&:hover': { bgcolor: '#f2ecdd', color: '#17130c' },
+            }}
           >
-            <CloseIcon />
-          </IconButton>
+            <CloseIcon sx={{ fontSize: 16 }} />
+          </Box>
         </Toolbar>
       </AppBar>
 
@@ -121,19 +157,18 @@ const JiziFullscreenPreview: React.FC<JiziFullscreenPreviewProps> = ({
           gap: 1.5,
           py: 1.5,
           px: 2,
-          bgcolor: 'rgba(0,0,0,0.3)',
-          backdropFilter: 'blur(8px)',
+          bgcolor: '#17130c',
+          borderTop: '1px solid rgba(242,236,221,0.28)',
         }}
       >
         <Button
           variant="contained"
-          startIcon={<DownloadIcon />}
           onClick={onExport}
           disabled={exporting || results.length === 0}
-          size="small"
-          sx={{ textTransform: 'none' }}
+          sx={{ height: 40, px: 2.5, justifyContent: 'space-between', gap: 3, fontFamily: 'var(--font-mono)', fontSize: 11 }}
         >
-          {exporting ? '导出中...' : '导出 PNG'}
+          <span>{exporting ? '导出中…' : '导出 PNG'}</span>
+          <span aria-hidden>↓</span>
         </Button>
       </Box>
     </Dialog>
