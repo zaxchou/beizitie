@@ -1,33 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Typography,
-  Card,
-  CardContent,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Button,
-  IconButton,
-  TextField,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Alert,
-  CircularProgress,
-  Chip,
-  Tooltip,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Snackbar,
+  Typography,
 } from '@mui/material';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from '@mui/icons-material/Search';
 import { useAuthStore } from '@/stores/useAuthStore';
 import {
   fetchAdminUsers,
@@ -38,6 +23,9 @@ import {
   type UserStatsResponse,
 } from '@/lib/api';
 
+const mono = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
+
+/** 用户管理：一行一个账号，统计进弹窗，避免表格里塞 N 次请求 */
 const UserManagePage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -46,6 +34,8 @@ const UserManagePage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [keyword, setKeyword] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'admin' | 'user' | null>(null);
 
   // 编辑对话框
   const [editOpen, setEditOpen] = useState(false);
@@ -67,7 +57,6 @@ const UserManagePage: React.FC = () => {
   const [statsLoading, setStatsLoading] = useState(false);
   const [statsError, setStatsError] = useState('');
 
-  // Snackbar
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
     open: false, message: '', severity: 'success',
   });
@@ -93,7 +82,6 @@ const UserManagePage: React.FC = () => {
     loadUsers();
   }, [isAdmin, navigate, loadUsers]);
 
-  // 打开编辑对话框
   const handleOpenEdit = (u: AdminUser) => {
     setEditTarget(u);
     setEditUsername(u.username);
@@ -102,7 +90,6 @@ const UserManagePage: React.FC = () => {
     setEditOpen(true);
   };
 
-  // 提交编辑
   const handleEditSubmit = async () => {
     if (!editTarget) return;
     if (!editUsername.trim()) {
@@ -131,7 +118,6 @@ const UserManagePage: React.FC = () => {
     }
   };
 
-  // 删除用户
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
@@ -148,7 +134,6 @@ const UserManagePage: React.FC = () => {
     }
   };
 
-  // 查看统计
   const handleViewStats = async (u: AdminUser) => {
     setStatsTarget(u);
     setStatsData(null);
@@ -167,189 +152,376 @@ const UserManagePage: React.FC = () => {
 
   if (!isAdmin) return null;
 
+  const admins = users.filter((u) => u.role === 'admin').length;
+  const filtered = users.filter((u) => {
+    if (roleFilter === 'admin' && u.role !== 'admin') return false;
+    if (roleFilter === 'user' && u.role === 'admin') return false;
+    const kw = keyword.trim().toLowerCase();
+    return !kw || u.username.toLowerCase().includes(kw);
+  });
+
+  const latest = users.reduce<string | null>((acc, u) => (!acc || u.created_at > acc ? u.created_at : acc), null);
+
+  const FILTERS: { key: 'admin' | 'user' | null; label: string; en: string; n: number }[] = [
+    { key: null, label: '全部', en: 'ALL', n: users.length },
+    { key: 'admin', label: '管理员', en: 'ADMIN', n: admins },
+    { key: 'user', label: '用户', en: 'USER', n: users.length - admins },
+  ];
+
+  const rowActionSx = {
+    border: 0,
+    background: 'none',
+    color: 'inherit',
+    p: 0,
+    cursor: 'pointer',
+    ...mono,
+    fontSize: 11,
+    opacity: 0.72,
+    '&:hover': { opacity: 1, textDecoration: 'underline' },
+  } as const;
+
   return (
-    <Box className="space-y-4 py-4">
-      {/* 顶部导航 */}
-      <Box className="flex items-center gap-2">
-        <IconButton onClick={() => navigate('/settings')} size="small">
-          <ArrowBackIcon />
-        </IconButton>
-        <Box>
-          <Typography component="h1" sx={{ fontSize: { xs: 24, md: 32 }, fontWeight: 900, letterSpacing: '0.08em', lineHeight: 1 }}>
+    <Box>
+      {/* 页头 */}
+      <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 2, pb: { xs: 1.5, md: 1.75 } }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Button
+            variant="text"
+            onClick={() => navigate('/settings')}
+            sx={{ minHeight: 0, p: 0, mb: 1, fontSize: 11, ...mono, color: 'text.primary', opacity: 0.7, '&:hover': { backgroundColor: 'transparent', opacity: 1 } }}
+          >
+            ← 设置
+          </Button>
+          <Typography component="h1" sx={{ fontSize: { xs: 30, md: 44 }, fontWeight: 900, letterSpacing: { xs: '4px', md: '7px' }, lineHeight: 1.1 }}>
             用户管理
           </Typography>
-          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, letterSpacing: '0.04em', opacity: 0.65, mt: 0.75 }}>
-            账号 · 权限 · 学习量
+          <Typography sx={{ ...mono, fontSize: 11, opacity: 0.72, mt: 1 }}>
+            {users.length} 个账号 · 管理员 {admins}
+            {latest ? ` · 最近注册 ${new Date(latest).toLocaleDateString('zh-CN')}` : ''}
           </Typography>
         </Box>
+        <Button
+          variant="outlined"
+          onClick={loadUsers}
+          disabled={loading}
+          sx={{ height: 36, px: 1.75, flexShrink: 0, ...mono, fontSize: 11 }}
+        >
+          {loading ? '读取中…' : '刷新'}
+        </Button>
       </Box>
 
-      {error && <Alert severity="error">{error}</Alert>}
+      {/* 工具条 */}
+      <Box
+        sx={{
+          borderTop: '1px solid',
+          borderBottom: '1px solid',
+          borderColor: 'text.primary',
+          display: 'flex',
+          alignItems: 'center',
+          gap: { xs: 1.25, md: 2 },
+          flexWrap: 'wrap',
+          py: 1.25,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, borderBottom: '1px solid', borderColor: 'text.primary', pb: '3px', width: { xs: '100%', md: 200 } }}>
+          <SearchIcon sx={{ fontSize: 15, opacity: 0.55 }} />
+          <Box
+            component="input"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            placeholder="搜索账号 / SEARCH"
+            aria-label="搜索账号"
+            sx={{ border: 0, outline: 'none', background: 'transparent', color: 'text.primary', ...mono, fontSize: 12, width: '100%', p: 0 }}
+          />
+          {keyword && (
+            <Box component="button" type="button" onClick={() => setKeyword('')} aria-label="清除搜索" sx={{ border: 0, background: 'none', p: 0, cursor: 'pointer', color: 'inherit', display: 'flex' }}>
+              <CloseIcon sx={{ fontSize: 14, opacity: 0.6 }} />
+            </Box>
+          )}
+        </Box>
 
-      {/* 用户列表 */}
-      <Card variant="outlined" sx={{ borderRadius: '2px' }}>
-        <CardContent sx={{ p: 0, '&:last-child': { pb: 0 } }}>
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={{ fontWeight: 600 }}>用户名</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>角色</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }}>注册时间</TableCell>
-                  <TableCell sx={{ fontWeight: 600 }} align="right">操作</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 4 }}>
-                      <CircularProgress size={24} />
-                    </TableCell>
-                  </TableRow>
-                ) : users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} align="center" sx={{ py: 4, color: 'text.secondary' }}>
-                      暂无用户
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  users.map((u) => (
-                    <TableRow key={u.id} hover>
-                      <TableCell>
-                        <Box className="flex items-center gap-1.5">
-                          {u.username}
-                          {u.id === user?.id && (
-                            <Chip label="当前账号" size="small" color="primary" variant="outlined" sx={{ height: 20, fontSize: 11 }} />
-                          )}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={u.role === 'admin' ? '管理员' : '用户'}
-                          size="small"
-                          color={u.role === 'admin' ? 'warning' : 'default'}
-                          variant="outlined"
-                          sx={{ height: 20, fontSize: 11 }}
-                        />
-                      </TableCell>
-                      <TableCell sx={{ fontSize: 13, color: 'text.secondary' }}>
-                        {new Date(u.created_at).toLocaleDateString('zh-CN')}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Box className="flex items-center justify-end gap-0.5">
-                          <Tooltip title="查看统计">
-                            <IconButton size="small" onClick={() => handleViewStats(u)}>
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="编辑">
-                            <IconButton size="small" onClick={() => handleOpenEdit(u)}>
-                              <EditIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          {u.id !== user?.id && (
-                            <Tooltip title="删除">
-                              <IconButton size="small" color="error" onClick={() => { setDeleteTarget(u); setDeleteError(''); }}>
-                                <DeleteIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+        <Box sx={{ display: 'flex' }}>
+          {FILTERS.map((f, i) => {
+            const on = roleFilter === f.key;
+            return (
+              <Box
+                key={f.en}
+                component="button"
+                type="button"
+                onClick={() => setRoleFilter(f.key)}
+                aria-pressed={on}
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'text.primary',
+                  borderLeftWidth: i === 0 ? 1 : 0,
+                  px: 1.1,
+                  height: 28,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                  bgcolor: on ? 'text.primary' : 'transparent',
+                  color: on ? 'background.default' : 'inherit',
+                  ...mono,
+                  fontSize: 11,
+                  '&:hover': on ? {} : { backgroundColor: 'action.hover' },
+                }}
+              >
+                {f.label}
+                <Box component="span" sx={{ ml: 0.6, opacity: 0.58 }}>{f.n}</Box>
+              </Box>
+            );
+          })}
+        </Box>
+
+        <Box sx={{ flex: 1 }} />
+        <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.62, display: { xs: 'none', md: 'block' } }}>
+          {filtered.length} / {users.length} 个账号
+        </Typography>
+      </Box>
+
+      {error && (
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1.5, py: 1.25, borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)' }}>{error}</Typography>
+          <Box component="button" type="button" onClick={loadUsers} sx={{ border: 0, background: 'none', p: 0, cursor: 'pointer', ...mono, fontSize: 11, color: 'inherit', textDecoration: 'underline' }}>
+            重试
+          </Box>
+        </Box>
+      )}
+
+      {loading ? (
+        <Typography sx={{ ...mono, fontSize: 11, opacity: 0.7, py: 8 }}>正在读取账号…</Typography>
+      ) : filtered.length === 0 ? (
+        <Box sx={{ borderTop: '2px solid', borderColor: 'text.primary', py: { xs: 8, md: 10 }, textAlign: 'center' }}>
+          <Typography sx={{ fontSize: 64, fontWeight: 900, lineHeight: 1, opacity: 0.14, letterSpacing: '0.12em' }}>
+            {keyword.trim() || roleFilter ? '无' : '空'}
+          </Typography>
+          <Typography sx={{ mt: 1.5, fontSize: 15, fontWeight: 700, letterSpacing: '0.1em' }}>没有匹配的账号</Typography>
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.65, mt: 0.75 }}>NO MATCH</Typography>
+        </Box>
+      ) : (
+        <Box>
+          {/* 表头 */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: 'minmax(0,1fr) 88px 108px', md: 'minmax(0,1.4fr) 120px 160px 140px' },
+              alignItems: 'center',
+              columnGap: 2,
+              borderTop: '2px solid',
+              borderBottom: '1px solid',
+              borderColor: 'text.primary',
+              px: { xs: 0.5, md: 1 },
+              py: 0.9,
+              ...mono,
+              fontSize: 9.5,
+              letterSpacing: '0.12em',
+              opacity: 0.6,
+            }}
+          >
+            <Box>用户名 · Username</Box>
+            <Box>角色</Box>
+            <Box sx={{ display: { xs: 'none', md: 'block' } }}>注册时间</Box>
+            <Box sx={{ textAlign: 'right' }}>操作</Box>
+          </Box>
+
+          {filtered.map((u) => {
+            const isSelf = u.id === user?.id;
+            return (
+              <Box
+                key={u.id}
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: 'minmax(0,1fr) 88px 108px', md: 'minmax(0,1.4fr) 120px 160px 140px' },
+                  alignItems: 'center',
+                  columnGap: 2,
+                  px: { xs: 0.5, md: 1 },
+                  py: { xs: '12px', md: '13px' },
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  transition: 'background-color 120ms linear, color 120ms linear',
+                  '&:hover': { backgroundColor: 'text.primary', color: 'background.default' },
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, minWidth: 0 }}>
+                  <Typography sx={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.02em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {u.username}
+                  </Typography>
+                  {isSelf && (
+                    <Typography sx={{ ...mono, fontSize: 9, opacity: 0.55, border: '1px solid', borderColor: 'currentColor', px: 0.5, flexShrink: 0 }}>
+                      当前
+                    </Typography>
+                  )}
+                </Box>
+
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.6 }}>
+                  <Typography sx={{ fontSize: 12.5, fontWeight: u.role === 'admin' ? 900 : 500 }}>
+                    {u.role === 'admin' ? '管理员' : '用户'}
+                  </Typography>
+                  <Typography sx={{ ...mono, fontSize: 9.5, opacity: 0.55 }}>{u.role === 'admin' ? 'ADMIN' : 'USER'}</Typography>
+                </Box>
+
+                <Typography sx={{ display: { xs: 'none', md: 'block' }, ...mono, fontSize: 11, opacity: 0.72, fontVariantNumeric: 'tabular-nums' }}>
+                  {new Date(u.created_at).toLocaleDateString('zh-CN')}
+                </Typography>
+
+                <Box sx={{ display: 'flex', gap: 1.25, justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <Box component="button" type="button" onClick={() => handleViewStats(u)} sx={rowActionSx}>统计</Box>
+                  <Box component="button" type="button" onClick={() => handleOpenEdit(u)} aria-label={`编辑 ${u.username}`} sx={rowActionSx}>改</Box>
+                  {!isSelf && (
+                    <Box component="button" type="button" onClick={() => { setDeleteTarget(u); setDeleteError(''); }} aria-label={`删除 ${u.username}`} sx={rowActionSx}>删</Box>
+                  )}
+                </Box>
+              </Box>
+            );
+          })}
+
+          <Box sx={{ py: 1.25, borderBottom: '1px solid', borderColor: 'text.primary' }}>
+            <Typography sx={{ ...mono, fontSize: 10, opacity: 0.5 }}>
+              只显示账号与注册时间 · 学习量请点「统计」
+            </Typography>
+          </Box>
+        </Box>
+      )}
 
       {/* 编辑对话框 */}
       <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>编辑用户 — {editTarget?.username}</DialogTitle>
-        <DialogContent>
-          {editError && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setEditError('')}>{editError}</Alert>}
-          <TextField
-            fullWidth
-            margin="dense"
-            label="用户名"
-            value={editUsername}
-            onChange={(e) => setEditUsername(e.target.value)}
-            disabled={editLoading}
-          />
-          <TextField
-            fullWidth
-            margin="dense"
-            label="新密码（留空则不修改）"
-            type="password"
-            value={editPassword}
-            onChange={(e) => setEditPassword(e.target.value)}
-            helperText="6-64 个字符"
-            disabled={editLoading}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditOpen(false)} disabled={editLoading}>取消</Button>
-          <Button variant="contained" disabled={editLoading} onClick={handleEditSubmit}>
-            {editLoading ? <CircularProgress size={20} color="inherit" /> : '保存'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 删除确认对话框 */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>确认删除</DialogTitle>
-        <DialogContent>
-          {deleteError && <Alert severity="error" sx={{ mb: 2 }}>{deleteError}</Alert>}
-          <Typography>
-            确定要删除用户「{deleteTarget?.username}」吗？
+        <DialogTitle sx={{ p: '14px 20px 12px', borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography sx={{ ...mono, fontSize: 10.5, letterSpacing: '0.14em', opacity: 0.7 }}>
+            编辑账号 · {editTarget?.username}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            该用户的学习进度将被清除，其创建的牌组将转移给管理员。
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteTarget(null)} disabled={deleteLoading}>取消</Button>
-          <Button variant="contained" color="error" disabled={deleteLoading} onClick={handleDelete}>
-            {deleteLoading ? <CircularProgress size={20} color="inherit" /> : '确认删除'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* 统计查看对话框 */}
-      <Dialog open={statsOpen} onClose={() => setStatsOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          学习统计 — {statsTarget?.username}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ p: '16px 20px 4px' }}>
+          {editError && (
+            <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mb: 1.5 }}>{editError}</Typography>
+          )}
+          <Box sx={{ borderBottom: '1px solid', borderColor: 'text.primary', pb: '6px', mb: 2 }}>
+            <Typography sx={{ ...mono, fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.6 }}>用户名</Typography>
+            <Box
+              component="input"
+              value={editUsername}
+              onChange={(e) => setEditUsername(e.target.value)}
+              disabled={editLoading}
+              sx={{ width: '100%', border: 0, outline: 'none', background: 'transparent', color: 'text.primary', fontSize: 18, letterSpacing: '0.03em', mt: 0.75, p: 0 }}
+            />
+          </Box>
+          <Box sx={{ borderBottom: '1px solid', borderColor: 'text.primary', pb: '6px' }}>
+            <Typography sx={{ ...mono, fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.6 }}>新密码 · 留空不改</Typography>
+            <Box
+              component="input"
+              type="password"
+              value={editPassword}
+              onChange={(e) => setEditPassword(e.target.value)}
+              disabled={editLoading}
+              sx={{ width: '100%', border: 0, outline: 'none', background: 'transparent', color: 'text.primary', fontSize: 18, letterSpacing: '0.03em', mt: 0.75, p: 0 }}
+            />
+          </Box>
+          <Typography sx={{ ...mono, fontSize: 9.5, opacity: 0.5, mt: 0.75 }}>6–64 个字符</Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: '14px 20px 16px', gap: 1 }}>
+          <Button onClick={() => setEditOpen(false)} disabled={editLoading} sx={{ ...mono, fontSize: 11, color: 'text.primary' }}>
+            取消
+          </Button>
+          <Button variant="contained" disabled={editLoading} onClick={handleEditSubmit} sx={{ ...mono, fontSize: 11, height: 36, px: 2 }}>
+            {editLoading ? '保存中…' : '保存'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 删除确认 */}
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
+        <DialogTitle sx={{ p: '14px 20px 12px', borderBottom: '1px solid', borderColor: 'divider' }}>
+          <Typography sx={{ ...mono, fontSize: 10.5, letterSpacing: '0.14em', opacity: 0.7 }}>
+            删除账号 · Delete
+          </Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: '16px 20px 4px' }}>
+          {deleteError && <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mb: 1.5 }}>{deleteError}</Typography>}
+          <Typography sx={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.03em' }}>
+            {deleteTarget?.username}
+          </Typography>
+          <Typography sx={{ fontSize: 13, lineHeight: 1.8, mt: 1 }}>
+            删除后该用户的学习进度会被清除，其创建的牌组将转移给管理员。不可撤销。
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ p: '14px 20px 16px', gap: 1 }}>
+          <Button onClick={() => setDeleteTarget(null)} disabled={deleteLoading} sx={{ ...mono, fontSize: 11, color: 'text.primary' }}>
+            取消
+          </Button>
+          <Button
+            variant="contained"
+            disabled={deleteLoading}
+            onClick={handleDelete}
+            sx={{ ...mono, fontSize: 11, height: 36, px: 2, backgroundColor: 'var(--hot-ink)' }}
+          >
+            {deleteLoading ? '删除中…' : '确认删除'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 学习统计 */}
+      <Dialog open={statsOpen} onClose={() => setStatsOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ p: '14px 20px 12px', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+          <Typography sx={{ ...mono, fontSize: 10.5, letterSpacing: '0.14em', opacity: 0.7 }}>
+            学习统计 · {statsTarget?.username}
+          </Typography>
+          {statsData && (
+            <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.55 }}>
+              {statsData.stats.total_sessions} 次 · {statsData.stats.active_days} 天
+            </Typography>
+          )}
+        </DialogTitle>
+        <DialogContent sx={{ p: '16px 20px 4px' }}>
           {statsLoading ? (
-            <Box className="flex justify-center py-8"><CircularProgress /></Box>
+            <Typography sx={{ ...mono, fontSize: 11, opacity: 0.7, py: 4 }}>正在读取统计…</Typography>
           ) : statsError ? (
-            <Alert severity="error">{statsError}</Alert>
+            <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)' }}>{statsError}</Typography>
           ) : statsData ? (
-            <Box className="space-y-4">
-              {/* 汇总卡片 */}
-              <Box display="grid" gridTemplateColumns="1fr 1fr 1fr" gap={1.5}>
-                <StatBox label="累计学习" value={statsData.stats.total_studied} unit="张" />
-                <StatBox label="学习天数" value={statsData.stats.active_days} unit="天" />
-                <StatBox label="学习时长" value={statsData.stats.total_minutes} unit="分钟" />
-              </Box>
-              <Box display="grid" gridTemplateColumns="1fr 1fr 1fr" gap={1.5}>
-                <StatBox label="新卡" value={statsData.stats.cards.new_count} unit="张" />
-                <StatBox label="学习中" value={statsData.stats.cards.learning_count} unit="张" />
-                <StatBox label="已掌握" value={statsData.stats.cards.mature_count} unit="张" />
+            <Box>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '2px solid', borderColor: 'text.primary' }}>
+                {[
+                  { label: '累计背写', en: 'STUDIED', value: statsData.stats.total_studied, unit: '字' },
+                  { label: '学习天数', en: 'DAYS', value: statsData.stats.active_days, unit: '天' },
+                  { label: '学习时长', en: 'MINUTES', value: statsData.stats.total_minutes, unit: '分' },
+                ].map((s, i) => (
+                  <Box key={s.en} sx={{ py: 1.5, pr: 1.5, borderRight: i < 2 ? '1px solid' : 0, borderColor: 'divider' }}>
+                    <Typography sx={{ ...mono, fontSize: 9, letterSpacing: '0.08em', opacity: 0.6 }}>
+                      {s.label}
+                      <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}> · {s.en}</Box>
+                    </Typography>
+                    <Typography sx={{ fontSize: { xs: 24, md: 28 }, fontWeight: 900, lineHeight: 1, mt: 0.75, fontVariantNumeric: 'tabular-nums' }}>
+                      {s.value}<Box component="span" sx={{ fontSize: 10, fontWeight: 400, ml: 0.5, opacity: 0.6 }}>{s.unit}</Box>
+                    </Typography>
+                  </Box>
+                ))}
               </Box>
 
-              {/* 已订阅牌组 */}
-              <Box>
-                <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 0.5 }}>已订阅牌组</Typography>
+              <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'text.primary', mt: 0 }}>
+                {[
+                  { label: '新字', en: 'NEW', value: statsData.stats.cards.new_count },
+                  { label: '学习中', en: 'LEARNING', value: statsData.stats.cards.learning_count },
+                  { label: '已掌握', en: 'MATURE', value: statsData.stats.cards.mature_count },
+                ].map((s, i) => (
+                  <Box key={s.en} sx={{ py: 1.25, pr: 1.5, borderRight: i < 2 ? '1px solid' : 0, borderColor: 'divider' }}>
+                    <Typography sx={{ ...mono, fontSize: 9, letterSpacing: '0.08em', opacity: 0.6 }}>
+                      {s.label}
+                      <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}> · {s.en}</Box>
+                    </Typography>
+                    <Typography sx={{ ...mono, fontSize: 14, mt: 0.5, fontVariantNumeric: 'tabular-nums' }}>{s.value}</Typography>
+                  </Box>
+                ))}
+              </Box>
+
+              <Box sx={{ mt: 2 }}>
+                <Typography sx={{ ...mono, fontSize: 9.5, letterSpacing: '0.12em', textTransform: 'uppercase', opacity: 0.6 }}>
+                  已订阅 · Subscriptions
+                </Typography>
                 {statsData.subscriptions.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">无</Typography>
+                  <Typography sx={{ ...mono, fontSize: 11, opacity: 0.6, mt: 1 }}>无</Typography>
                 ) : (
-                  <Box className="flex flex-wrap gap-1">
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, mt: 1 }}>
                     {statsData.subscriptions.map((s) => (
-                      <Chip key={s.id} label={s.name} size="small" variant="outlined" />
+                      <Typography key={s.id} sx={{ fontSize: 12, border: '1px solid', borderColor: 'divider', px: 0.9, py: 0.4 }}>
+                        {s.name}
+                      </Typography>
                     ))}
                   </Box>
                 )}
@@ -357,12 +529,13 @@ const UserManagePage: React.FC = () => {
             </Box>
           ) : null}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setStatsOpen(false)}>关闭</Button>
+        <DialogActions sx={{ p: '14px 20px 16px' }}>
+          <Button variant="outlined" onClick={() => setStatsOpen(false)} sx={{ ...mono, fontSize: 11, height: 34, px: 2 }}>
+            关闭
+          </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={3000}
@@ -376,16 +549,5 @@ const UserManagePage: React.FC = () => {
     </Box>
   );
 };
-
-/** 统计数字卡片 */
-const StatBox: React.FC<{ label: string; value: number; unit: string }> = ({ label, value, unit }) => (
-  <Box sx={{ border: 1, borderColor: 'divider', borderRadius: '2px', p: 1.25, bgcolor: 'action.hover' }}>
-    <Typography variant="caption" color="text.secondary" sx={{ fontSize: 11 }}>{label}</Typography>
-    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5, mt: 0.25 }}>
-      <Typography sx={{ fontWeight: 600, fontSize: 20, lineHeight: 1.1 }}>{value}</Typography>
-      <Typography variant="caption" color="text.secondary">{unit}</Typography>
-    </Box>
-  </Box>
-);
 
 export default UserManagePage;
