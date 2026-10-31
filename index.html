@@ -21,7 +21,7 @@
       // GitHub Pages 直接托管仓库根目录，这个 index.html 是 Vite 开发入口（/src/main.tsx 未编译）。
       // 在 Pages 域名下转到同目录的单文件版，避免根路径白屏；线上/本地不受影响。
       (function () {
-        if (location.hostname.slice(-10) !== 'github.io') return;
+        if (!/github\.io$/.test(location.hostname)) return;
         var base = location.pathname.replace(/[^/]*$/, '');
         location.replace(base + 'beizitie.html');
       })();
