@@ -4,25 +4,15 @@ import {
   Box,
   Typography,
   Button,
-  List,
-  ListItem,
-  ListItemAvatar,
-  ListItemText,
-  Avatar,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
   TextField,
   Alert,
-  Card as MuiCard,
-  Chip,
-  LinearProgress,
   CardMedia,
 } from '@mui/material';
 import ImageIcon from '@mui/icons-material/Image';
-import UploadIcon from '@mui/icons-material/Upload';
 import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import { useDeckStore } from '@/stores/useDeckStore';
@@ -42,6 +32,7 @@ import {
 } from '@/lib/api';
 import type { Card, Deck, MarketplaceDeck } from '@/types';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
+import { DialogHead, FieldLabel, dlgFieldSx, dlgActionSx, dlgCancelSx, dlgSaveSx } from '@/components/common/DialogKit';
 import { LoadingState } from '@/components/common/LoadingState';
 import EditDeckDialog from '@/components/market/EditDeckDialog';
 
@@ -1161,57 +1152,50 @@ const CardManagePage: React.FC = () => {
         open={addDialogOpen}
         onClose={handleCloseAddDialog}
         aria-labelledby="add-card-dialog-title"
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
       >
-        <DialogTitle id="add-card-dialog-title" sx={{ py: 1.5 }}>添加卡片</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
+        <DialogHead id="add-card-dialog-title" title="添加卡片" en="New card" />
+        <DialogContent sx={{ p: '16px 20px 6px' }}>
           {addError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {addError}
-            </Alert>
+            <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mb: 1.5 }}>{addError}</Typography>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.25 }}>
             <Box>
-              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, color: 'text.primary' }}>
-                正面文字<span style={{ color: '#d32f2f', marginLeft: 2 }}>*</span>
-              </Typography>
+              <FieldLabel required hint="≤ 100 字">正面文字 · Front</FieldLabel>
               <TextField
                 autoFocus
                 fullWidth
                 required
                 value={newFrontText}
                 onChange={(e) => setNewFrontText(e.target.value)}
-                placeholder="输入卡片正面的汉字..."
+                placeholder="输入卡片正面的汉字…"
                 multiline
                 minRows={3}
                 maxRows={8}
                 inputProps={{ maxLength: 100 }}
+                sx={dlgFieldSx}
               />
             </Box>
 
             <Box>
-              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, color: 'text.primary' }}>
-                背面文字
-              </Typography>
+              <FieldLabel hint="可留空">背面文字 · Back</FieldLabel>
               <TextField
                 fullWidth
                 value={newBackText}
                 onChange={(e) => setNewBackText(e.target.value)}
-                placeholder="纯文字卡片可在此输入背面内容..."
+                placeholder="纯文字卡片可在此输入背面内容…"
                 multiline
-                minRows={4}
+                minRows={3}
                 maxRows={10}
                 inputProps={{ maxLength: 500 }}
+                sx={dlgFieldSx}
               />
             </Box>
 
-            {/* 图片上传区域 */}
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                书法图片（可选）
-              </Typography>
+              <FieldLabel hint="JPG / PNG / WebP · ≤ 10MB">书法图片 · Image</FieldLabel>
               <input
                 ref={fileInputRef}
                 type="file"
@@ -1219,42 +1203,37 @@ const CardManagePage: React.FC = () => {
                 onChange={handleFileSelect}
                 style={{ display: 'none' }}
               />
-              <Button
-                variant="outlined"
-                startIcon={<UploadIcon />}
-                onClick={() => fileInputRef.current?.click()}
-                fullWidth
-              >
-                {newImageFile ? newImageFile.name : '选择图片'}
-              </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                支持 JPG、PNG、WebP 格式，最大 10MB
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Button variant="outlined" onClick={() => fileInputRef.current?.click()} sx={{ height: 36, px: 1.75 }}>
+                  选择图片
+                </Button>
+                <Typography sx={{ ...mono, fontSize: 10, opacity: 0.6, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {newImageFile ? newImageFile.name : '未选择'}
+                </Typography>
+              </Box>
             </Box>
 
-            {/* 图片预览 */}
             {newImagePreview && (
-              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Box
-                  component="img"
-                  src={newImagePreview}
-                  alt="预览"
-                  sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: '2px', border: 1, borderColor: 'divider', objectFit: 'contain' }}
-                />
-              </Box>
+              <Box
+                component="img"
+                src={newImagePreview}
+                alt="预览"
+                sx={{ maxHeight: 180, maxWidth: '100%', objectFit: 'contain', border: '1px solid', borderColor: 'text.primary', alignSelf: 'flex-start' }}
+              />
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseAddDialog} color="inherit" disabled={adding}>
+        <DialogActions sx={dlgActionSx}>
+          <Button onClick={handleCloseAddDialog} disabled={adding} sx={dlgCancelSx}>
             取消
           </Button>
           <Button
             onClick={handleConfirmAdd}
             variant="contained"
             disabled={!newFrontText.trim() || adding}
+            sx={dlgSaveSx}
           >
-            {adding ? '添加中...' : '确认添加'}
+            {adding ? '添加中…' : '确认添加'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1265,10 +1244,10 @@ const CardManagePage: React.FC = () => {
         onClose={() => { setTextBatchOpen(false); setTextBatchResult(null); }}
         maxWidth="sm" fullWidth
       >
-        <DialogTitle>文字批量导入</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" className="mb-2">
-            每两行为一组卡片（第一行正面，第二行背面），空行自动忽略
+        <DialogHead title="文字批量导入" en="Text import" />
+        <DialogContent sx={{ p: '16px 20px 6px' }}>
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.6, mb: 1.25 }}>
+            每两行为一组（正面 / 背面），空行自动忽略
           </Typography>
           <TextField
             autoFocus
@@ -1282,25 +1261,33 @@ const CardManagePage: React.FC = () => {
 世界
 日月
 星辰`}
-            className="mb-2"
             disabled={textBatchImporting}
+            sx={dlgFieldSx}
           />
           {textBatchResult && (
-            <Alert severity={textBatchResult.startsWith('成功') ? 'success' : 'error'} className="mt-2">
+            <Typography
+              sx={{
+                ...mono,
+                fontSize: 11,
+                mt: 1.5,
+                color: textBatchResult.startsWith('成功') ? 'inherit' : 'var(--hot-ink)',
+              }}
+            >
               {textBatchResult}
-            </Alert>
+            </Typography>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setTextBatchOpen(false); setTextBatchResult(null); }} disabled={textBatchImporting}>
+        <DialogActions sx={dlgActionSx}>
+          <Button onClick={() => { setTextBatchOpen(false); setTextBatchResult(null); }} disabled={textBatchImporting} sx={dlgCancelSx}>
             取消
           </Button>
           <Button
             variant="contained"
             onClick={handleTextBatchImport}
             disabled={!textBatchContent.trim() || textBatchImporting}
+            sx={dlgSaveSx}
           >
-            {textBatchImporting ? '导入中...' : '确认导入'}
+            {textBatchImporting ? '导入中…' : '确认导入'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1323,68 +1310,58 @@ const CardManagePage: React.FC = () => {
         open={editDialogOpen}
         onClose={handleCloseEdit}
         aria-labelledby="edit-card-dialog-title"
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
       >
-        <DialogTitle id="edit-card-dialog-title" sx={{ py: 1.5 }}>编辑卡片</DialogTitle>
-        <DialogContent sx={{ pt: 2 }}>
+        <DialogHead id="edit-card-dialog-title" title="编辑卡片" en="Edit card" />
+        <DialogContent sx={{ p: '16px 20px 6px' }}>
           {editError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {editError}
-            </Alert>
+            <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mb: 1.5 }}>{editError}</Typography>
           )}
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.25 }}>
             <Box>
-              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, color: 'text.primary' }}>
-                正面文字<span style={{ color: '#d32f2f', marginLeft: 2 }}>*</span>
-              </Typography>
+              <FieldLabel required hint="≤ 100 字">正面文字 · Front</FieldLabel>
               <TextField
                 autoFocus
                 fullWidth
                 required
                 value={editFrontText}
                 onChange={(e) => setEditFrontText(e.target.value)}
-                placeholder="输入卡片正面的汉字..."
+                placeholder="输入卡片正面的汉字…"
                 multiline
                 minRows={3}
                 maxRows={8}
                 inputProps={{ maxLength: 100 }}
+                sx={dlgFieldSx}
               />
             </Box>
 
             <Box>
-              <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, color: 'text.primary' }}>
-                背面文字
-              </Typography>
+              <FieldLabel hint="可留空">背面文字 · Back</FieldLabel>
               <TextField
                 fullWidth
                 value={editBackText}
                 onChange={(e) => setEditBackText(e.target.value)}
-                placeholder="纯文字卡片在此输入背面内容..."
+                placeholder="纯文字卡片在此输入背面内容…"
                 multiline
-                minRows={4}
+                minRows={3}
                 maxRows={10}
                 inputProps={{ maxLength: 500 }}
+                sx={dlgFieldSx}
               />
             </Box>
 
-            {/* 图片区域 */}
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                书法图片
-              </Typography>
+              <FieldLabel hint="不选则保留原图">书法图片 · Image</FieldLabel>
 
-              {/* 当前图片 */}
               {editTarget?.image_url && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1.5 }}>
-                  <Box
-                    component="img"
-                    src={getImageUrl(editTarget.image_url)}
-                    alt={editTarget.front_text}
-                    sx={{ maxHeight: 160, maxWidth: '100%', borderRadius: '2px', border: 1, borderColor: 'divider', objectFit: 'contain' }}
-                  />
-                </Box>
+                <Box
+                  component="img"
+                  src={getImageUrl(editTarget.image_url)}
+                  alt={editTarget.front_text}
+                  sx={{ display: 'block', maxHeight: 160, maxWidth: '100%', objectFit: 'contain', border: '1px solid', borderColor: 'divider', mb: 1.25 }}
+                />
               )}
 
               <input
@@ -1394,43 +1371,37 @@ const CardManagePage: React.FC = () => {
                 onChange={handleEditFileSelect}
                 style={{ display: 'none' }}
               />
-              <Button
-                variant="outlined"
-                startIcon={<UploadIcon />}
-                onClick={() => editFileInputRef.current?.click()}
-                fullWidth
-                disabled={editing}
-              >
-                {editImageFile ? editImageFile.name : '更换图片'}
-              </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-                选择新图片则替换，不选则保留原图；支持 JPG、PNG、WebP 格式，最大 10MB
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                <Button variant="outlined" onClick={() => editFileInputRef.current?.click()} disabled={editing} sx={{ height: 36, px: 1.75 }}>
+                  更换图片
+                </Button>
+                <Typography sx={{ ...mono, fontSize: 10, opacity: 0.6, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {editImageFile ? editImageFile.name : '未选择新图'}
+                </Typography>
+              </Box>
             </Box>
 
-            {/* 新图片预览 */}
             {editImagePreview && (
-              <Box sx={{ display: 'flex', justifyContent: 'center' }}>
-                <Box
-                  component="img"
-                  src={editImagePreview}
-                  alt="新图片预览"
-                  sx={{ maxHeight: 200, maxWidth: '100%', borderRadius: '2px', border: 1, borderColor: 'divider', objectFit: 'contain' }}
-                />
-              </Box>
+              <Box
+                component="img"
+                src={editImagePreview}
+                alt="新图片预览"
+                sx={{ maxHeight: 180, maxWidth: '100%', objectFit: 'contain', border: '1px solid', borderColor: 'text.primary', alignSelf: 'flex-start' }}
+              />
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseEdit} color="inherit" disabled={editing}>
+        <DialogActions sx={dlgActionSx}>
+          <Button onClick={handleCloseEdit} disabled={editing} sx={dlgCancelSx}>
             取消
           </Button>
           <Button
             onClick={handleConfirmEdit}
             variant="contained"
             disabled={!editFrontText.trim() || editing}
+            sx={dlgSaveSx}
           >
-            {editing ? '保存中...' : '保存'}
+            {editing ? '保存中…' : '保存'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1443,18 +1414,15 @@ const CardManagePage: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle id="batch-import-dialog-title">
-          批量导入卡片
-        </DialogTitle>
-        <DialogContent>
+        <DialogHead id="batch-import-dialog-title" title="批量导入" en="Batch import" />
+        <DialogContent sx={{ p: '16px 20px 6px' }}>
           {batchGeneralError && (
-            <Alert severity="error" className="mb-3 whitespace-pre-line">
+            <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mb: 1.5, whiteSpace: 'pre-line' }}>
               {batchGeneralError}
-            </Alert>
+            </Typography>
           )}
 
-          {/* 文件选择区域 */}
-          <Box className="mb-3 mt-1">
+          <Box sx={{ mb: 2 }}>
             <input
               ref={batchFileInputRef}
               type="file"
@@ -1463,110 +1431,70 @@ const CardManagePage: React.FC = () => {
               onChange={handleBatchFileSelect}
               style={{ display: 'none' }}
             />
-            <Button
-              variant="outlined"
-              startIcon={<UploadIcon />}
-              onClick={() => batchFileInputRef.current?.click()}
-              fullWidth
-              disabled={batchImporting}
-            >
-              {batchFiles.length > 0
-                ? `已选择 ${batchFiles.length} 个文件（点击重新选择）`
-                : '选择图片文件'}
-            </Button>
-            <Typography variant="caption" color="text.secondary" className="mt-1 block">
-              支持 JPG、PNG、WebP 格式，最大 10MB；可多选
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+              <Button variant="outlined" onClick={() => batchFileInputRef.current?.click()} disabled={batchImporting} sx={{ height: 36, px: 1.75 }}>
+                选择图片
+              </Button>
+              <Typography sx={{ ...mono, fontSize: 10, opacity: 0.6 }}>
+                {batchFiles.length > 0 ? `已选 ${batchFiles.length} 个文件` : '可多选'} · JPG / PNG / WebP · ≤ 10MB
+              </Typography>
+            </Box>
           </Box>
 
-          {/* 导入进度条 */}
           {batchImporting && batchImportTotal > 0 && (
-            <Box className="mb-3">
-              <Typography variant="body2" color="text.secondary" className="mb-1">
-                正在导入... {batchImportProgress} / {batchImportTotal}
-              </Typography>
-              <LinearProgress
-                variant="determinate"
-                value={(batchImportProgress / batchImportTotal) * 100}
-              />
+            <Box sx={{ mb: 2 }}>
+              <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 0.75 }}>
+                <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.7 }}>
+                  正在导入 · {batchImportProgress} / {batchImportTotal}
+                </Typography>
+                <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.5, fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.round((batchImportProgress / batchImportTotal) * 100)}%
+                </Typography>
+              </Box>
+              <Box sx={{ height: 4, bgcolor: 'divider' }}>
+                <Box sx={{ height: '100%', bgcolor: 'text.primary', width: `${(batchImportProgress / batchImportTotal) * 100}%` }} />
+              </Box>
             </Box>
           )}
 
-          {/* 文件预览列表 */}
           {batchPreviews.length > 0 && (
-            <MuiCard variant="outlined" sx={{ borderRadius: '2px' }}>
-              <List disablePadding dense>
-                {batchPreviews.map((entry, index) => (
-                  <ListItem
-                    key={`${entry.file.name}-${index}`}
-                    divider={index < batchPreviews.length - 1}
-                    className="px-3 py-2"
-                  >
-                    <ListItemAvatar>
-                      {entry.valid && entry.previewUrl ? (
-                        <Avatar
-                          variant="rounded"
-                          src={entry.previewUrl}
-                          alt={entry.frontText}
-                          sx={{ width: 40, height: 40 }}
-                        />
-                      ) : (
-                        <Avatar
-                          variant="rounded"
-                          sx={{ width: 40, height: 40, bgcolor: 'grey.200' }}
-                        >
-                          <ImageIcon color="disabled" fontSize="small" />
-                        </Avatar>
-                      )}
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={
-                        <Typography variant="body2" className="font-kai">
-                          {entry.frontText || entry.file.name}
-                        </Typography>
-                      }
-                      secondary={
-                        entry.valid
-                          ? `${(entry.file.size / 1024).toFixed(1)} KB`
-                          : entry.error
-                      }
-                      secondaryTypographyProps={{
-                        color: entry.valid ? 'text.secondary' : 'error',
-                      }}
-                    />
-                    {!entry.valid && (
-                      <Chip
-                        label="跳过"
-                        size="small"
-                        color="warning"
-                        variant="outlined"
-                      />
+            <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary', maxHeight: 280, overflowY: 'auto' }}>
+              {batchPreviews.map((entry, index) => (
+                <Box
+                  key={`${entry.file.name}-${index}`}
+                  sx={{ display: 'flex', alignItems: 'center', gap: 1.25, py: 0.9, borderBottom: '1px solid', borderColor: 'divider' }}
+                >
+                  <Box sx={{ width: 34, height: 34, flexShrink: 0, border: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                    {entry.valid && entry.previewUrl ? (
+                      <Box component="img" src={entry.previewUrl} alt={entry.frontText} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <ImageIcon sx={{ fontSize: 14, opacity: 0.35 }} />
                     )}
-                  </ListItem>
-                ))}
-              </List>
-            </MuiCard>
+                  </Box>
+                  <Typography className="font-kai" sx={{ fontSize: 14, flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {entry.frontText || entry.file.name}
+                  </Typography>
+                  <Typography
+                    sx={{ ...mono, fontSize: 10, flexShrink: 0, opacity: entry.valid ? 0.55 : 1, color: entry.valid ? 'inherit' : 'var(--hot-ink)' }}
+                  >
+                    {entry.valid ? `${(entry.file.size / 1024).toFixed(1)} KB` : entry.error}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={handleCloseBatchDialog}
-            color="inherit"
-            disabled={batchImporting}
-          >
+        <DialogActions sx={dlgActionSx}>
+          <Button onClick={handleCloseBatchDialog} disabled={batchImporting} sx={dlgCancelSx}>
             取消
           </Button>
           <Button
             onClick={handleConfirmBatchImport}
             variant="contained"
-            disabled={
-              batchImporting ||
-              batchPreviews.filter((e) => e.valid).length === 0
-            }
+            disabled={batchImporting || batchPreviews.filter((e) => e.valid).length === 0}
+            sx={dlgSaveSx}
           >
-            {batchImporting
-              ? `导入中...`
-              : `确认导入（${batchPreviews.filter((e) => e.valid).length} 张卡片）`}
+            {batchImporting ? '导入中…' : `确认导入（${batchPreviews.filter((e) => e.valid).length} 张）`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1595,19 +1523,26 @@ const CardManagePage: React.FC = () => {
       <Dialog
         open={unpublishConfirmOpen}
         onClose={() => { if (!unpublishing) setUnpublishConfirmOpen(false); }}
+        maxWidth="xs"
+        fullWidth
       >
-        <DialogTitle>从市场撤回</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            确定要将该牌组从市场中撤下吗？撤回后其他用户将无法订阅此牌组，但已有订阅数据不受影响。
-          </DialogContentText>
+        <DialogHead title="从市场撤回" en="Unpublish" />
+        <DialogContent sx={{ p: '16px 20px 6px' }}>
+          <Typography sx={{ fontSize: 13, lineHeight: 1.8 }}>
+            撤回后其他用户将无法订阅这帖，已有订阅数据不受影响。
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setUnpublishConfirmOpen(false)} disabled={unpublishing} color="inherit">
+        <DialogActions sx={dlgActionSx}>
+          <Button onClick={() => setUnpublishConfirmOpen(false)} disabled={unpublishing} sx={dlgCancelSx}>
             取消
           </Button>
-          <Button onClick={handleConfirmUnpublish} disabled={unpublishing} color="error" variant="contained">
-            {unpublishing ? '撤回中...' : '确认撤回'}
+          <Button
+            onClick={handleConfirmUnpublish}
+            disabled={unpublishing}
+            variant="contained"
+            sx={{ ...dlgSaveSx, backgroundColor: 'var(--hot-ink)' }}
+          >
+            {unpublishing ? '撤回中…' : '确认撤回'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1619,11 +1554,10 @@ const CardManagePage: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle>设置碑帖文本</DialogTitle>
-        <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            粘贴完整的文章正文，系统会自动将卡片中的汉字与文章中的位置匹配。
-            匹配完成后，进入学习时可以选择"碑帖文本"模式。
+        <DialogHead title="碑帖文本" en="Deck text" />
+        <DialogContent sx={{ p: '16px 20px 6px' }}>
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.6, mb: 1.25, lineHeight: 1.9 }}>
+            粘贴全文，系统把每张卡片对到文中的位置；匹配完成后学习时可选出卡顺序为「碑帖文本」。
           </Typography>
 
           <TextField
@@ -1637,33 +1571,33 @@ const CardManagePage: React.FC = () => {
               setArticleTextValue(e.target.value);
               setArticleResult(null);
             }}
-            placeholder={"在此粘贴文章全文，例如：\n大唐三藏圣教序太宗文皇帝制"}
+            placeholder={'在此粘贴文章全文，例如：\n大唐三藏圣教序太宗文皇帝制'}
             disabled={articleSetting}
+            sx={dlgFieldSx}
           />
 
           {articleResult && (
-            <Alert
-              severity={articleResult.unmatched === 0 ? 'success' : 'warning'}
-              sx={{ mt: 2 }}
+            <Box
+              sx={{
+                mt: 1.5,
+                border: '1px solid',
+                borderColor: articleResult.unmatched === 0 ? 'text.primary' : 'var(--hot-ink)',
+                p: '8px 12px',
+                ...mono,
+                fontSize: 11,
+                lineHeight: 1.8,
+              }}
             >
-              <Typography variant="body2">
-                匹配成功：{articleResult.matched} / {articleResult.total_cards} 张卡片
-              </Typography>
-              {articleResult.unmatched > 0 && (
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  未匹配：{articleResult.unmatched} 张
-                </Typography>
-              )}
-            </Alert>
+              匹配 {articleResult.matched} / {articleResult.total_cards} 张
+              {articleResult.unmatched > 0 && ` · 未匹配 ${articleResult.unmatched} 张`}
+            </Box>
           )}
           {articleError && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              <Typography variant="body2">{articleError}</Typography>
-            </Alert>
+            <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mt: 1.5 }}>{articleError}</Typography>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setArticleDialogOpen(false)} disabled={articleSetting}>
+        <DialogActions sx={dlgActionSx}>
+          <Button onClick={() => setArticleDialogOpen(false)} disabled={articleSetting} sx={dlgCancelSx}>
             关闭
           </Button>
           <Button
@@ -1689,8 +1623,9 @@ const CardManagePage: React.FC = () => {
               }
             }}
             disabled={!articleTextValue.trim() || articleSetting}
+            sx={dlgSaveSx}
           >
-            {articleSetting ? '保存中...' : '保存'}
+            {articleSetting ? '保存中…' : '保存'}
           </Button>
         </DialogActions>
       </Dialog>

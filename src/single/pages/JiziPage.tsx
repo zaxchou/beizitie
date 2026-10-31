@@ -3,15 +3,7 @@ import {
   Box,
   Typography,
   Button,
-  Chip,
-  TextField,
-  Paper,
-  MenuItem,
-  CircularProgress,
-  Alert,
 } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
-import SearchIcon from '@mui/icons-material/Search';
 import { localDataSource } from '@/data/local/localAdapter';
 import { exportJiziPNG } from '@/lib/jiziExport';
 import { groupResults } from '@/components/jizi/JiziPreview';
@@ -190,73 +182,145 @@ export const JiziPage: React.FC = () => {
     }
   };
 
+  const mono = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
+  const rowLabel = { ...mono, fontSize: 9.5, opacity: 0.6, flexShrink: 0, minWidth: 34 } as const;
+  const seg = (label: string, on: boolean, onClick: () => void) => (
+    <Box
+      key={label}
+      component="button"
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      sx={{
+        border: '1px solid',
+        borderColor: on ? 'text.primary' : 'divider',
+        bgcolor: on ? 'text.primary' : 'transparent',
+        color: on ? 'background.default' : 'inherit',
+        ...mono,
+        fontSize: 11,
+        height: 26,
+        px: 1,
+        cursor: 'pointer',
+        whiteSpace: 'nowrap',
+        flexShrink: 0,
+        '&:hover': on ? {} : { borderColor: 'text.primary' },
+      }}
+    >
+      {label}
+    </Box>
+  );
+
   return (
-    <Box className="space-y-3">
-      <Typography className="font-kai" sx={{ fontSize: 20, fontWeight: 700 }}>集字</Typography>
+    <Box sx={{ maxWidth: 920, mx: 'auto' }}>
+      {/* 页头 */}
+      <Box sx={{ pb: { xs: 1.5, md: 1.75 } }}>
+        <Typography component="h1" sx={{ fontSize: { xs: 30, md: 44 }, fontWeight: 900, letterSpacing: { xs: '4px', md: '7px' }, lineHeight: 1.1 }}>
+          集字
+        </Typography>
+        <Typography sx={{ ...mono, fontSize: 11, opacity: 0.72, mt: 1 }}>
+          {scope === 'all' ? '在线全库 · 168 万+ 单字' : '仅本机已订阅碑帖'} · 点字可换写法
+        </Typography>
+      </Box>
 
       {/* 数据源 */}
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-        <Chip label="全部字库" size="small"
-          color={scope === 'all' ? 'primary' : 'default'}
-          variant={scope === 'all' ? 'filled' : 'outlined'}
-          onClick={() => setScope('all')} sx={{ cursor: 'pointer' }} />
-        <Chip label="我的书库" size="small"
-          color={scope === 'mine' ? 'primary' : 'default'}
-          variant={scope === 'mine' ? 'filled' : 'outlined'}
-          onClick={() => setScope('mine')} sx={{ cursor: 'pointer' }} />
-        <Typography variant="caption" color="text.secondary">
-          {scope === 'all' ? '在线版全库 · 168 万+ 单字' : '仅本机已订阅碑帖'}
+      <Box sx={{ borderTop: '1px solid', borderBottom: '1px solid', borderColor: 'text.primary', py: 1.25, display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Typography sx={rowLabel}>字库</Typography>
+        {seg('全部字库', scope === 'all', () => setScope('all'))}
+        {seg('我的书库', scope === 'mine', () => setScope('mine'))}
+        <Typography sx={{ ...mono, fontSize: 9.5, opacity: 0.5, ml: 'auto', display: { xs: 'none', sm: 'block' } }}>
+          SOURCE
         </Typography>
       </Box>
 
       {/* 输入 */}
-      <TextField
-        multiline minRows={2} fullWidth
-        placeholder="输入文字，从字库匹配单字…"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        sx={{ bgcolor: 'background.paper', borderRadius: '2px' }}
-      />
-      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-        <Button
-          variant="contained" startIcon={<SearchIcon />}
-          onClick={match} disabled={busy || !text.trim()} sx={{ borderRadius: '2px' }}
-        >
-          {busy ? '匹配中…' : '匹配单字'}
-        </Button>
-        {busy && <CircularProgress size={16} />}
-        {hint && <Typography variant="caption" color="text.secondary">{hint}</Typography>}
+      <Box sx={{ pt: 2 }}>
+        <Typography sx={{ ...mono, fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.6, mb: 0.75 }}>
+          集字内容 · Text
+        </Typography>
+        <Box
+          component="textarea"
+          value={text}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
+          placeholder="输入文字，从字库匹配单字…"
+          rows={3}
+          sx={{
+            width: '100%',
+            resize: 'none',
+            border: '1px solid',
+            borderColor: 'text.primary',
+            bgcolor: 'transparent',
+            color: 'text.primary',
+            p: '10px 12px',
+            fontSize: 15,
+            lineHeight: 1.9,
+            letterSpacing: '0.05em',
+            outline: 'none',
+            fontFamily: 'inherit',
+            '&::placeholder': { color: 'text.disabled' },
+          }}
+        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1.25 }}>
+          <Button
+            variant="contained"
+            onClick={match}
+            disabled={busy || !text.trim()}
+            sx={{ height: 44, px: 2.25, justifyContent: 'space-between', gap: 3, flexShrink: 0 }}
+          >
+            <span>{busy ? '匹配中…' : '匹配单字'}</span>
+            <span aria-hidden>→</span>
+          </Button>
+          {hint && <Typography sx={{ ...mono, fontSize: 10, opacity: 0.55 }}>{hint}</Typography>}
+        </Box>
+
+        {error && (
+          <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mt: 1.25 }}>{error}</Typography>
+        )}
       </Box>
 
-      {error && <Alert severity="error" onClose={() => setError(null)}>{error}</Alert>}
-
-      {/* 结果 */}
       {results && (
         <>
-          {/* 书体/书家筛选 */}
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-            {STYLE_FILTERS.map((s) => (
-              <Chip key={s} label={s} size="small"
-                color={styleFilter === s ? 'primary' : 'default'}
-                variant={styleFilter === s ? 'filled' : 'outlined'}
-                onClick={() => setStyleFilter(s)} sx={{ cursor: 'pointer' }} />
-            ))}
-            <TextField
-              select size="small" value={calligrapherFilter}
-              onChange={(e) => setCalligrapherFilter(e.target.value)}
-              sx={{ minWidth: 110, '& .MuiInputBase-input': { fontSize: 12 } }}
-            >
-              {calligrapherOptions.map((c) => (
-                <MenuItem key={c} value={c} sx={{ fontSize: 12 }}>{c}</MenuItem>
-              ))}
-            </TextField>
+          {/* 筛选 */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mt: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+            <Typography sx={rowLabel}>书体</Typography>
+            {STYLE_FILTERS.map((s) => seg(s, styleFilter === s, () => setStyleFilter(s)))}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, ml: { xs: 0, sm: 'auto' } }}>
+              <Typography sx={rowLabel}>书家</Typography>
+              <Box
+                component="select"
+                value={calligrapherFilter}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setCalligrapherFilter(e.target.value)}
+                aria-label="按书家筛选"
+                sx={{
+                  border: 0,
+                  borderBottom: '1px solid',
+                  borderColor: 'text.primary',
+                  background: 'transparent',
+                  color: 'text.primary',
+                  ...mono,
+                  fontSize: 11,
+                  py: '3px',
+                  pr: '16px',
+                  maxWidth: 140,
+                  outline: 'none',
+                  cursor: 'pointer',
+                }}
+              >
+                {calligrapherOptions.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </Box>
+            </Box>
           </Box>
 
-          {/* 预览 */}
-          <Paper
-            variant="outlined"
+          {/* 预览：纸面 + 方正字阵 */}
+          <Box
             sx={{
-              p: 2, borderRadius: '2px', overflow: 'auto',
+              mt: 2,
+              p: 2,
+              border: '2px solid',
+              borderColor: 'text.primary',
+              overflow: 'auto',
+              maxHeight: { xs: '62vh', md: 'none' },
               bgcolor: isDarkBg ? (layout.background === 'ink' ? '#1a1a1a' : '#8b0000')
                 : layout.background === 'white' ? '#fff' : '#f5ecd9',
             }}
@@ -266,7 +330,8 @@ export const JiziPage: React.FC = () => {
                 display: 'flex',
                 flexDirection: isVertical ? 'row-reverse' : 'column',
                 gap: `${Math.round(layout.fontSize * layout.lineGap)}px`,
-                width: 'fit-content', mx: 'auto',
+                width: 'fit-content',
+                mx: 'auto',
               }}
             >
               {groups.map((g, gi) => (
@@ -289,16 +354,14 @@ export const JiziPage: React.FC = () => {
                         title={r.hits.length > 1 ? '点击换一个写法' : hit ? hit.calligrapher : '缺字'}
                         sx={{
                           width: layout.fontSize,
-                          display: 'flex', flexDirection: 'column', alignItems: 'center',
-                          cursor: r.hits.length > 1 ? 'pointer' : 'default', flexShrink: 0,
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          cursor: r.hits.length > 1 ? 'pointer' : 'default',
+                          flexShrink: 0,
                         }}
                       >
-                        <Box
-                          sx={{
-                            width: layout.fontSize, height: layout.fontSize,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          }}
-                        >
+                        <Box sx={{ width: layout.fontSize, height: layout.fontSize, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {hit ? (
                             <Box
                               component="img"
@@ -309,9 +372,10 @@ export const JiziPage: React.FC = () => {
                           ) : (
                             <Box
                               sx={{
-                                width: '100%', height: '100%', border: '1px dashed #bbb',
+                                width: '100%', height: '100%', border: '1px dashed',
+                                borderColor: isDarkBg ? 'rgba(255,255,255,0.4)' : 'rgba(23,19,12,0.35)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: isDarkBg ? '#ccc' : '#999',
+                                color: isDarkBg ? 'rgba(255,255,255,0.6)' : 'rgba(23,19,12,0.5)',
                                 fontSize: layout.fontSize * 0.4, fontFamily: 'serif',
                               }}
                             >
@@ -322,8 +386,11 @@ export const JiziPage: React.FC = () => {
                         <Typography
                           noWrap
                           sx={{
-                            fontSize: 9, lineHeight: 1.4, maxWidth: '100%',
-                            color: isDarkBg ? 'rgba(255,255,255,0.65)' : 'text.secondary',
+                            ...mono,
+                            fontSize: 8.5,
+                            lineHeight: 1.4,
+                            maxWidth: '100%',
+                            color: isDarkBg ? 'rgba(255,255,255,0.6)' : 'text.secondary',
                           }}
                         >
                           {[hit?.calligrapher, hit?.deck_name].filter(Boolean).join('·') || '缺字'}
@@ -334,41 +401,37 @@ export const JiziPage: React.FC = () => {
                 </Box>
               ))}
             </Box>
-          </Paper>
+          </Box>
 
           {/* 排版控制 */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
-            {DIRECTIONS.map((d) => (
-              <Chip key={d.key} label={d.label} size="small"
-                color={layout.direction === d.key ? 'primary' : 'default'}
-                variant={layout.direction === d.key ? 'filled' : 'outlined'}
-                onClick={() => setLayout((l) => ({ ...l, direction: d.key }))} sx={{ cursor: 'pointer' }} />
-            ))}
-            {FONT_SIZES.map((s) => (
-              <Chip key={s} label={`${s}px`} size="small"
-                color={layout.fontSize === s ? 'primary' : 'default'}
-                variant={layout.fontSize === s ? 'filled' : 'outlined'}
-                onClick={() => setLayout((l) => ({ ...l, fontSize: s }))} sx={{ cursor: 'pointer' }} />
-            ))}
-            {COL_COUNTS.map((c) => (
-              <Chip key={c} label={`${isVertical ? '列' : '行'}${c}`} size="small"
-                color={layout.colCount === c ? 'primary' : 'default'}
-                variant={layout.colCount === c ? 'filled' : 'outlined'}
-                onClick={() => setLayout((l) => ({ ...l, colCount: c }))} sx={{ cursor: 'pointer' }} />
-            ))}
-            {BACKGROUNDS.map((b) => (
-              <Chip key={b.key} label={b.label} size="small"
-                color={layout.background === b.key ? 'primary' : 'default'}
-                variant={layout.background === b.key ? 'filled' : 'outlined'}
-                onClick={() => setLayout((l) => ({ ...l, background: b.key }))} sx={{ cursor: 'pointer' }} />
-            ))}
+          <Box sx={{ mt: 2, borderTop: '1px solid', borderColor: 'text.primary', pt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflowX: 'auto' }}>
+              <Typography sx={rowLabel}>方向</Typography>
+              {DIRECTIONS.map((d) => seg(d.label, layout.direction === d.key, () => setLayout((l) => ({ ...l, direction: d.key }))))}
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflowX: 'auto' }}>
+              <Typography sx={rowLabel}>字号</Typography>
+              {FONT_SIZES.map((s) => seg(`${s}`, layout.fontSize === s, () => setLayout((l) => ({ ...l, fontSize: s }))))}
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, overflowX: 'auto' }}>
+              <Typography sx={rowLabel}>{isVertical ? '每列' : '每行'}</Typography>
+              {COL_COUNTS.map((c) => seg(`${c} 字`, layout.colCount === c, () => setLayout((l) => ({ ...l, colCount: c }))))}
+            </Box>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+              <Typography sx={rowLabel}>背景</Typography>
+              {BACKGROUNDS.map((b) => seg(b.label, layout.background === b.key, () => setLayout((l) => ({ ...l, background: b.key }))))}
+            </Box>
           </Box>
 
           <Button
-            fullWidth variant="contained" startIcon={<DownloadIcon />}
-            onClick={handleExport} disabled={exporting} sx={{ borderRadius: '2px' }}
+            fullWidth
+            variant="contained"
+            onClick={handleExport}
+            disabled={exporting}
+            sx={{ mt: 2, height: 46, justifyContent: 'space-between', px: 2.25 }}
           >
-            {exporting ? '生成中…' : '导出高清 PNG'}
+            <span>{exporting ? '生成中…' : '导出高清 PNG'}</span>
+            <span aria-hidden>↓</span>
           </Button>
         </>
       )}

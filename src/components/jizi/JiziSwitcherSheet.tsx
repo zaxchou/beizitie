@@ -1,13 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import {
-  Drawer,
-  Box,
-  Typography,
-  Chip,
-  IconButton,
-  useMediaQuery,
-  useTheme,
-} from '@mui/material';
+import { Drawer, Box, Typography, useMediaQuery, useTheme } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { getImageUrl } from '@/lib/api';
 import type { JiziMatchResult } from '@/types/jizi';
@@ -97,10 +89,12 @@ const JiziSwitcherSheet: React.FC<JiziSwitcherSheetProps> = ({
       onClose={handleClose}
       PaperProps={{
         sx: {
-          maxHeight: isMobile ? '80vh' : '70vh',
-          height: isMobile ? '80vh' : '70vh',
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
+          maxHeight: isMobile ? '82vh' : '72vh',
+          height: isMobile ? '82vh' : '72vh',
+          borderTopLeftRadius: 0,
+          borderTopRightRadius: 0,
+          borderTop: '2px solid',
+          borderColor: 'text.primary',
         },
       }}
     >
@@ -108,169 +102,195 @@ const JiziSwitcherSheet: React.FC<JiziSwitcherSheetProps> = ({
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
+          alignItems: 'flex-end',
           justifyContent: 'space-between',
-          px: 2,
-          py: 1.5,
+          px: { xs: 2, md: 3 },
+          pt: 1.5,
+          pb: 1.25,
           position: 'sticky',
           top: 0,
           bgcolor: 'background.paper',
           zIndex: 10,
-          borderBottom: 1,
-          borderColor: 'divider',
+          borderBottom: '1px solid',
+          borderColor: 'text.primary',
         }}
       >
-        <Typography variant="h6" component="span" sx={{ fontWeight: 600, fontSize: 16 }}>
-          {result ? `「${result.char}」的 ${hits.length} 种写法` : '加载中...'}
-        </Typography>
-        <IconButton onClick={handleClose} size="small" edge="end">
-          <CloseIcon />
-        </IconButton>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, letterSpacing: '0.14em', textTransform: 'uppercase', opacity: 0.6 }}>
+            写法 · Variants
+          </Typography>
+          <Typography component="span" sx={{ display: 'block', fontSize: 19, fontWeight: 900, letterSpacing: '0.08em', mt: 0.5 }}>
+            {result ? `「${result.char}」的 ${hits.length} 种写法` : '加载中…'}
+          </Typography>
+        </Box>
+        <Box
+          component="button"
+          type="button"
+          onClick={handleClose}
+          aria-label="关闭"
+          sx={{
+            border: '1px solid',
+            borderColor: 'text.primary',
+            bgcolor: 'transparent',
+            color: 'inherit',
+            width: 28,
+            height: 28,
+            p: 0,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            '&:hover': { bgcolor: 'text.primary', color: 'background.default' },
+          }}
+        >
+          <CloseIcon sx={{ fontSize: 16 }} />
+        </Box>
       </Box>
 
       {/* 主体：左列作者筛选 + 右列内容 */}
       <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
-        {/* ===== 左列：作者筛选 ===== */}
+        {/* 左列：作者 */}
         <Box
           sx={{
-            width: isMobile ? 72 : 90,
+            width: isMobile ? 76 : 104,
             flexShrink: 0,
             overflowY: 'auto',
-            borderRight: 1,
-            borderColor: 'divider',
-            bgcolor: 'action.hover',
-            py: 1,
+            borderRight: '1px solid',
+            borderColor: 'text.primary',
           }}
         >
-          {/* 全部（清除作者筛选） */}
-          <Box
-            onClick={() => setAuthorFilter(null)}
-            sx={{
-              px: 1,
-              py: 0.75,
-              fontSize: 12,
-              fontWeight: authorFilter === null ? 700 : 400,
-              color: authorFilter === null ? 'primary.main' : 'text.secondary',
-              cursor: 'pointer',
-              borderBottom: 1,
-              borderColor: 'divider',
-              bgcolor: authorFilter === null ? 'action.selected' : 'transparent',
-              '&:hover': { bgcolor: 'action.hover' },
-            }}
-          >
-            全部
-          </Box>
-          {allCalligraphers.map((name) => (
-            <Box
-              key={name}
-              onClick={() => setAuthorFilter(authorFilter === name ? null : name)}
-              sx={{
-                px: 1,
-                py: 0.75,
-                fontSize: 12,
-                fontWeight: authorFilter === name ? 700 : 400,
-                color: authorFilter === name ? 'primary.main' : 'text.secondary',
-                cursor: 'pointer',
-                borderBottom: 1,
-                borderColor: 'divider',
-                bgcolor: authorFilter === name ? 'action.selected' : 'transparent',
-                lineHeight: 1.3,
-                wordBreak: 'break-all',
-                '&:hover': { bgcolor: 'action.hover' },
-              }}
-            >
-              {name}
-            </Box>
-          ))}
+          {[null, ...allCalligraphers].map((name) => {
+            const on = authorFilter === name;
+            return (
+              <Box
+                key={name ?? '__all__'}
+                component="button"
+                type="button"
+                onClick={() => setAuthorFilter(name)}
+                aria-pressed={on}
+                sx={{
+                  display: 'block',
+                  width: '100%',
+                  textAlign: 'left',
+                  border: 0,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  bgcolor: on ? 'text.primary' : 'transparent',
+                  color: on ? 'background.default' : 'inherit',
+                  px: 1,
+                  py: 0.9,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  fontWeight: on ? 700 : 400,
+                  lineHeight: 1.3,
+                  wordBreak: 'break-all',
+                  '&:hover': on ? {} : { backgroundColor: 'action.hover' },
+                }}
+              >
+                {name ?? '全部'}
+              </Box>
+            );
+          })}
         </Box>
 
-        {/* ===== 右列：字体筛选 + 候选字网格 ===== */}
+        {/* 右列：字体筛选 + 候选字网格 */}
         <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-          {/* 字体筛选标签栏 */}
           {allStyles.length > 0 && (
             <Box
               sx={{
                 display: 'flex',
-                gap: 0.5,
+                gap: 0.75,
                 px: 1.5,
                 py: 1,
-                borderBottom: 1,
+                borderBottom: '1px solid',
                 borderColor: 'divider',
                 overflowX: 'auto',
                 flexShrink: 0,
               }}
             >
-              <Chip
-                label="全部字体"
-                size="small"
-                variant={styleFilter === null ? 'filled' : 'outlined'}
-                color={styleFilter === null ? 'primary' : 'default'}
-                onClick={() => setStyleFilter(null)}
-                sx={{ fontSize: 11, height: 24 }}
-              />
-              {allStyles.map((s) => (
-                <Chip
-                  key={s}
-                  label={s}
-                  size="small"
-                  variant={styleFilter === s ? 'filled' : 'outlined'}
-                  color={styleFilter === s ? 'primary' : 'default'}
-                  onClick={() => setStyleFilter(styleFilter === s ? null : s)}
-                  sx={{ fontSize: 11, height: 24 }}
-                />
-              ))}
+              {[null, ...allStyles].map((s) => {
+                const on = styleFilter === s;
+                return (
+                  <Box
+                    key={s ?? '__all__'}
+                    component="button"
+                    type="button"
+                    onClick={() => setStyleFilter(on ? null : s)}
+                    aria-pressed={on}
+                    sx={{
+                      border: '1px solid',
+                      borderColor: on ? 'text.primary' : 'divider',
+                      bgcolor: on ? 'text.primary' : 'transparent',
+                      color: on ? 'background.default' : 'inherit',
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: 11,
+                      height: 26,
+                      px: 1,
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                      '&:hover': on ? {} : { borderColor: 'text.primary' },
+                    }}
+                  >
+                    {s ?? '全部字体'}
+                  </Box>
+                );
+              })}
             </Box>
           )}
 
-          {/* 候选字网格 */}
-          <Box sx={{ flex: 1, overflowY: 'auto', px: 1.5, py: 1 }}>
+          <Box sx={{ flex: 1, overflowY: 'auto', px: { xs: 1.5, md: 2 }, py: 1.25 }}>
             {grouped.length === 0 ? (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 6 }}>
+              <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.6, textAlign: 'center', py: 6 }}>
                 无匹配结果
               </Typography>
             ) : (
               grouped.map((group) => (
-                <Box key={`${group.style}|${group.calligrapher}`} sx={{ mb: 2 }}>
-                  {/* 分组标题：字体 + 书家 */}
+                <Box key={`${group.style}|${group.calligrapher}`} sx={{ mb: 2.25 }}>
                   <Typography
-                    variant="caption"
-                    sx={{ fontSize: 11, fontWeight: 500, color: 'text.secondary', display: 'block', mb: 0.75 }}
+                    sx={{
+                      display: 'block',
+                      mb: 0.9,
+                      pb: 0.6,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      fontSize: 12,
+                    }}
                   >
-                    <Box component="span" sx={{ color: 'primary.main', fontWeight: 600 }}>{group.style}</Box>
-                    {' · '}{group.calligrapher}{' · '}{group.deck_name}
+                    <Box component="span" sx={{ fontWeight: 900, mr: 0.75 }}>{group.style}</Box>
+                    <Box component="span" sx={{ fontFamily: 'var(--font-mono)', fontSize: 10, opacity: 0.6 }}>
+                      {group.calligrapher} · {group.deck_name}
+                    </Box>
                   </Typography>
 
-                  {/* 一行 3 个 */}
-                  <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1 }}>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3, 1fr)', md: 'repeat(5, 1fr)' }, gap: 0.75 }}>
                     {group.entries.map(({ hit, index: i }) => {
                       const isSelected = i === selectedIndex;
                       return (
                         <Box
                           key={hit.card_id}
+                          component="button"
+                          type="button"
                           onClick={() => onPick(i)}
+                          aria-pressed={isSelected}
                           sx={{
                             cursor: 'pointer',
-                            border: isSelected ? 2 : 0,
-                            borderColor: 'primary.main',
-                            borderRadius: '2px',
-                            p: 0.75,
-                            bgcolor: isSelected ? 'action.selected' : 'background.paper',
-                            boxShadow: (t) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',
-                            transition: 'all 0.12s',
-                            '&:hover': { borderColor: 'primary.light' },
+                            border: isSelected ? '2px solid' : '1px solid',
+                            borderColor: isSelected ? 'var(--hot-ink)' : 'divider',
+                            bgcolor: 'background.paper',
+                            p: 0.5,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            '&:hover': { borderColor: isSelected ? 'var(--hot-ink)' : 'text.primary' },
                           }}
                         >
                           <Box
                             component="img"
                             src={getImageUrl(hit.image_url)}
                             alt={hit.front_text_raw}
-                            sx={{
-                              width: '100%',
-                              aspectRatio: '1',
-                              objectFit: 'contain',
-                              bgcolor: '#fafafa',
-                              borderRadius: '2px',
-                            }}
+                            sx={{ width: '100%', aspectRatio: '1', objectFit: 'contain' }}
                             draggable={false}
                           />
                         </Box>

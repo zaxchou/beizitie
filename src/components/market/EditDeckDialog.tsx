@@ -1,20 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  Switch,
-  FormControlLabel,
-  Box,
-  Typography,
-  Alert,
-  CircularProgress,
-  Divider,
-  Chip,
-} from '@mui/material';
+import { Dialog, DialogContent, Button, TextField, Box, Typography } from '@mui/material';
 import {
   fetchMarketplaceDeck,
   publishDeck,
@@ -24,6 +9,7 @@ import {
   getImageUrl,
 } from '@/lib/api';
 import type { PublishDeckData, MarketplaceDeck } from '@/types';
+import { DialogHead, FieldLabel, dlgFieldSx, DlgActions, dlgCancelSx, dlgSaveSx } from '@/components/common/DialogKit';
 
 /** 书体选项 */
 const STYLE_OPTIONS = ['楷', '行', '草', '隶', '篆'] as const;
@@ -172,184 +158,211 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
 
   return (
     <Dialog open={open} onClose={saving || uploading ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle sx={{ pb: 1 }}>
-        {publishMode
-          ? (isPublished ? '编辑市场信息' : '发布到市场')
-          : '编辑牌组信息'
-        }
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-          牌组：{deckName}
-        </Typography>
-      </DialogTitle>
-      <DialogContent sx={{ pt: 2 }}>
+      <DialogHead
+        title={publishMode ? (isPublished ? '编辑市场信息' : '发布到市场') : '编辑牌组信息'}
+        en={publishMode ? 'Market listing' : 'Deck info'}
+        sub={deckName}
+      />
+      <DialogContent sx={{ p: '16px 20px 6px' }}>
         {loading ? (
-          <Box className="flex justify-center py-8">
-            <CircularProgress />
-          </Box>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.7, py: 5 }}>
+            正在读取牌组…
+          </Typography>
         ) : (
-          <Box className="space-y-3">
-            {error && <Alert severity="error">{error}</Alert>}
-            {coverSuccess && <Alert severity="success" sx={{ py: 0.5 }}>封面图上传成功</Alert>}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.25 }}>
+            {error && (
+              <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--hot-ink)' }}>{error}</Typography>
+            )}
+            {coverSuccess && (
+              <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, opacity: 0.75 }}>封面图上传成功</Typography>
+            )}
             {isPublished && publishMode && (
-              <Alert severity="info" sx={{ py: 0.5 }}>
-                该牌组已发布到市场，修改将立即生效。
-              </Alert>
+              <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, opacity: 0.6 }}>
+                已发布到市场 · 修改立即生效
+              </Typography>
             )}
 
-            {/* 牌组名称 */}
-            <TextField
-              fullWidth
-              label="牌组名称"
-              value={editingDeckName}
-              onChange={(e) => setEditingDeckName(e.target.value)}
-              disabled={saving}
-            />
-
-            {/* 封面图 */}
             <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: 13 }}>
-                封面图
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+              <FieldLabel>牌组名称 · Title</FieldLabel>
+              <TextField
+                fullWidth
+                value={editingDeckName}
+                onChange={(e) => setEditingDeckName(e.target.value)}
+                disabled={saving}
+                sx={dlgFieldSx}
+              />
+            </Box>
+
+            <Box>
+              <FieldLabel hint="封面用于市场书表缩略图">封面图 · Cover</FieldLabel>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
                 <Box
                   sx={{
-                    width: 100, height: 70, borderRadius: '2px', overflow: 'hidden',
-                    bgcolor: (t) => t.palette.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'grey.100',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                    boxShadow: (t) => t.palette.mode === 'dark' ? '0px 0px 0px 1px rgba(255,255,255,0.12)' : '0px 0px 0px 1px rgba(0,0,0,0.08)',
+                    width: 84,
+                    height: 60,
+                    flexShrink: 0,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
                 >
                   {coverImageUrl ? (
                     <Box component="img" src={getImageUrl(coverImageUrl)} sx={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   ) : (
-                    <Typography fontSize={11} color="text.disabled">无封面</Typography>
+                    <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 9, opacity: 0.45 }}>无封面</Typography>
                   )}
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                  <Box component="label" sx={{ cursor: 'pointer', fontSize: 13, color: 'primary.main', '&:hover': { textDecoration: 'underline' } }}>
-                    {uploading ? '上传中...' : '上传本地图片'}
-                    <input
-                      ref={fileInputRef}
-                      type="file" accept="image/*" hidden
-                      disabled={uploading}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleCoverUpload(f);
-                      }}
-                    />
-                  </Box>
+                <Box component="label" sx={{ cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 11, textDecoration: 'underline', textUnderlineOffset: 3, opacity: uploading ? 0.5 : 0.8, '&:hover': { opacity: 1 } }}>
+                  {uploading ? '上传中…' : '上传本地图片'}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    disabled={uploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) handleCoverUpload(f);
+                    }}
+                  />
                 </Box>
               </Box>
               <TextField
                 fullWidth
                 size="small"
-                label="或输入封面图 URL"
                 value={coverImageUrl}
                 onChange={(e) => setCoverImageUrl(e.target.value)}
                 disabled={saving || uploading}
-                placeholder="https://..."
+                placeholder="或输入封面图 URL：https://…"
+                sx={dlgFieldSx}
               />
             </Box>
 
-            <Divider />
-
-            {/* 书家 */}
-            <TextField
-              fullWidth
-              required={publishMode}
-              label="书家"
-              value={calligrapher}
-              onChange={(e) => setCalligrapher(e.target.value)}
-              placeholder="例如：王羲之"
-              disabled={saving}
-            />
-
-            {/* 朝代 */}
-            <TextField
-              fullWidth
-              label="朝代"
-              value={dynasty}
-              onChange={(e) => setDynasty(e.target.value)}
-              placeholder="例如：东晋"
-              disabled={saving}
-            />
-
-            {/* 书体（多选） */}
-            <Box>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75, fontSize: 13 }}>
-                书体
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 0.5 }}>
-                {STYLE_OPTIONS.map((s) => (
-                  <Chip
-                    key={s}
-                    label={s}
-                    size="small"
-                    color={style.includes(s) ? 'primary' : 'default'}
-                    variant={style.includes(s) ? 'filled' : 'outlined'}
-                    onClick={() => {
-                      setStyle((prev) =>
-                        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-                      );
-                    }}
-                    disabled={saving}
-                    sx={{ cursor: 'pointer' }}
-                  />
-                ))}
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+              <Box>
+                <FieldLabel required={publishMode}>书家 · Author</FieldLabel>
+                <TextField
+                  fullWidth
+                  required={publishMode}
+                  value={calligrapher}
+                  onChange={(e) => setCalligrapher(e.target.value)}
+                  placeholder="例如：王羲之"
+                  disabled={saving}
+                  sx={dlgFieldSx}
+                />
+              </Box>
+              <Box>
+                <FieldLabel>朝代 · Dynasty</FieldLabel>
+                <TextField
+                  fullWidth
+                  value={dynasty}
+                  onChange={(e) => setDynasty(e.target.value)}
+                  placeholder="例如：东晋"
+                  disabled={saving}
+                  sx={dlgFieldSx}
+                />
               </Box>
             </Box>
 
-            {/* 简介 */}
-            <TextField
-              fullWidth
-              multiline
-              minRows={3}
-              maxRows={6}
-              label="简介"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="牌组简介、内容特点等..."
-              disabled={saving}
-            />
+            <Box>
+              <FieldLabel>书体 · Script</FieldLabel>
+              <Box sx={{ display: 'flex' }}>
+                {STYLE_OPTIONS.map((s, i) => {
+                  const on = style.includes(s);
+                  return (
+                    <Box
+                      key={s}
+                      component="button"
+                      type="button"
+                      onClick={() => {
+                        setStyle((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
+                      }}
+                      disabled={saving}
+                      aria-pressed={on}
+                      sx={{
+                        flex: 1,
+                        border: '1px solid',
+                        borderColor: on ? 'text.primary' : 'divider',
+                        borderLeftWidth: i === 0 ? 1 : 0,
+                        bgcolor: on ? 'text.primary' : 'transparent',
+                        color: on ? 'background.default' : 'inherit',
+                        height: 34,
+                        cursor: saving ? 'not-allowed' : 'pointer',
+                        fontSize: 13,
+                        opacity: saving ? 0.5 : 1,
+                        '&:hover': on || saving ? {} : { borderColor: 'text.primary' },
+                      }}
+                    >
+                      {s}
+                    </Box>
+                  );
+                })}
+              </Box>
+            </Box>
 
-            {/* 推荐状态 */}
-            <Divider />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={featured}
-                  onChange={(e) => setFeatured(e.target.checked)}
-                  disabled={saving}
-                  color="primary"
-                />
-              }
-              label={
-                <Box>
-                  <Typography variant="body2" component="span" fontWeight={500}>
-                    推荐牌组
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                    推荐牌组会在市场中显示"推荐"标记
-                  </Typography>
-                </Box>
-              }
-            />
+            <Box>
+              <FieldLabel>简介 · Description</FieldLabel>
+              <TextField
+                fullWidth
+                multiline
+                minRows={3}
+                maxRows={6}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="牌组简介、内容特点…"
+                disabled={saving}
+                sx={dlgFieldSx}
+              />
+            </Box>
+
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, borderTop: '1px solid', borderColor: 'divider', pt: 1.75 }}>
+              <Box>
+                <Typography sx={{ fontSize: 14 }}>推荐牌组</Typography>
+                <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 9.5, opacity: 0.55, mt: 0.3 }}>
+                  FEATURED · 市场中显示推荐标记
+                </Typography>
+              </Box>
+              <Box
+                component="button"
+                type="button"
+                onClick={() => setFeatured((v) => !v)}
+                disabled={saving}
+                aria-pressed={featured}
+                sx={{
+                  border: '1px solid',
+                  borderColor: featured ? 'text.primary' : 'divider',
+                  bgcolor: featured ? 'text.primary' : 'transparent',
+                  color: featured ? 'background.default' : 'inherit',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: 11,
+                  height: 28,
+                  px: 1.25,
+                  cursor: saving ? 'not-allowed' : 'pointer',
+                  flexShrink: 0,
+                }}
+              >
+                {featured ? '推荐' : '普通'}
+              </Box>
+            </Box>
           </Box>
         )}
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} disabled={saving || uploading} color="inherit">
+      <DlgActions>
+        <Button onClick={onClose} disabled={saving || uploading} sx={dlgCancelSx}>
           取消
         </Button>
         <Button
           variant="contained"
           onClick={handleSave}
           disabled={loading || saving || uploading || (publishMode && !calligrapher.trim())}
-          startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
+          sx={dlgSaveSx}
         >
-          {saving ? '保存中...' : isPublished ? '保存修改' : '发布'}
+          {saving ? '保存中…' : isPublished ? '保存修改' : '发布'}
         </Button>
-      </DialogActions>
+      </DlgActions>
     </Dialog>
   );
 };
