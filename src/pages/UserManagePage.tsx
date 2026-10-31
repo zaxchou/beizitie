@@ -7,13 +7,13 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogTitle,
   Snackbar,
   Typography,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import SearchIcon from '@mui/icons-material/Search';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { DialogHead } from '@/components/common/DialogKit';
 import {
   fetchAdminUsers,
   updateAdminUser,
@@ -294,8 +294,12 @@ const UserManagePage: React.FC = () => {
           <Typography sx={{ fontSize: 64, fontWeight: 900, lineHeight: 1, opacity: 0.14, letterSpacing: '0.12em' }}>
             {keyword.trim() || roleFilter ? '无' : '空'}
           </Typography>
-          <Typography sx={{ mt: 1.5, fontSize: 15, fontWeight: 700, letterSpacing: '0.1em' }}>没有匹配的账号</Typography>
-          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.65, mt: 0.75 }}>NO MATCH</Typography>
+          <Typography sx={{ mt: 1.5, fontSize: 15, fontWeight: 700, letterSpacing: '0.1em' }}>
+            {keyword.trim() || roleFilter ? '没有匹配的账号' : '还没有账号'}
+          </Typography>
+          <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.65, mt: 0.75 }}>
+            {keyword.trim() || roleFilter ? 'NO MATCH' : 'EMPTY'}
+          </Typography>
         </Box>
       ) : (
         <Box>
@@ -383,12 +387,8 @@ const UserManagePage: React.FC = () => {
       )}
 
       {/* 编辑对话框 */}
-      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ p: '14px 20px 12px', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography sx={{ ...mono, fontSize: 10.5, letterSpacing: '0.14em', opacity: 0.7 }}>
-            编辑账号 · {editTarget?.username}
-          </Typography>
-        </DialogTitle>
+      <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="xs" fullWidth aria-labelledby="edit-user-dialog-title">
+        <DialogHead id="edit-user-dialog-title" title="编辑账号" en="Edit account" sub={editTarget?.username} />
         <DialogContent sx={{ p: '16px 20px 4px' }}>
           {editError && (
             <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mb: 1.5 }}>{editError}</Typography>
@@ -400,6 +400,7 @@ const UserManagePage: React.FC = () => {
               value={editUsername}
               onChange={(e) => setEditUsername(e.target.value)}
               disabled={editLoading}
+              aria-label="用户名"
               sx={{ width: '100%', border: 0, outline: 'none', background: 'transparent', color: 'text.primary', fontSize: 18, letterSpacing: '0.03em', mt: 0.75, p: 0 }}
             />
           </Box>
@@ -411,6 +412,7 @@ const UserManagePage: React.FC = () => {
               value={editPassword}
               onChange={(e) => setEditPassword(e.target.value)}
               disabled={editLoading}
+              aria-label="新密码"
               sx={{ width: '100%', border: 0, outline: 'none', background: 'transparent', color: 'text.primary', fontSize: 18, letterSpacing: '0.03em', mt: 0.75, p: 0 }}
             />
           </Box>
@@ -427,12 +429,8 @@ const UserManagePage: React.FC = () => {
       </Dialog>
 
       {/* 删除确认 */}
-      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ p: '14px 20px 12px', borderBottom: '1px solid', borderColor: 'divider' }}>
-          <Typography sx={{ ...mono, fontSize: 10.5, letterSpacing: '0.14em', opacity: 0.7 }}>
-            删除账号 · Delete
-          </Typography>
-        </DialogTitle>
+      <Dialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} maxWidth="xs" fullWidth aria-labelledby="delete-user-dialog-title">
+        <DialogHead id="delete-user-dialog-title" title="删除账号" en="Delete account" sub={deleteTarget?.username} />
         <DialogContent sx={{ p: '16px 20px 4px' }}>
           {deleteError && <Typography sx={{ ...mono, fontSize: 11, color: 'var(--hot-ink)', mb: 1.5 }}>{deleteError}</Typography>}
           <Typography sx={{ fontSize: 17, fontWeight: 700, letterSpacing: '0.03em' }}>
@@ -458,17 +456,17 @@ const UserManagePage: React.FC = () => {
       </Dialog>
 
       {/* 学习统计 */}
-      <Dialog open={statsOpen} onClose={() => setStatsOpen(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ p: '14px 20px 12px', borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-          <Typography sx={{ ...mono, fontSize: 10.5, letterSpacing: '0.14em', opacity: 0.7 }}>
-            学习统计 · {statsTarget?.username}
-          </Typography>
-          {statsData && (
-            <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.55 }}>
-              {statsData.stats.total_sessions} 次 · {statsData.stats.active_days} 天
-            </Typography>
-          )}
-        </DialogTitle>
+      <Dialog open={statsOpen} onClose={() => setStatsOpen(false)} maxWidth="sm" fullWidth aria-labelledby="user-stats-dialog-title">
+        <DialogHead
+          id="user-stats-dialog-title"
+          title="学习统计"
+          en="Study stats"
+          sub={
+            statsTarget
+              ? `${statsTarget.username}${statsData ? ` · ${statsData.stats.total_sessions} 次 · ${statsData.stats.active_days} 天` : ''}`
+              : undefined
+          }
+        />
         <DialogContent sx={{ p: '16px 20px 4px' }}>
           {statsLoading ? (
             <Typography sx={{ ...mono, fontSize: 11, opacity: 0.7, py: 4 }}>正在读取统计…</Typography>

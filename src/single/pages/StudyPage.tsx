@@ -124,24 +124,27 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
     }
   };
 
-  // 空格翻面 / ESC 退出（焦点在输入框时不抢键）
+  // 空格翻面 / ESC 退出：焦点在输入框、按钮或卡面时不抢键（卡面自己处理空格）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const tag = (document.activeElement?.tagName || '').toLowerCase();
+      const el = document.activeElement as HTMLElement | null;
+      const tag = (el?.tagName || '').toLowerCase();
       const typing = tag === 'input' || tag === 'textarea' || tag === 'select';
-      if (e.code === 'Space' && !typing) {
+      const onControl = !!el?.closest('button, a, [role="button"]');
+      if (e.code === 'Space') {
+        if (typing || onControl || confirmExit || sessionDone || queue.length === 0) return;
         e.preventDefault();
-        if (!sessionDone && queue.length > 0) setFlipped((f) => !f);
+        setFlipped((f) => !f);
         return;
       }
-      if (e.key === 'Escape') {
+      if (e.key === 'Escape' && !confirmExit) {
         if (rated > 0 && !sessionDone) setConfirmExit(true);
         else onExitStudy();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [rated, sessionDone, queue.length, onExitStudy]);
+  }, [rated, sessionDone, queue.length, confirmExit, onExitStudy]);
 
   // ---- 加载中 ----
   if (loading) {

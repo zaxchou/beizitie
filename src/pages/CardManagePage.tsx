@@ -9,7 +9,6 @@ import {
   DialogContent,
   DialogActions,
   TextField,
-  Alert,
   CardMedia,
 } from '@mui/material';
 import ImageIcon from '@mui/icons-material/Image';
@@ -33,7 +32,6 @@ import {
 import type { Card, Deck, MarketplaceDeck } from '@/types';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { DialogHead, FieldLabel, dlgFieldSx, dlgActionSx, dlgCancelSx, dlgSaveSx } from '@/components/common/DialogKit';
-import { LoadingState } from '@/components/common/LoadingState';
 import EditDeckDialog from '@/components/market/EditDeckDialog';
 
 const PAGE_SIZE = 20;
@@ -636,23 +634,25 @@ const CardManagePage: React.FC = () => {
     };
   }, [newImagePreview, editImagePreview, batchPreviews]);
 
+  const pageMono = { fontFamily: 'var(--font-mono)', letterSpacing: '0.04em' } as const;
+
   // 加载状态
   if (loading) {
-    return <LoadingState message="正在加载卡片列表..." />;
+    return (
+      <Typography sx={{ ...pageMono, fontSize: 11, opacity: 0.7, py: 8 }}>正在加载卡片列表…</Typography>
+    );
   }
 
   // 错误状态
   if (error) {
     return (
-      <Box className="py-4">
-        <Alert severity="error" className="mb-4">
-          {error}
-        </Alert>
-        <Box className="flex gap-2">
-          <Button variant="outlined" onClick={() => navigate(-1)}>
+      <Box sx={{ py: 4 }}>
+        <Typography sx={{ ...pageMono, fontSize: 11, color: 'var(--hot-ink)', pb: 1.5 }}>{error}</Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" onClick={() => navigate(-1)} sx={{ height: 36, px: 1.75 }}>
             返回
           </Button>
-          <Button variant="contained" onClick={loadData}>
+          <Button variant="contained" onClick={loadData} sx={{ height: 36, px: 1.75 }}>
             重试
           </Button>
         </Box>
@@ -1174,7 +1174,7 @@ const CardManagePage: React.FC = () => {
                 multiline
                 minRows={3}
                 maxRows={8}
-                inputProps={{ maxLength: 100 }}
+                inputProps={{ maxLength: 100, 'aria-label': '正面文字' }}
                 sx={dlgFieldSx}
               />
             </Box>
@@ -1189,7 +1189,7 @@ const CardManagePage: React.FC = () => {
                 multiline
                 minRows={3}
                 maxRows={10}
-                inputProps={{ maxLength: 500 }}
+                inputProps={{ maxLength: 500, 'aria-label': '背面文字' }}
                 sx={dlgFieldSx}
               />
             </Box>
@@ -1243,8 +1243,9 @@ const CardManagePage: React.FC = () => {
         open={textBatchOpen}
         onClose={() => { setTextBatchOpen(false); setTextBatchResult(null); }}
         maxWidth="sm" fullWidth
+        aria-labelledby="text-import-dialog-title"
       >
-        <DialogHead title="文字批量导入" en="Text import" />
+        <DialogHead id="text-import-dialog-title" title="文字批量导入" en="Text import" />
         <DialogContent sx={{ p: '16px 20px 6px' }}>
           <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.6, mb: 1.25 }}>
             每两行为一组（正面 / 背面），空行自动忽略
@@ -1262,6 +1263,7 @@ const CardManagePage: React.FC = () => {
 日月
 星辰`}
             disabled={textBatchImporting}
+            inputProps={{ 'aria-label': '批量文本内容' }}
             sx={dlgFieldSx}
           />
           {textBatchResult && (
@@ -1332,7 +1334,7 @@ const CardManagePage: React.FC = () => {
                 multiline
                 minRows={3}
                 maxRows={8}
-                inputProps={{ maxLength: 100 }}
+                inputProps={{ maxLength: 100, 'aria-label': '正面文字' }}
                 sx={dlgFieldSx}
               />
             </Box>
@@ -1347,7 +1349,7 @@ const CardManagePage: React.FC = () => {
                 multiline
                 minRows={3}
                 maxRows={10}
-                inputProps={{ maxLength: 500 }}
+                inputProps={{ maxLength: 500, 'aria-label': '背面文字' }}
                 sx={dlgFieldSx}
               />
             </Box>
@@ -1525,8 +1527,9 @@ const CardManagePage: React.FC = () => {
         onClose={() => { if (!unpublishing) setUnpublishConfirmOpen(false); }}
         maxWidth="xs"
         fullWidth
+        aria-labelledby="unpublish-dialog-title"
       >
-        <DialogHead title="从市场撤回" en="Unpublish" />
+        <DialogHead id="unpublish-dialog-title" title="从市场撤回" en="Unpublish" />
         <DialogContent sx={{ p: '16px 20px 6px' }}>
           <Typography sx={{ fontSize: 13, lineHeight: 1.8 }}>
             撤回后其他用户将无法订阅这帖，已有订阅数据不受影响。
@@ -1553,8 +1556,9 @@ const CardManagePage: React.FC = () => {
         onClose={() => { if (!articleSetting) setArticleDialogOpen(false); }}
         maxWidth="sm"
         fullWidth
+        aria-labelledby="deck-text-dialog-title"
       >
-        <DialogHead title="碑帖文本" en="Deck text" />
+        <DialogHead id="deck-text-dialog-title" title="碑帖文本" en="Deck text" />
         <DialogContent sx={{ p: '16px 20px 6px' }}>
           <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.6, mb: 1.25, lineHeight: 1.9 }}>
             粘贴全文，系统把每张卡片对到文中的位置；匹配完成后学习时可选出卡顺序为「碑帖文本」。
@@ -1573,6 +1577,7 @@ const CardManagePage: React.FC = () => {
             }}
             placeholder={'在此粘贴文章全文，例如：\n大唐三藏圣教序太宗文皇帝制'}
             disabled={articleSetting}
+            inputProps={{ 'aria-label': '碑帖全文' }}
             sx={dlgFieldSx}
           />
 

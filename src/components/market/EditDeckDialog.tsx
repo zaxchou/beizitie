@@ -157,8 +157,9 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
   ]);
 
   return (
-    <Dialog open={open} onClose={saving || uploading ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={saving || uploading ? undefined : onClose} maxWidth="sm" fullWidth aria-labelledby="edit-deck-dialog-title">
       <DialogHead
+        id="edit-deck-dialog-title"
         title={publishMode ? (isPublished ? '编辑市场信息' : '发布到市场') : '编辑牌组信息'}
         en={publishMode ? 'Market listing' : 'Deck info'}
         sub={deckName}
@@ -189,6 +190,7 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
                 value={editingDeckName}
                 onChange={(e) => setEditingDeckName(e.target.value)}
                 disabled={saving}
+                inputProps={{ 'aria-label': '牌组名称' }}
                 sx={dlgFieldSx}
               />
             </Box>
@@ -237,6 +239,7 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
                 onChange={(e) => setCoverImageUrl(e.target.value)}
                 disabled={saving || uploading}
                 placeholder="或输入封面图 URL：https://…"
+                inputProps={{ 'aria-label': '封面图 URL' }}
                 sx={dlgFieldSx}
               />
             </Box>
@@ -251,6 +254,7 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
                   onChange={(e) => setCalligrapher(e.target.value)}
                   placeholder="例如：王羲之"
                   disabled={saving}
+                  inputProps={{ 'aria-label': '书家' }}
                   sx={dlgFieldSx}
                 />
               </Box>
@@ -262,6 +266,7 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
                   onChange={(e) => setDynasty(e.target.value)}
                   placeholder="例如：东晋"
                   disabled={saving}
+                  inputProps={{ 'aria-label': '朝代' }}
                   sx={dlgFieldSx}
                 />
               </Box>
@@ -314,6 +319,7 @@ const EditDeckDialog: React.FC<EditDeckDialogProps> = ({
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="牌组简介、内容特点…"
                 disabled={saving}
+                inputProps={{ 'aria-label': '简介' }}
                 sx={dlgFieldSx}
               />
             </Box>

@@ -283,7 +283,7 @@ export const MarketPage: React.FC<Props> = ({ onSubscribed }) => {
                             onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
                           />
                         ) : null}
-                        <Box sx={{ position: 'absolute', top: 3, left: 3, px: 0.4, py: '1px', bgcolor: 'var(--hot-ink)', color: '#f2ecdd', ...mono, fontSize: 8, fontWeight: 700 }}>
+                        <Box sx={{ position: 'absolute', top: 3, left: 3, px: 0.4, py: '1px', bgcolor: 'var(--hot-ink)', color: 'var(--paper)', ...mono, fontSize: 8, fontWeight: 700 }}>
                           荐
                         </Box>
                       </Box>

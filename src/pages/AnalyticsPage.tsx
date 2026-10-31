@@ -24,17 +24,15 @@ const RANGE_OPTIONS: { key: RangeKey; label: string; days: number }[] = [
 
 /** 浅色/暗色 tooltip */
 const ChartTooltip = ({ active, payload, label, unit }: any) => {
-  const theme = useTheme();
   if (!active || !payload?.length) return null;
-  const dark = theme.palette.mode === 'dark';
   return (
     <Box sx={{
-      bgcolor: dark ? '#333' : '#fff',
-      color: dark ? '#e0e0e0' : '#333',
+      bgcolor: 'background.paper',
+      color: 'text.primary',
       px: 1.5, py: 0.75,
-      borderRadius: '2px',
-      border: 1, borderColor: dark ? '#555' : '#ddd',
-      fontSize: 12, boxShadow: 2,
+      border: '1px solid',
+      borderColor: 'text.primary',
+      fontSize: 12,
     }}>
       <Box sx={{ fontWeight: 600, mb: 0.25 }}>{label}</Box>
       {payload.map((p: any, i: number) => (

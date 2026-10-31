@@ -264,7 +264,7 @@ export const DashboardPage: React.FC<Props> = ({ refreshKey, onStudy, onChangeTa
                       cursor: canStart ? 'pointer' : 'not-allowed',
                       opacity: canStart ? 1 : 0.35,
                       whiteSpace: 'nowrap',
-                      '&:hover': canStart ? { bgcolor: 'currentColor', color: 'background.default' } : {},
+                      '&:hover': canStart ? { bgcolor: 'background.default', color: 'text.primary' } : {},
                     }}
                   >
                     开始 →
@@ -307,13 +307,14 @@ function LimitEditor({ deck, onClose, onSaved }: {
   const [reviewLimit, setReviewLimit] = useState(deck.settings.dailyReviewLimit);
   const [mode, setMode] = useState<StudyMode>(deck.settings.mode || 'default');
 
-  const numInput = (value: number, onChange: (n: number) => void, min: number, max?: number) => (
+  const numInput = (value: number, onChange: (n: number) => void, min: number, max: number | undefined, label: string) => (
     <Box
       component="input"
       type="number"
       value={value}
       min={min}
       max={max}
+      aria-label={label}
       onChange={(e) => {
         const n = Math.max(min, parseInt(e.target.value, 10) || 0);
         onChange(max ? Math.min(max, n) : n);
@@ -344,11 +345,11 @@ function LimitEditor({ deck, onClose, onSaved }: {
       <DialogContent sx={{ p: '8px 20px 4px' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.75, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography sx={{ fontSize: 14 }}>每日新字<Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.55, ml: 0.75 }}>NEW / DAY</Box></Typography>
-          {numInput(newLimit, setNewLimit, 0, 200)}
+          {numInput(newLimit, setNewLimit, 0, 200, '每日新字上限')}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.75, borderBottom: '1px solid', borderColor: 'divider' }}>
           <Typography sx={{ fontSize: 14 }}>每日复习<Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.55, ml: 0.75 }}>REVIEW / DAY</Box></Typography>
-          {numInput(reviewLimit, setReviewLimit, 0)}
+          {numInput(reviewLimit, setReviewLimit, 0, undefined, '每日复习上限')}
         </Box>
         <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', py: 1.75 }}>
           <Typography sx={{ fontSize: 14 }}>出卡顺序<Box component="span" sx={{ ...mono, fontSize: 9.5, opacity: 0.55, ml: 0.75 }}>ORDER</Box></Typography>
@@ -356,6 +357,7 @@ function LimitEditor({ deck, onClose, onSaved }: {
             component="select"
             value={mode}
             onChange={(e) => setMode(e.target.value as StudyMode)}
+            aria-label="出卡顺序"
             sx={{
               border: 0,
               borderBottom: '1px solid',

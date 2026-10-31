@@ -167,7 +167,7 @@ const JiziSwitcherSheet: React.FC<JiziSwitcherSheetProps> = ({
                 key={name ?? '__all__'}
                 component="button"
                 type="button"
-                onClick={() => setAuthorFilter(name)}
+                onClick={() => setAuthorFilter(on ? null : name)}
                 aria-pressed={on}
                 sx={{
                   display: 'block',

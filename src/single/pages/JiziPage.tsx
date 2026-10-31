@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
@@ -167,6 +167,16 @@ export const JiziPage: React.FC = () => {
     return groupResults(filteredResults, layout.colCount, text);
   }, [filteredResults, layout.colCount, text]);
 
+  // 换书体/书家后候选变少时，旧下标可能越界（r.hits[sel] 变 undefined）→ 收敛到最后一个候选
+  useEffect(() => {
+    setSelections((prev) =>
+      prev.map((s, i) => {
+        const n = filteredResults[i]?.hits.length ?? 0;
+        return n > 0 ? Math.min(s, n - 1) : 0;
+      }),
+    );
+  }, [filteredResults]);
+
   const isVertical = layout.direction.startsWith('vertical');
   const isDarkBg = layout.background === 'ink' || layout.background === 'vermilion';
 
@@ -242,6 +252,7 @@ export const JiziPage: React.FC = () => {
           value={text}
           onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)}
           placeholder="输入文字，从字库匹配单字…"
+          aria-label="集字内容"
           rows={3}
           sx={{
             width: '100%',
@@ -390,7 +401,7 @@ export const JiziPage: React.FC = () => {
                             fontSize: 8.5,
                             lineHeight: 1.4,
                             maxWidth: '100%',
-                            color: isDarkBg ? 'rgba(255,255,255,0.6)' : 'text.secondary',
+                            color: isDarkBg ? 'rgba(255,255,255,0.6)' : 'rgba(23,19,12,0.55)',
                           }}
                         >
                           {[hit?.calligrapher, hit?.deck_name].filter(Boolean).join('·') || '缺字'}

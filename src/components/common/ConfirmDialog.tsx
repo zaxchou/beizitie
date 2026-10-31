@@ -41,13 +41,12 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
       </Typography>
     </DialogContent>
     <DlgActions>
-      <Button onClick={onCancel} sx={dlgCancelSx}>
+      <Button onClick={onCancel} autoFocus sx={dlgCancelSx}>
         取消
       </Button>
       <Button
         onClick={onConfirm}
         variant="contained"
-        autoFocus
         sx={{ ...dlgSaveSx, backgroundColor: 'var(--hot-ink)' }}
       >
         确认

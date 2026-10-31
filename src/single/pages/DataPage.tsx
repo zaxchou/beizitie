@@ -18,6 +18,7 @@ const dateKey = (d: Date) =>
 
 export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
   const [stats, setStats] = useState<LocalDailyStat[]>([]);
+  const [allStats, setAllStats] = useState<LocalDailyStat[]>([]);
   const [days, setDays] = useState(0);
   const [decks, setDecks] = useState<DeckRow[]>([]);
   const [forecast, setForecast] = useState<{ date: string; count: number }[]>([]);
@@ -25,6 +26,7 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
   useEffect(() => {
     (async () => {
       const all = (await localDataSource.stats.range(9999)).filter((s) => s.studied > 0);
+      setAllStats(all);
       setDays(all.length);
       // 近 14 天（含无学习记录的日期补零）
       const map = new Map(all.map((s) => [s.date, s]));
@@ -42,13 +44,13 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
     })();
   }, [refreshKey]);
 
-  const todayKey = dateKey(new Date());
-  const todayStudied = stats.find((s) => s.date === todayKey)?.studied ?? stats[stats.length - 1]?.studied ?? 0;
-  const totalStudied = stats.reduce((s, x) => s + x.studied, 0);
+  // 序列按日期升序、最后一项就是今天；序列里的 date 是 MM-DD，不能直接和 YYYY-MM-DD 比
+  const todayStudied = stats[stats.length - 1]?.studied ?? 0;
+  const totalStudied = allStats.reduce((s, x) => s + x.studied, 0);
   const dueNow = decks.reduce((s, d) => s + d.dueRemaining, 0);
 
   // 连续打卡（从昨天往前推，今天学了也算今天起）
-  const activeDates = new Set(stats.filter((s) => s.studied > 0).map((s) => s.date));
+  const activeDates = new Set(allStats.map((s) => s.date));
   let streak = 0;
   {
     const d = new Date();
@@ -146,7 +148,7 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
             </Box>
           </Box>
         </Box>
-        {totalStudied === 0 ? (
+        {days === 0 ? (
           <Typography sx={{ ...mono, fontSize: 10.5, opacity: 0.55, py: 6 }}>
             NO DATA · 还没有学习记录，先去「今日」背几个字
           </Typography>
@@ -159,7 +161,7 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
               <Tooltip
                 formatter={(v: any, k: any) => [`${v} 张`, k]}
                 labelStyle={{ fontSize: 12 }}
-                contentStyle={{ fontSize: 12, borderRadius: 0, border: '1px solid #17130c', background: '#fbf6ea' }}
+                contentStyle={{ fontSize: 12, borderRadius: 0, border: '1px solid var(--line-strong)', background: 'var(--paper)', color: 'var(--ink)' }}
               />
               <Bar dataKey="新卡" stackId="a" fill="var(--vermilion)" radius={0} />
               <Bar dataKey="复习" stackId="a" fill="var(--ink)" radius={0} />
@@ -188,7 +190,7 @@ export const DataPage: React.FC<{ refreshKey: number }> = ({ refreshKey }) => {
               <Tooltip
                 formatter={(v: any) => [`${v} 张`, '到期']}
                 labelStyle={{ fontSize: 12 }}
-                contentStyle={{ fontSize: 12, borderRadius: 0, border: '1px solid #17130c', background: '#fbf6ea' }}
+                contentStyle={{ fontSize: 12, borderRadius: 0, border: '1px solid var(--line-strong)', background: 'var(--paper)', color: 'var(--ink)' }}
               />
               <Bar dataKey="count" fill="var(--ink)" radius={0} />
             </BarChart>
