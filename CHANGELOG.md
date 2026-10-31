@@ -4,6 +4,10 @@
 **major** = 数据格式/接口不兼容变更；**minor** = 新功能；**patch** = 修复。
 单文件版每次发版都会在 [GitHub Releases](https://github.com/zaxchou/beizitie/releases) 挂当版本的 `beizitie.html` 附件，下载即对应版本。
 
+## v1.2.2（2026-10-31）
+
+- 通用确认弹窗（删除卡片 / 删除帖 / 撤回 / 中断学习）改为 A1：等宽小标 + 中文题 + 朱砂确认键，宽度收窄到 xs
+
 ## v1.2.1（2026-10-31）
 
 ### 补齐

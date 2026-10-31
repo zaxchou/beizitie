@@ -1,12 +1,6 @@
 import React from 'react';
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-  Button,
-} from '@mui/material';
+import { Dialog, DialogContent, Button, Typography } from '@mui/material';
+import { DialogHead, DlgActions, dlgCancelSx, dlgSaveSx } from './DialogKit';
 
 export interface ConfirmDialogProps {
   /** 对话框是否可见 */
@@ -22,8 +16,8 @@ export interface ConfirmDialogProps {
 }
 
 /**
- * 通用确认对话框。
- * 确认按钮为红色（error），取消按钮为灰色。
+ * 通用确认对话框（A1）：等宽小标 + 中文题 + 朱砂确认键。
+ * 删除、撤回、中断学习等危险动作共用。
  */
 const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   open,
@@ -31,30 +25,35 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   message,
   onConfirm,
   onCancel,
-}) => {
-  return (
-    <Dialog
-      open={open}
-      onClose={onCancel}
-      aria-labelledby="confirm-dialog-title"
-      aria-describedby="confirm-dialog-description"
-    >
-      <DialogTitle id="confirm-dialog-title">{title}</DialogTitle>
-      <DialogContent>
-        <DialogContentText id="confirm-dialog-description">
-          {message}
-        </DialogContentText>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onCancel} color="inherit">
-          取消
-        </Button>
-        <Button onClick={onConfirm} color="error" variant="contained" autoFocus>
-          确认
-        </Button>
-      </DialogActions>
-    </Dialog>
-  );
-};
+}) => (
+  <Dialog
+    open={open}
+    onClose={onCancel}
+    aria-labelledby="confirm-dialog-title"
+    aria-describedby="confirm-dialog-description"
+    maxWidth="xs"
+    fullWidth
+  >
+    <DialogHead id="confirm-dialog-title" title={title} en="Confirm" />
+    <DialogContent sx={{ p: '16px 20px 6px' }}>
+      <Typography id="confirm-dialog-description" sx={{ fontSize: 13, lineHeight: 1.9 }}>
+        {message}
+      </Typography>
+    </DialogContent>
+    <DlgActions>
+      <Button onClick={onCancel} sx={dlgCancelSx}>
+        取消
+      </Button>
+      <Button
+        onClick={onConfirm}
+        variant="contained"
+        autoFocus
+        sx={{ ...dlgSaveSx, backgroundColor: 'var(--hot-ink)' }}
+      >
+        确认
+      </Button>
+    </DlgActions>
+  </Dialog>
+);
 
 export default ConfirmDialog;
