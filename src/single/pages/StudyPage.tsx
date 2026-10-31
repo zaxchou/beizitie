@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Typography, Button } from '@mui/material';
 import FlashCard from '@/components/study/FlashCard';
 import RatingButtons from '@/components/study/RatingButtons';
@@ -112,15 +112,21 @@ export const StudyPage: React.FC<Props> = ({ studyingDeck, onExitStudy, exitLabe
     return () => ctrl.abort();
   }, [queue]);
 
+  const ratingRef = useRef(false);
   const handleRate = async (rating: Rating) => {
-    if (!current) return;
-    await localDataSource.study.rate(current.card.id, rating);
-    setRated((n) => n + 1);
-    setFlipped(false);
-    if (index + 1 >= queue.length) {
-      setSessionDone(true);
-    } else {
-      setIndex((i) => i + 1);
+    if (!current || ratingRef.current) return;
+    ratingRef.current = true;
+    try {
+      await localDataSource.study.rate(current.card.id, rating);
+      setRated((n) => n + 1);
+      setFlipped(false);
+      if (index + 1 >= queue.length) {
+        setSessionDone(true);
+      } else {
+        setIndex((i) => i + 1);
+      }
+    } finally {
+      ratingRef.current = false;
     }
   };
 

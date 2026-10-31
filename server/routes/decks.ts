@@ -315,19 +315,25 @@ decksRouter.put('/decks/:id/reset-progress', async (req: Request, res: Response)
       [req.user!.userId, id]
     );
 
-    await db.query(
-      `UPDATE cards SET ease = 2.5, interval = 0, repetitions = 0,
-                        next_review = $1, last_review = NULL, updated_at = $2
-       WHERE deck_id = $3`,
-      [now, now, id]
-    );
-
-    // 重置 deck 自身的学习上限到默认值（新牌组状态）
-    await db.query(
-      `UPDATE decks SET daily_new_card_limit = 20, daily_review_limit = 200, updated_at = $1
-       WHERE id = $2`,
-      [now, id]
-    );
+    // 共享牌组的卡片列与帖设置只允许帖主/管理员重置；
+    // 订阅者重置只清自己的进度，否则会改到其他订阅者的学习节奏。
+    const isOwner = isAdmin || (await db.query(
+      'SELECT 1 FROM decks WHERE id = $1 AND user_id = $2',
+      [id, req.user!.userId]
+    )).rows[0];
+    if (isOwner) {
+      await db.query(
+        `UPDATE cards SET ease = 2.5, interval = 0, repetitions = 0,
+                          next_review = $1, last_review = NULL, updated_at = $2
+         WHERE deck_id = $3`,
+        [now, now, id]
+      );
+      await db.query(
+        `UPDATE decks SET daily_new_card_limit = 20, daily_review_limit = 200, updated_at = $1
+         WHERE id = $2`,
+        [now, id]
+      );
+    }
 
     const today = new Date();
     const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;

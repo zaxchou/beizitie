@@ -256,33 +256,30 @@ studyRouter.get('/daily-stats/:date', async (req: Request, res: Response) => {
 // PUT /api/daily-stats/:date —— 更新/创建每日统计
 studyRouter.put('/daily-stats/:date', async (req: Request, res: Response) => {
   try {
-    const { date } = req.params;
-    const { cards_studied, new_cards_learned } = req.body;
+    const date = String(req.params.date);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      res.status(400).json({ error: 'date must be YYYY-MM-DD' });
+      return;
+    }
+    const clamp = (v: unknown): number => {
+      const n = Number(v);
+      return Number.isFinite(n) ? Math.max(0, Math.min(100000, Math.round(n))) : 0;
+    };
+    const cardsStudied = clamp(req.body.cards_studied);
+    const newLearned = Math.min(cardsStudied, clamp(req.body.new_cards_learned));
 
     const db = getDb();
 
-    // upsert：按 (date, user_id, deck_id) 三元 PK
+    // 单条 upsert：避免"先查后插"在并发首写时撞主键
     const deckId = (req.body.deck_id as string | undefined) || '';
-    const existing = (await db.query(
-      'SELECT date FROM daily_stats WHERE date = $1 AND user_id = $2 AND deck_id = $3',
-      [date, req.user!.userId, deckId]
-    )).rows[0];
-
-    if (existing) {
-      await db.query(
-        'UPDATE daily_stats SET cards_studied = $1, new_cards_learned = $2 WHERE date = $3 AND user_id = $4 AND deck_id = $5',
-        [cards_studied ?? 0, new_cards_learned ?? 0, date, req.user!.userId, deckId]
-      );
-    } else {
-      await db.query(
-        'INSERT INTO daily_stats (date, user_id, deck_id, cards_studied, new_cards_learned) VALUES ($1, $2, $3, $4, $5)',
-        [date, req.user!.userId, deckId, cards_studied ?? 0, new_cards_learned ?? 0]
-      );
-    }
-
     const { rows } = await db.query(
-      'SELECT date, cards_studied, new_cards_learned FROM daily_stats WHERE date = $1 AND user_id = $2 AND deck_id = $3',
-      [date, req.user!.userId, deckId]
+      `INSERT INTO daily_stats (date, user_id, deck_id, cards_studied, new_cards_learned)
+       VALUES ($1, $2, $3, $4, $5)
+       ON CONFLICT (date, user_id, deck_id) DO UPDATE SET
+         cards_studied = EXCLUDED.cards_studied,
+         new_cards_learned = EXCLUDED.new_cards_learned
+       RETURNING date, cards_studied, new_cards_learned`,
+      [date, req.user!.userId, deckId, cardsStudied, newLearned]
     );
 
     res.json(rows[0]);
@@ -343,6 +340,7 @@ studyRouter.get('/due-counts', async (req: Request, res: Response) => {
          WHERE (d.user_id = $3 OR us.user_id = $4 OR $5)
            AND ucp.interval > 0 AND ucp.next_review <= $6
            AND d.paused_at IS NULL
+           AND c.archived_at IS NULL
          GROUP BY d.id, d.name ORDER BY d.created_at DESC`,
         [userId, userId, userId, userId, isAdmin, now]
       );

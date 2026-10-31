@@ -201,6 +201,15 @@ export const useStudyStore = create<StudyStore>((set, get) => ({
         new_cards_learned: wasNew ? 1 : 0,
       });
 
+      // 每评一张就把会话计数落库：直接关页/崩溃时评分分布与已学数不会丢
+      // （会话的 ended_at 由学习页每 10s 心跳维护，这里不传，避免提前结束）
+      try {
+        await endStudySessionApi(session.id, {
+          cards_studied: updatedSession.cards_studied,
+          ratings: updatedRatings,
+        });
+      } catch { /* 单条记录失败不阻塞评分，退出时还会再写一次 */ }
+
       // 前进到下一张卡片
       const nextIndex = currentIndex + 1;
       if (nextIndex >= queue.length) {

@@ -31,6 +31,7 @@ import {
   putCards,
   putDeck,
   putProgress,
+  putProgressAndStat,
   putStat,
   todayLocal,
 } from './db';
@@ -302,7 +303,10 @@ export const localDataSource: LocalDataSource = {
           ? [...dueAll].sort(byOrder)
           : [...dueAll].sort((a, b) => (pMap.get(a.id)!.dueAt || '').localeCompare(pMap.get(b.id)!.dueAt || ''))
       ).slice(0, settings.dailyReviewLimit);
-      const fresh = cards.filter((c) => !pMap.get(c.id)).sort(byOrder).slice(0, settings.dailyNewLimit);
+      // 今天已经学过的新字要占额度：否则退出再进可以无限刷每日新字
+      const todayStat = await getStat(todayLocal());
+      const remainingNew = Math.max(0, settings.dailyNewLimit - (todayStat?.newLearned ?? 0));
+      const fresh = cards.filter((c) => !pMap.get(c.id)).sort(byOrder).slice(0, remainingNew);
       let ordered: LocalCard[];
       if (settings.paused) ordered = [];
       else if (mode === 'random') ordered = shuffle([...reviews, ...fresh]);
@@ -333,12 +337,15 @@ export const localDataSource: LocalDataSource = {
         dueAt: next.next_review,
         lastReviewed: nowIso,
       };
-      await putProgress(p);
       const date = todayLocal();
       const stat = (await getStat(date)) || { date, studied: 0, newLearned: 0 };
-      stat.studied += 1;
-      if (!existing) stat.newLearned += 1;
-      await putStat(stat);
+      const nextStat = {
+        ...stat,
+        studied: stat.studied + 1,
+        newLearned: stat.newLearned + (existing ? 0 : 1),
+      };
+      // 进度与统计同一事务：避免只写了一半
+      await putProgressAndStat(p, nextStat);
     },
   },
 

@@ -484,7 +484,7 @@ cardsRouter.delete('/cards/:id', requireAdmin, async (req: Request, res: Respons
       await client.query('DELETE FROM cards WHERE id = $1', [id]);
 
       // 更新牌组卡片计数
-      const countResult = await client.query('SELECT COUNT(*) as cnt FROM cards WHERE deck_id = $1', [cardRow.deck_id]);
+      const countResult = await client.query('SELECT COUNT(*)::int as cnt FROM cards WHERE deck_id = $1 AND archived_at IS NULL', [cardRow.deck_id]);
       const cnt = countResult.rows[0].cnt;
       const now = nowISO();
       await client.query('UPDATE decks SET card_count = $1, updated_at = $2 WHERE id = $3', [cnt, now, cardRow.deck_id]);

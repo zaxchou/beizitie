@@ -220,6 +220,20 @@ export async function getStat(date: string): Promise<LocalDailyStat | undefined>
     () => mem.stats.get(date),
   );
 }
+/** 一次事务同时写进度与当日统计：评一张卡要么都落盘，要么都不落 */
+export async function putProgressAndStat(p: LocalProgress, s: LocalDailyStat): Promise<void> {
+  return withFallback(
+    () => tx(['progress', 'stats'], 'readwrite', (t) => {
+      t.objectStore('progress').put(p);
+      t.objectStore('stats').put(s);
+    }),
+    () => {
+      mem.progress.set(p.cardId, p);
+      mem.stats.set(s.date, s);
+    },
+  );
+}
+
 export async function putStat(s: LocalDailyStat): Promise<void> {
   return withFallback(
     () => tx(['stats'], 'readwrite', (t) => void t.objectStore('stats').put(s)),

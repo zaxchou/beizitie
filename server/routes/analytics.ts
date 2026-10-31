@@ -133,8 +133,12 @@ analyticsRouter.get('/analytics/daily-trend', async (req: Request, res: Response
 
     // 查询这些天的统计
     const rows = (await db.query(
-      `SELECT date, cards_studied, new_cards_learned FROM daily_stats
-       WHERE user_id = $1 AND date >= $2 AND date <= $3 ORDER BY date ASC`,
+      `SELECT date,
+              SUM(cards_studied)::int AS cards_studied,
+              SUM(new_cards_learned)::int AS new_cards_learned
+       FROM daily_stats
+       WHERE user_id = $1 AND date >= $2 AND date <= $3
+       GROUP BY date ORDER BY date ASC`,
       [req.user!.userId, dates[0], dates[dates.length - 1]]
     )).rows as {
       date: string; cards_studied: number; new_cards_learned: number;
@@ -214,8 +218,8 @@ analyticsRouter.get('/analytics/daily-extra', async (req: Request, res: Response
         }[])
       : ((await db.query(
           `SELECT date,
-                  SUM(cards_studied) as cards_studied,
-                  SUM(new_cards_learned) as new_cards_learned
+                  SUM(cards_studied)::int as cards_studied,
+                  SUM(new_cards_learned)::int as new_cards_learned
            FROM daily_stats
            WHERE user_id = $1 AND date >= $2 AND date <= $3
            GROUP BY date`,
@@ -226,7 +230,7 @@ analyticsRouter.get('/analytics/daily-extra', async (req: Request, res: Response
 
     // 2) 评分按日分布 + 学时 —— 全部在 SQL 端聚合（避免 N+1）
     //    用 AT TIME ZONE 提取本地日期键
-    const sessionParams: unknown[] = [userId, `${from} 00:00:00`, `${to} 23:59:59`];
+    const sessionParams: unknown[] = [userId, from, to];
     const sessionWhere = deckId
       ? `AND deck_id = $${sessionParams.length + 1}`
       : '';
@@ -235,15 +239,17 @@ analyticsRouter.get('/analytics/daily-extra', async (req: Request, res: Response
     }
 
     const sessionAgg = (await db.query(
-      `SELECT (started_at::timestamp AT TIME ZONE 'Asia/Shanghai')::date as date_key,
-              SUM(ratings_again + ratings_hard) as hard,
-              SUM(ratings_good) as medium,
-              SUM(ratings_easy) as easy,
+      `SELECT to_char((started_at::timestamptz AT TIME ZONE 'Asia/Shanghai')::date, 'YYYY-MM-DD') as date_key,
+              SUM(ratings_again + ratings_hard)::int as hard,
+              SUM(ratings_good)::int as medium,
+              SUM(ratings_easy)::int as easy,
               SUM(CASE WHEN ended_at IS NOT NULL
-                       THEN EXTRACT(EPOCH FROM (ended_at::timestamp - started_at::timestamp)) / 60.0
+                       THEN EXTRACT(EPOCH FROM (ended_at::timestamptz - started_at::timestamptz)) / 60.0
                        ELSE 0 END) as minutes
        FROM study_sessions
-       WHERE user_id = $1 AND started_at >= $2 AND started_at <= $3
+       WHERE user_id = $1
+         AND started_at::timestamptz >= $2::date
+         AND started_at::timestamptz < ($3::date + interval '1 day')
          AND ended_at IS NOT NULL
          ${sessionWhere}
        GROUP BY date_key`,
@@ -264,9 +270,10 @@ analyticsRouter.get('/analytics/daily-extra', async (req: Request, res: Response
     for (const r of dailyRows) {
       const bucket = dailyMap.get(r.date);
       if (!bucket) continue;
-      const reviewed = Math.max(0, r.cards_studied - r.new_cards_learned);
-      bucket.new_learned += r.new_cards_learned;
-      bucket.reviewed += reviewed;
+      const studied = Number(r.cards_studied) || 0;
+      const fresh = Number(r.new_cards_learned) || 0;
+      bucket.new_learned += fresh;
+      bucket.reviewed += Math.max(0, studied - fresh);
     }
     for (const s of sessionAgg) {
       const bucket = dailyMap.get(s.date_key);
